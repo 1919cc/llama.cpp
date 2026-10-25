@@ -1680,7 +1680,7 @@ static void ggml_compute_forward_mul_mat_id(
             continue;
         }
 
-        const char * src0_cur = (const char *) src0->data + cur_a * nb02;
+        const char * src0_cur = ggml_cpu_expert_data(src0, cur_a); // data + cur_a*nb02 unless an expert cache holds it
         const void * wdata = (src1->type == vec_dot_type) ? src1->data : params->wdata;
         const size_t row_size = ggml_row_size(vec_dot_type, ne10);
 

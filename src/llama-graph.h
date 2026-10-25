@@ -780,6 +780,12 @@ using llm_graph_cb = std::function<void(const llama_ubatch & ubatch, ggml_tensor
 
 class llm_graph_result;
 
+// LLAMA_EXPERT_PREFETCH level: 0 = off, 1 = the experts of each layer, 2 = also the predicted experts of the next layer
+int llama_expert_prefetch_level();
+
+// LLAMA_LAYER_PREFETCH: how many layers ahead to page in mmap-ed weights, 0 = off
+int llama_layer_prefetch_distance();
+
 struct llm_graph_params {
     llm_arch arch = LLM_ARCH_UNKNOWN;
 
@@ -1187,6 +1193,22 @@ struct llm_graph_context {
              ggml_tensor * gate_exps_s = nullptr,
              ggml_tensor * down_exps_s = nullptr,
              ggml_tensor * selected_experts_in = nullptr) const;
+
+    // ask the OS to read the mmap-ed weights of layer il + LLAMA_LAYER_PREFETCH while layer il runs (dense models paging from flash)
+    void build_layer_prefetch(const struct llama_model & mdl, ggml_tensor * cur, int il) const;
+
+    // LLAMA_WEIGHT_STREAM: load the host weights of layer il with O_DIRECT reads before it runs (see llama-weight-stream.h)
+    void build_layer_stream(const struct llama_model & mdl, ggml_tensor * cur, int il) const;
+
+    // ask the OS to read the selected experts of mmap-ed expert tensors ahead of their use (LLAMA_EXPERT_PREFETCH)
+    void build_expert_prefetch(
+             ggml_tensor * selected_experts,
+             ggml_tensor * up_exps,
+             ggml_tensor * gate_exps,
+             ggml_tensor * down_exps,
+             ggml_tensor * gate_up_exps,
+                     int   il,
+                    bool   predicted = false) const;
 
     // the slots of the selected experts in the MoE cache, nullptr if the experts of the layer are not read from the cache
     ggml_tensor * build_moe_cache_slots(

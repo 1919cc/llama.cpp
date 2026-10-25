@@ -12,6 +12,8 @@ void llama_model_qwen35::load_arch_hparams(llama_model_loader & ml) {
     ml.get_key(LLM_KV_SSM_TIME_STEP_RANK, hparams.ssm_dt_rank);
     ml.get_key(LLM_KV_SSM_GROUP_COUNT,    hparams.ssm_n_group);
 
+    ml.get_key(LLM_KV_FFN_BLOCK_SIZE,     hparams.n_ff_block, false);
+
     // Mark recurrent layers (linear attention layers). MTP layers are dense
     // attention-only and must be flagged non-recurrent.
     if (!ml.get_key_or_arr(LLM_KV_ATTENTION_RECURRENT_LAYERS, hparams.is_recr_impl, hparams.n_layer_all, false)) {
@@ -90,8 +92,14 @@ void llama_model_qwen35::load_arch_tensors(llama_model_loader & ml) {
         }
 
         layer.ffn_gate = create_tensor(tn(LLM_TENSOR_FFN_GATE, "weight", il), {n_embd,   n_ff}, flags);
-        layer.ffn_down = create_tensor(tn(LLM_TENSOR_FFN_DOWN, "weight", il), {  n_ff, n_embd}, flags);
         layer.ffn_up   = create_tensor(tn(LLM_TENSOR_FFN_UP,   "weight", il), {n_embd,   n_ff}, flags);
+        if (hparams.n_ff_block > 0) {
+            const int64_t n_ff_block = hparams.n_ff_block;
+            GGML_ASSERT(n_ff % n_ff_block == 0);
+            layer.ffn_down_blk = create_tensor(tn(LLM_TENSOR_FFN_DOWN_BLK, "weight", il), {n_ff_block, n_embd, n_ff / n_ff_block}, flags);
+        } else {
+            layer.ffn_down = create_tensor(tn(LLM_TENSOR_FFN_DOWN, "weight", il), {n_ff, n_embd}, flags);
+        }
     };
 
     auto load_block_mtp = [&](int il) {
@@ -158,6 +166,9 @@ llama_model_qwen35::graph::graph(const llama_model & model, const llm_graph_para
     // MTP/NextN layers are loaded as extra decoder blocks but not executed in the main pass.
     for (int il = 0; il < n_layer; ++il) {
         res->t_layer_inp[il] = inpL;
+
+        build_layer_prefetch(model, inpL, il);
+        build_layer_stream(model, inpL, il);
 
         ggml_tensor * inpSA = inpL;
 
@@ -481,9 +492,47 @@ ggml_tensor * llama_model_qwen35::graph::build_layer_attn_linear(
     return cur;
 }
 
+// blocks of ffn_down_blk used per token (LLAMA_FFN_SPARSE_BLOCKS), 0 = all; read per graph so it can change between contexts
+static int64_t qwen35_ffn_sparse_blocks() {
+    const char * s = getenv("LLAMA_FFN_SPARSE_BLOCKS");
+    return s ? (int64_t) atoll(s) : 0;
+}
+
 ggml_tensor * llama_model_qwen35::graph::build_layer_ffn(ggml_tensor * cur, const int il) {
     // Qwen3.5 does not use MoE FFN
     GGML_ASSERT(model.layers[il].ffn_gate_inp == nullptr);
+
+    const auto & layer = model.layers[il];
+
+    if (layer.ffn_down_blk) {
+        // block-sparse FFN: the n_ff neurons are n_blk experts of n_ff_block neurons each; a token uses the blocks
+        // with the largest sum |silu(gate)| (the gate is computed in full), up and down only read those blocks
+        const int64_t n_tok  = cur->ne[1];
+        const int64_t n_bs   = hparams.n_ff_block;
+        const int64_t n_blk  = layer.ffn_gate->ne[1] / n_bs;
+        const int64_t n_used = qwen35_ffn_sparse_blocks() > 0 ? std::min(qwen35_ffn_sparse_blocks(), n_blk) : n_blk;
+
+        ggml_tensor * gate = ggml_silu(ctx0, build_lora_mm(layer.ffn_gate, cur, layer.ffn_gate_s));
+        gate = ggml_reshape_3d(ctx0, gate, n_bs, n_blk, n_tok);
+        cb(gate, "ffn_gate_par", il);
+
+        ggml_tensor * score = ggml_reshape_2d(ctx0, ggml_sum_rows(ctx0, ggml_abs(ctx0, gate)), n_blk, n_tok);
+        ggml_tensor * ids   = ggml_argsort_top_k(ctx0, score, n_used); // [n_used, n_tok]
+        cb(ids, "ffn_blk_ids", il);
+
+        ggml_tensor * up_exps = ggml_reshape_3d(ctx0, layer.ffn_up, n_embd, n_bs, n_blk);
+        ggml_tensor * up      = ggml_mul_mat_id(ctx0, up_exps, ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tok), ids); // [n_bs, n_used, n_tok]
+
+        ggml_tensor * par = ggml_mul(ctx0, ggml_get_rows(ctx0, gate, ids), up);
+        cb(par, "ffn_par", il);
+
+        ggml_tensor * down = ggml_mul_mat_id(ctx0, layer.ffn_down_blk, par, ids); // [n_embd, n_used, n_tok]
+        down = ggml_sum_rows(ctx0, ggml_cont(ctx0, ggml_permute(ctx0, down, 1, 0, 2, 3)));
+        cur  = ggml_reshape_2d(ctx0, down, n_embd, n_tok);
+        cb(cur, "ffn_out", il);
+
+        return cur;
+    }
 
     cur = build_ffn(cur,
         model.layers[il].ffn_up, NULL, model.layers[il].ffn_up_s,

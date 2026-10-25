@@ -1146,6 +1146,14 @@ ggml_tensor * llama_model_qwen4exp::graph::build_layer_attn_linear(
 ggml_tensor * llama_model_qwen4exp::graph::build_layer_ffn(ggml_tensor * cur, const int il) {
     GGML_ASSERT(model.layers[il].ffn_gate_inp != nullptr);
 
+    // predict the experts of the next layer with its router on this layer's input, so they are read while this layer runs
+    if (llama_expert_prefetch_level() >= 2 && il + 1 < n_layer && model.layers[il + 1].ffn_gate_inp != nullptr) {
+        const auto & next = model.layers[il + 1];
+        ggml_tensor * ids_next = ggml_argsort_top_k(ctx0, build_lora_mm(next.ffn_gate_inp, cur), n_expert_used);
+        cb(ids_next, "ffn_moe_topk_next", il);
+        build_expert_prefetch(ids_next, next.ffn_up_exps, next.ffn_gate_exps, next.ffn_down_exps, next.ffn_gate_up_exps, il + 1, true);
+    }
+
     ggml_tensor * moe_out =
         build_moe_ffn(cur,
             model.layers[il].ffn_gate_inp,

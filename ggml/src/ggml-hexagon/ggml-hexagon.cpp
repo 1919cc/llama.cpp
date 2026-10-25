@@ -108,6 +108,13 @@ static int    opt_profile = 0; // profiling mode (0-disabled, 1-basic, 2-pmu)
 static bool   opt_hostbuf = false;
 static bool   opt_dma64   = false;
 
+// matmuls whose weights stay in host memory (layers not offloaded with -ngl) run on the NPU when they have at least
+// this many tokens: the scheduler copies the weight into a compute buffer, where it is repacked into tiles on the way
+// (GGML_HEXAGON_OFFLOAD, 0 = off). Small batches (decode, speculative verification) stay on the CPU, where reading the
+// weight once is cheaper than repacking it.
+static int    opt_offload_batch  = 32;
+static int    opt_repack_threads = 6; // host threads that repack a weight into tiles (GGML_HEXAGON_REPACK_THREADS)
+
 static size_t opt_mbuf_dyn    = 512ul * 1024 * 1024;      // max dynamic (compute) buffer size
 static size_t opt_mbuf_static = 1ul * 1024 * 1024 * 1024; // max static (weight/KV) buffer size
 static size_t opt_mbuf_total  = 0;                        // total buffer space limit (0 = unconstrained)
@@ -284,12 +291,31 @@ static inline bool ggml_hexagon_is_repack_type(enum ggml_type type) {
            type == GGML_TYPE_Q8_0 || type == GGML_TYPE_IQ4_NL ||
            type == GGML_TYPE_MXFP4 || type == GGML_TYPE_Q6_K ||
            type == GGML_TYPE_Q4_K || type == GGML_TYPE_Q5_K ||
-           type == GGML_TYPE_Q3_K || type == GGML_TYPE_Q2_K;
+           type == GGML_TYPE_Q3_K || type == GGML_TYPE_Q2_K ||
+           type == GGML_TYPE_IQ4_XS ||
+           type == GGML_TYPE_IQ2_XXS || type == GGML_TYPE_IQ2_XS || type == GGML_TYPE_IQ2_S ||
+           type == GGML_TYPE_IQ1_S || type == GGML_TYPE_IQ1_M ||
+           type == GGML_TYPE_IQ3_XXS || type == GGML_TYPE_IQ3_S;
+}
+
+// Type of the DSP tile a repacked weight is stored in. Most types have their own tile; the others are transcoded
+// on the host: IQ4_XS into the IQ4_NL tile (same codebook and nibble order, the 6-bit sub-block scale folded into
+// the per-32 fp16 scale), the IQ2 family into the IQ2_XXS tile and the IQ1 family into the IQ1_S tile (see
+// repack_iq_lut3_tiled).
+static inline enum ggml_type ggml_hexagon_tile_type(enum ggml_type type) {
+    switch (type) {
+        case GGML_TYPE_IQ4_XS: return GGML_TYPE_IQ4_NL;
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:  return GGML_TYPE_IQ2_XXS;
+        case GGML_TYPE_IQ1_M:  return GGML_TYPE_IQ1_S;
+        default:               return type;
+    }
 }
 
 // Size of one repacked row in the DSP tiled layout. The K-quant tiles store uncompressed scales/mins,
 // so they are larger than the ggml blocks. For the other repack types the tile has the same size as the ggml blocks.
 static inline size_t ggml_hexagon_tiled_row_size(enum ggml_type type, int64_t ne0) {
+    type = ggml_hexagon_tile_type(type);
     if (type == GGML_TYPE_Q6_K) {
         return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_Q6_K / 32);
     }
@@ -304,6 +330,18 @@ static inline size_t ggml_hexagon_tiled_row_size(enum ggml_type type, int64_t ne
     }
     if (type == GGML_TYPE_Q2_K) {
         return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_Q2_K / 32);
+    }
+    if (type == GGML_TYPE_IQ2_XXS) {
+        return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS / 32);
+    }
+    if (type == GGML_TYPE_IQ1_S) {
+        return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_IQ1_S / 32);
+    }
+    if (type == GGML_TYPE_IQ3_XXS) {
+        return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_IQ3_XXS / 32);
+    }
+    if (type == GGML_TYPE_IQ3_S) {
+        return (size_t) (ne0 / 32) * (HTP_MM_WEIGHT_TILE_SIZE_IQ3_S / 32);
     }
     return ggml_row_size(type, ne0);
 }
@@ -555,6 +593,8 @@ struct ggml_hexagon_session {
     std::vector<htp_opnode> cached_nodes;
 
     mutable std::unordered_set<const ggml_tensor *> needs_repack;
+    // host weights of the matmuls offload_op accepted: their copies in compute buffers are repacked (see set_tensor)
+    mutable std::unordered_set<std::string> offload_weights;
 
     ggml_hexagon_mdev_group                mdev;
     ggml_backend_dev_t                     dev       = nullptr;
@@ -640,6 +680,43 @@ struct ggml_backend_hexagon_buffer_type_context {
     std::string                           name;
 };
 
+// MemAvailable from /proc/meminfo in bytes, 0 where it cannot be read
+static size_t ggml_hexagon_mem_available() {
+    FILE * f = fopen("/proc/meminfo", "r");
+    if (!f) {
+        return 0;
+    }
+    char line[256];
+    size_t kib = 0;
+    while (fgets(line, sizeof(line), f)) {
+        if (sscanf(line, "MemAvailable: %zu kB", &kib) == 1) {
+            break;
+        }
+    }
+    fclose(f);
+    return kib * 1024;
+}
+
+// RAM to leave free when allocating rpcmem (GGML_HEXAGON_MEM_RESERVE, MiB, default 2048). rpcmem cannot be
+// swapped or reclaimed, and taking the last of it brought a 12 GB phone down instead of failing the allocation.
+static size_t ggml_hexagon_mem_reserve() {
+    static const size_t reserve = [] {
+        const char * s = getenv("GGML_HEXAGON_MEM_RESERVE");
+        return (size_t) (s ? atoll(s) : 2048) << 20;
+    }();
+    return reserve;
+}
+
+// rpcmem allocated by this process, and the RAM available when the first block was allocated. The pages of a block
+// are only taken when they are written (repack), so MemAvailable lags the allocations: the budget counts them instead.
+static std::atomic<size_t> g_rpcmem_bytes{0};
+static size_t              g_rpcmem_baseline = 0;
+static std::mutex          g_rpcmem_mutex;
+
+extern "C" size_t ggml_backend_hexagon_rpcmem_bytes() {
+    return g_rpcmem_bytes.load();
+}
+
 struct ggml_hexagon_rpcmem_block {
     uint8_t * base = nullptr;
     int       fd   = -1;
@@ -648,13 +725,29 @@ struct ggml_hexagon_rpcmem_block {
     std::unordered_set<ggml_hexagon_session *> mapped_clones;
 
     ggml_hexagon_rpcmem_block(size_t size) {
+        {
+            std::lock_guard<std::mutex> lock(g_rpcmem_mutex);
+            if (g_rpcmem_bytes == 0) {
+                g_rpcmem_baseline = ggml_hexagon_mem_available();
+            }
+            if (g_rpcmem_baseline && g_rpcmem_bytes + size + ggml_hexagon_mem_reserve() > g_rpcmem_baseline) {
+                char msg[256];
+                snprintf(msg, sizeof(msg),
+                         "ggml-hex: rpcmem_alloc of %zu MiB (%zu MiB already) would leave less than %zu MiB of the %zu MiB available (GGML_HEXAGON_MEM_RESERVE)",
+                         size >> 20, g_rpcmem_bytes.load() >> 20, ggml_hexagon_mem_reserve() >> 20, g_rpcmem_baseline >> 20);
+                throw std::runtime_error(msg);
+            }
+            g_rpcmem_bytes += size;
+        }
         base = (uint8_t *) rpcmem_alloc2(RPCMEM_HEAP_ID_SYSTEM, RPCMEM_DEFAULT_FLAGS, size);
         if (!base) {
+            g_rpcmem_bytes -= size;
             throw std::runtime_error("ggml-hex: rpcmem_alloc failed");
         }
         fd = rpcmem_to_fd(base);
         if (fd < 0) {
             rpcmem_free(base);
+            g_rpcmem_bytes -= size;
             throw std::runtime_error("ggml-hex: rpcmem_to_fd failed");
         }
         this->size = size;
@@ -663,6 +756,7 @@ struct ggml_hexagon_rpcmem_block {
     ~ggml_hexagon_rpcmem_block() {
         if (base) {
             rpcmem_free(base);
+            g_rpcmem_bytes -= size;
         }
     }
 };
@@ -1051,6 +1145,653 @@ static void repack_tiled_q4_0(void * data, const ggml_tensor * t, size_t offset,
             }
         }
     }
+}
+
+// IQ4_XS -> IQ4_NL: both use the kvalues_iq4nl codebook and the same nibble order per 32 values, so every
+// sub-block keeps its nibbles and gets d * (ls - 32) as its fp16 scale (same as dequantize_row_iq4_xs).
+static void iq4_xs_to_iq4_nl(const block_iq4_xs * x, block_iq4_nl * y, int64_t nb) {
+    for (int64_t i = 0; i < nb; i++) {
+        const float d = GGML_FP16_TO_FP32(x[i].d);
+        for (int ib = 0; ib < QK_K / QK4_NL; ib++) {
+            const int ls = ((x[i].scales_l[ib / 2] >> 4 * (ib % 2)) & 0xf) | (((x[i].scales_h >> 2 * ib) & 3) << 4);
+            block_iq4_nl * b = &y[i * (QK_K / QK4_NL) + ib];
+            b->d = GGML_FP32_TO_FP16(d * (ls - 32));
+            memcpy(b->qs, x[i].qs + ib * (QK4_NL / 2), QK4_NL / 2);
+        }
+    }
+}
+
+// IQ4_NL -> IQ4_XS for get_tensor. The super-block scale is the sub-block scale of largest magnitude over -32
+// (the quantizer puts that sub-block at ls = 0), the others are rounded to it: this gives the original
+// IQ4_XS bytes back for data that came from iq4_xs_to_iq4_nl.
+static void iq4_nl_to_iq4_xs(const block_iq4_nl * x, block_iq4_xs * y, int64_t nb) {
+    for (int64_t i = 0; i < nb; i++) {
+        const block_iq4_nl * xb = &x[i * (QK_K / QK4_NL)];
+
+        float s[QK_K / QK4_NL];
+        float smax = 0.0f;
+        for (int ib = 0; ib < QK_K / QK4_NL; ib++) {
+            s[ib] = GGML_FP16_TO_FP32(xb[ib].d);
+            if (fabsf(s[ib]) > fabsf(smax)) {
+                smax = s[ib];
+            }
+        }
+
+        y[i].d = GGML_FP32_TO_FP16(smax / -32.0f);
+        const float d  = GGML_FP16_TO_FP32(y[i].d);
+        const float id = d != 0.0f ? 1.0f / d : 0.0f;
+
+        y[i].scales_h = 0;
+        memset(y[i].scales_l, 0, sizeof(y[i].scales_l));
+        for (int ib = 0; ib < QK_K / QK4_NL; ib++) {
+            const int ls = (std::min)(63, (std::max)(0, (int) lroundf(id * s[ib]) + 32));
+            y[i].scales_l[ib / 2] |= (ls & 0xf) << 4 * (ib % 2);
+            y[i].scales_h         |= (ls >> 4) << 2 * ib;
+            memcpy(y[i].qs + ib * (QK4_NL / 2), xb[ib].qs, QK4_NL / 2);
+        }
+    }
+}
+
+// repack iq4_xs data into the iq4_nl tiled layout (see ggml_hexagon_tile_type)
+static void repack_iq4_xs_tiled(ggml_tensor * t, const void * data, size_t size) {
+    const int64_t nb = ggml_nelements(t) / QK_K;
+    GGML_ASSERT(size >= (size_t) nb * sizeof(block_iq4_xs));
+
+    std::vector<block_iq4_nl> nl(nb * (QK_K / QK4_NL));
+    iq4_xs_to_iq4_nl((const block_iq4_xs *) data, nl.data(), nb);
+
+    ggml_tensor t_nl = *t;
+    t_nl.type = GGML_TYPE_IQ4_NL;
+    repack_q4_0_tiled(&t_nl, nl.data(), 0, nl.size() * sizeof(block_iq4_nl));
+}
+
+// repack the iq4_nl tiles of an iq4_xs tensor into iq4_xs data (any offset: the whole tensor is unpacked)
+static void repack_tiled_iq4_xs(void * data, const ggml_tensor * t, size_t offset, size_t size) {
+    const int64_t nb = ggml_nelements(t) / QK_K;
+    GGML_ASSERT(offset + size <= (size_t) nb * sizeof(block_iq4_xs));
+
+    ggml_tensor t_nl = *t;
+    t_nl.type = GGML_TYPE_IQ4_NL;
+    std::vector<block_iq4_nl> nl(nb * (QK_K / QK4_NL));
+    repack_tiled_q4_0(nl.data(), &t_nl, 0, nl.size() * sizeof(block_iq4_nl));
+
+    std::vector<block_iq4_xs> xs(nb);
+    iq4_nl_to_iq4_xs(nl.data(), xs.data(), nb);
+    memcpy(data, (const uint8_t *) xs.data() + offset, size);
+}
+
+// Codebook i-quants. Their grids only hold a few magnitudes, so every weight is a small integer code that the
+// DSP maps to int8 through a per-type LUT (see HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS / _IQ3_XXS in htp/matmul-ops.h):
+//   IQ2_XXS / IQ2_XS / IQ2_S: magnitude index of 8, 25, 43 | sign << 2, one scale per 16
+//   IQ1_S / IQ1_M:            2 * (grid + 1) + (delta > 0), the value 8 * (grid + delta), one scale per 16
+//   IQ3_XXS / IQ3_S:          magnitude index | sign << 3, one scale per 32 (stored as IQ4_NL blocks)
+// The codes and scales give the values of the dequantize_row_* functions (up to the fp16 rounding of the scales).
+
+static inline uint8_t iq2_code(uint8_t grid, bool neg) {
+    return (grid == 8 ? 0 : grid == 25 ? 1 : 2) | (neg ? 4 : 0);
+}
+
+static inline uint8_t iq1_code(int8_t grid, bool delta_neg) {
+    return (uint8_t) (2 * (grid + 1) + (delta_neg ? 0 : 1));
+}
+
+static inline uint8_t iq3_xxs_code(uint8_t grid, bool neg) {
+    return (grid == 62 ? 7 : (grid - 4) / 8) | (neg ? 8 : 0);
+}
+
+static inline uint8_t iq3_s_code(uint8_t grid, bool neg) {
+    return ((grid - 1) / 2) | (neg ? 8 : 0);
+}
+
+// one row of an IQ2 / IQ1 tensor: ne0 codes and ne0 / 16 scales
+static void iq_lut3_decode_row(enum ggml_type type, const void * row, int64_t ne0, uint8_t * codes, float * scales) {
+    const int64_t nb = ne0 / QK_K;
+
+    for (int64_t i = 0; i < nb; i++) {
+        uint8_t * c  = codes  + i * QK_K;
+        float   * sc = scales + i * (QK_K / 16);
+
+        switch (type) {
+            case GGML_TYPE_IQ2_XXS: {
+                const block_iq2_xxs * x = (const block_iq2_xxs *) row + i;
+                const float d = GGML_FP16_TO_FP32(x->d);
+                for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                    uint32_t aux32[2];
+                    memcpy(aux32, x->qs + 4 * ib32, sizeof(aux32));
+                    const uint8_t * aux8 = (const uint8_t *) aux32;
+                    sc[2 * ib32 + 0] = sc[2 * ib32 + 1] = d * (0.5f + (aux32[1] >> 28)) * 0.25f;
+                    for (int l = 0; l < 4; l++) {
+                        const uint8_t * grid  = (const uint8_t *) (iq2xxs_grid + aux8[l]);
+                        const uint8_t   signs = ksigns_iq2xs[(aux32[1] >> 7 * l) & 127];
+                        for (int j = 0; j < 8; j++) {
+                            c[32 * ib32 + 8 * l + j] = iq2_code(grid[j], signs & kmask_iq2xs[j]);
+                        }
+                    }
+                }
+            } break;
+
+            case GGML_TYPE_IQ2_XS: {
+                const block_iq2_xs * x = (const block_iq2_xs *) row + i;
+                const float d = GGML_FP16_TO_FP32(x->d);
+                for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                    sc[2 * ib32 + 0] = d * (0.5f + (x->scales[ib32] & 0xf)) * 0.25f;
+                    sc[2 * ib32 + 1] = d * (0.5f + (x->scales[ib32] >> 4)) * 0.25f;
+                    for (int l = 0; l < 4; l++) {
+                        const uint8_t * grid  = (const uint8_t *) (iq2xs_grid + (x->qs[4 * ib32 + l] & 511));
+                        const uint8_t   signs = ksigns_iq2xs[x->qs[4 * ib32 + l] >> 9];
+                        for (int j = 0; j < 8; j++) {
+                            c[32 * ib32 + 8 * l + j] = iq2_code(grid[j], signs & kmask_iq2xs[j]);
+                        }
+                    }
+                }
+            } break;
+
+            case GGML_TYPE_IQ2_S: {
+                const block_iq2_s * x = (const block_iq2_s *) row + i;
+                const float d = GGML_FP16_TO_FP32(x->d);
+                const uint8_t * qs    = x->qs;
+                const uint8_t * signs = x->qs + QK_K / 8;
+                for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                    sc[2 * ib32 + 0] = d * (0.5f + (x->scales[ib32] & 0xf)) * 0.25f;
+                    sc[2 * ib32 + 1] = d * (0.5f + (x->scales[ib32] >> 4)) * 0.25f;
+                    for (int l = 0; l < 4; l++) {
+                        const uint8_t * grid = (const uint8_t *) (iq2s_grid + (qs[l] | (x->qh[ib32] << (8 - 2 * l) & 0x300)));
+                        for (int j = 0; j < 8; j++) {
+                            c[32 * ib32 + 8 * l + j] = iq2_code(grid[j], signs[l] & kmask_iq2xs[j]);
+                        }
+                    }
+                    qs    += 4;
+                    signs += 4;
+                }
+            } break;
+
+            case GGML_TYPE_IQ1_S: {
+                const block_iq1_s * x = (const block_iq1_s *) row + i;
+                const float d = GGML_FP16_TO_FP32(x->d);
+                for (int ib = 0; ib < QK_K / 32; ib++) {
+                    const uint16_t qh = x->qh[ib];
+                    sc[2 * ib + 0] = sc[2 * ib + 1] = d * (2 * ((qh >> 12) & 7) + 1) / 8;
+                    for (int l = 0; l < 4; l++) {
+                        const int8_t * grid = (const int8_t *) (iq1s_grid + (x->qs[4 * ib + l] | (((qh >> 3 * l) & 7) << 8)));
+                        for (int j = 0; j < 8; j++) {
+                            c[32 * ib + 8 * l + j] = iq1_code(grid[j], qh & 0x8000);
+                        }
+                    }
+                }
+            } break;
+
+            case GGML_TYPE_IQ1_M: {
+                const block_iq1_m * x = (const block_iq1_m *) row + i;
+                const uint16_t * sc16 = (const uint16_t *) x->scales;
+                iq1m_scale_t scale;
+                scale.u16 = (sc16[0] >> 12) | ((sc16[1] >> 8) & 0x00f0) | ((sc16[2] >> 4) & 0x0f00) | (sc16[3] & 0xf000);
+                const float d = GGML_FP16_TO_FP32(scale.f16);
+                const uint8_t * qs = x->qs;
+                const uint8_t * qh = x->qh;
+                for (int ib = 0; ib < QK_K / 32; ib++) {
+                    sc[2 * ib + 0] = d * (2 * ((sc16[ib / 2] >> (6 * (ib % 2) + 0)) & 0x7) + 1) / 8;
+                    sc[2 * ib + 1] = d * (2 * ((sc16[ib / 2] >> (6 * (ib % 2) + 3)) & 0x7) + 1) / 8;
+                    const uint16_t idx[4] = {
+                        (uint16_t) (qs[0] | ((qh[0] << 8) & 0x700)), (uint16_t) (qs[1] | ((qh[0] << 4) & 0x700)),
+                        (uint16_t) (qs[2] | ((qh[1] << 8) & 0x700)), (uint16_t) (qs[3] | ((qh[1] << 4) & 0x700)),
+                    };
+                    const bool delta_neg[4] = { (qh[0] & 0x08) != 0, (qh[0] & 0x80) != 0, (qh[1] & 0x08) != 0, (qh[1] & 0x80) != 0 };
+                    for (int l = 0; l < 4; l++) {
+                        const int8_t * grid = (const int8_t *) (iq1s_grid + idx[l]);
+                        for (int j = 0; j < 8; j++) {
+                            c[32 * ib + 8 * l + j] = iq1_code(grid[j], delta_neg[l]);
+                        }
+                    }
+                    qs += 4;
+                    qh += 2;
+                }
+            } break;
+
+            default:
+                GGML_ABORT("ggml-hex: %s is not a 3-bit codebook type", ggml_type_name(type));
+        }
+    }
+}
+
+// IQ2 / IQ1 data into the Q3_K tile layout with a 3-bit code (see HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS)
+static void repack_iq_lut3_tiled(ggml_tensor * t, const void * data, size_t size) {
+    const int64_t ne0 = t->ne[0];
+    const int64_t ne1 = t->ne[1];
+    const int64_t ne2 = t->ne[2];
+    const int64_t ne3 = t->ne[3];
+
+    GGML_ASSERT(ne0 % QK_K == 0);
+    GGML_ASSERT(size >= ggml_nbytes(t));
+
+    const int    n_col_tiles = hex_round_up(ne1, 32) / 32;
+    const int    n_k_tiles   = ne0 / 32;
+    const size_t tile_size   = HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS;
+    const size_t matrix_size = (size_t) n_col_tiles * n_k_tiles * tile_size;
+    const size_t row_size    = ggml_row_size(t->type, ne0);
+
+    std::vector<uint8_t> codes(ne0);
+    std::vector<float>   scales(ne0 / 16);
+
+    for (int64_t i23 = 0; i23 < ne2 * ne3; i23++) {
+        uint8_t * matrix_dst = (uint8_t *) t->data + i23 * matrix_size;
+        memset(matrix_dst, 0, matrix_size);  // padding rows and the OR-ed bits below need zeroed tiles
+
+        for (int64_t r = 0; r < ne1; r++) {
+            iq_lut3_decode_row(t->type, (const uint8_t *) data + (i23 * ne1 + r) * row_size, ne0, codes.data(), scales.data());
+
+            const int ct  = (int) (r / 32);
+            const int row = (int) (r % 32);
+            for (int kt = 0; kt < n_k_tiles; kt++) {
+                uint8_t   * tile  = matrix_dst + ((size_t) ct * n_k_tiles + kt) * tile_size;
+                uint8_t   * lo_pl = tile;
+                uint8_t   * hi_pl = tile + 256;
+                ggml_half * sc_pl = (ggml_half *) (tile + 384);
+
+                for (int lk = 0; lk < 32; lk++) {
+                    const uint8_t code = codes[kt * 32 + lk];
+                    const int g   = lk >> 2;
+                    const int pos = row * 4 + (lk & 3);
+                    lo_pl[(g >> 2) * 128 + pos] |= (uint8_t) ((code & 3) << ((g & 3) * 2));
+                    if (code & 4) {
+                        hi_pl[pos] |= (uint8_t) (1 << g);
+                    }
+                }
+                for (int sub = 0; sub < 2; sub++) {
+                    sc_pl[sub * 32 + row] = GGML_FP32_TO_FP16(scales[kt * 2 + sub]);
+                }
+            }
+        }
+    }
+}
+
+// IQ3_XXS / IQ3_S data as IQ4_NL blocks of 4-bit codes, one block per 32 values
+static void iq_lut4_to_iq4_nl(enum ggml_type type, const void * data, int64_t nb, block_iq4_nl * y) {
+    for (int64_t i = 0; i < nb; i++) {
+        uint8_t c[QK_K];
+        float   db[QK_K / 32];
+
+        if (type == GGML_TYPE_IQ3_XXS) {
+            const block_iq3_xxs * x = (const block_iq3_xxs *) data + i;
+            const float d = GGML_FP16_TO_FP32(x->d);
+            const uint8_t * qs = x->qs;
+            const uint8_t * scales_and_signs = x->qs + QK_K / 4;
+            for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                uint32_t aux32;
+                memcpy(&aux32, scales_and_signs + 4 * ib32, sizeof(aux32));
+                db[ib32] = d * (0.5f + (aux32 >> 28)) * 0.5f;
+                for (int l = 0; l < 4; l++) {
+                    const uint8_t   signs = ksigns_iq2xs[(aux32 >> 7 * l) & 127];
+                    const uint8_t * grid1 = (const uint8_t *) (iq3xxs_grid + qs[2 * l + 0]);
+                    const uint8_t * grid2 = (const uint8_t *) (iq3xxs_grid + qs[2 * l + 1]);
+                    for (int j = 0; j < 4; j++) {
+                        c[32 * ib32 + 8 * l + j + 0] = iq3_xxs_code(grid1[j], signs & kmask_iq2xs[j + 0]);
+                        c[32 * ib32 + 8 * l + j + 4] = iq3_xxs_code(grid2[j], signs & kmask_iq2xs[j + 4]);
+                    }
+                }
+                qs += 8;
+            }
+        } else {
+            GGML_ASSERT(type == GGML_TYPE_IQ3_S);
+            const block_iq3_s * x = (const block_iq3_s *) data + i;
+            const float d = GGML_FP16_TO_FP32(x->d);
+            const uint8_t * qs    = x->qs;
+            const uint8_t * qh    = x->qh;
+            const uint8_t * signs = x->signs;
+            for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                db[ib32] = d * (1 + 2 * ((x->scales[ib32 / 2] >> 4 * (ib32 % 2)) & 0xf));
+                for (int l = 0; l < 4; l++) {
+                    const uint8_t * grid1 = (const uint8_t *) (iq3s_grid + (qs[2 * l + 0] | ((qh[0] << (8 - 2 * l)) & 256)));
+                    const uint8_t * grid2 = (const uint8_t *) (iq3s_grid + (qs[2 * l + 1] | ((qh[0] << (7 - 2 * l)) & 256)));
+                    for (int j = 0; j < 4; j++) {
+                        c[32 * ib32 + 8 * l + j + 0] = iq3_s_code(grid1[j], signs[l] & kmask_iq2xs[j + 0]);
+                        c[32 * ib32 + 8 * l + j + 4] = iq3_s_code(grid2[j], signs[l] & kmask_iq2xs[j + 4]);
+                    }
+                }
+                qh    += 1;
+                qs    += 8;
+                signs += 4;
+            }
+        }
+
+        for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+            block_iq4_nl * b = &y[i * (QK_K / 32) + ib32];
+            b->d = GGML_FP32_TO_FP16(db[ib32]);
+            for (int j = 0; j < 16; j++) {
+                b->qs[j] = c[32 * ib32 + j] | (c[32 * ib32 + j + 16] << 4);
+            }
+        }
+    }
+}
+
+// IQ3 data into the IQ4_NL tile layout with 4-bit codes (see HTP_MM_WEIGHT_TILE_SIZE_IQ3_XXS)
+static void repack_iq_lut4_tiled(ggml_tensor * t, const void * data, size_t size) {
+    const int64_t nb = ggml_nelements(t) / QK_K;
+    GGML_ASSERT(size >= ggml_nbytes(t));
+
+    std::vector<block_iq4_nl> nl(nb * (QK_K / QK4_NL));
+    iq_lut4_to_iq4_nl(t->type, data, nb, nl.data());
+
+    ggml_tensor t_nl = *t;
+    t_nl.type = GGML_TYPE_IQ4_NL;
+    repack_q4_0_tiled(&t_nl, nl.data(), 0, nl.size() * sizeof(block_iq4_nl));
+}
+
+// --- read-back of the codebook tiles ---
+// The grid indices are found again from the codes (every code pattern of a valid block is a grid entry), the
+// signs from their 7-bit parity index, and the scales as in the quantizers: the largest sub-block scale at the
+// largest ls. The blocks dequantize to the tile values up to the fp16 rounding of the tile scales.
+
+// grid entry -> index, keyed by bits_per_value-bit codes of its n_values values
+struct iq_grid_index {
+    std::vector<int16_t> idx;
+
+    template <typename T, typename F>
+    iq_grid_index(const T * grid, int n_entries, int n_values, int bits_per_value, F code_of) :
+        idx((size_t) 1 << (n_values * bits_per_value), -1) {
+        for (int i = 0; i < n_entries; i++) {
+            const uint8_t * v = (const uint8_t *) (grid + i);
+            uint32_t key = 0;
+            for (int j = 0; j < n_values; j++) {
+                key |= (uint32_t) code_of(v[j]) << (j * bits_per_value);
+            }
+            idx[key] = (int16_t) i;
+        }
+    }
+
+    int find(const uint8_t * codes, int n_values, int bits_per_value) const {
+        uint32_t key = 0;
+        for (int j = 0; j < n_values; j++) {
+            key |= (uint32_t) codes[j] << (j * bits_per_value);
+        }
+        const int i = idx[key];
+        GGML_ASSERT(i >= 0 && "ggml-hex: code pattern is not a grid entry");
+        return i;
+    }
+};
+
+static uint8_t iq2_mag_code(uint8_t v)  { return iq2_code(v, false); }
+static uint8_t iq1_grid_code(uint8_t v) { return (uint8_t) ((int8_t) v + 1); }
+static uint8_t iq3_xxs_mag_code(uint8_t v) { return iq3_xxs_code(v, false); }
+static uint8_t iq3_s_mag_code(uint8_t v)   { return iq3_s_code(v, false); }
+
+// 8 sign bits (bit j set: value j negative) -> the 7-bit ksigns_iq2xs index
+static int iq_sign_index(uint8_t signs) {
+    static const std::vector<int8_t> index = [] {
+        std::vector<int8_t> r(256, -1);
+        for (int i = 0; i < 128; i++) {
+            r[ksigns_iq2xs[i]] = (int8_t) i;
+        }
+        return r;
+    }();
+    GGML_ASSERT(index[signs] >= 0 && "ggml-hex: sign pattern has odd parity");
+    return index[signs];
+}
+
+// scales s[j] = d * (2 * ls[j] + 1) * mult with ls in [0, ls_max]
+static void iq_recover_odd_scales(const float * s, int n, int ls_max, float mult, ggml_half * d_out, int * ls) {
+    float smax = 0.0f;
+    for (int j = 0; j < n; j++) {
+        smax = (std::max)(smax, s[j]);
+    }
+    *d_out = GGML_FP32_TO_FP16(smax / ((2 * ls_max + 1) * mult));
+    const float d = GGML_FP16_TO_FP32(*d_out);
+    for (int j = 0; j < n; j++) {
+        const int l = d > 0.0f ? (int) lroundf((s[j] / (d * mult) - 1.0f) / 2.0f) : 0;
+        ls[j] = (std::min)(ls_max, (std::max)(0, l));
+    }
+}
+
+// one row of codes (ne0) and per-16 scales back into IQ2 / IQ1 blocks
+static void iq_lut3_encode_row(enum ggml_type type, const uint8_t * codes, const float * scales, int64_t ne0, void * row) {
+    static const iq_grid_index iq2xxs_index(iq2xxs_grid, 256,  8, 2, iq2_mag_code);
+    static const iq_grid_index iq2xs_index (iq2xs_grid,  512,  8, 2, iq2_mag_code);
+    static const iq_grid_index iq2s_index  (iq2s_grid,   1024, 8, 2, iq2_mag_code);
+    static const iq_grid_index iq1s_index  (iq1s_grid,   2048, 8, 2, iq1_grid_code);
+
+    for (int64_t i = 0; i < ne0 / QK_K; i++) {
+        const uint8_t * c  = codes  + i * QK_K;
+        const float   * sc = scales + i * (QK_K / 16);
+
+        // magnitude / grid codes and sign bits of the 8 values starting at e
+        auto grid_codes = [&](int e, uint8_t * g8, uint8_t * signs) {
+            *signs = 0;
+            for (int j = 0; j < 8; j++) {
+                if (type == GGML_TYPE_IQ1_S || type == GGML_TYPE_IQ1_M) {
+                    g8[j] = c[e + j] >> 1;  // grid + 1
+                } else {
+                    g8[j] = c[e + j] & 3;
+                    *signs |= (uint8_t) (((c[e + j] >> 2) & 1) << j);
+                }
+            }
+        };
+
+        switch (type) {
+            case GGML_TYPE_IQ2_XXS: {
+                block_iq2_xxs * x = (block_iq2_xxs *) row + i;
+                float s32[QK_K / 32];
+                int   ls[QK_K / 32];
+                for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                    s32[ib32] = sc[2 * ib32];
+                }
+                iq_recover_odd_scales(s32, QK_K / 32, 15, 0.125f, &x->d, ls);
+                for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                    uint32_t aux32[2] = { 0, (uint32_t) ls[ib32] << 28 };
+                    uint8_t * aux8 = (uint8_t *) aux32;
+                    for (int l = 0; l < 4; l++) {
+                        uint8_t g8[8], signs;
+                        grid_codes(32 * ib32 + 8 * l, g8, &signs);
+                        aux8[l] = (uint8_t) iq2xxs_index.find(g8, 8, 2);
+                        aux32[1] |= (uint32_t) iq_sign_index(signs) << (7 * l);
+                    }
+                    memcpy(x->qs + 4 * ib32, aux32, sizeof(aux32));
+                }
+            } break;
+
+            case GGML_TYPE_IQ2_XS:
+            case GGML_TYPE_IQ2_S: {
+                int ls[QK_K / 16];
+                ggml_half d;
+                iq_recover_odd_scales(sc, QK_K / 16, 15, 0.125f, &d, ls);
+                if (type == GGML_TYPE_IQ2_XS) {
+                    block_iq2_xs * x = (block_iq2_xs *) row + i;
+                    x->d = d;
+                    for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                        x->scales[ib32] = (uint8_t) (ls[2 * ib32] | (ls[2 * ib32 + 1] << 4));
+                        for (int l = 0; l < 4; l++) {
+                            uint8_t g8[8], signs;
+                            grid_codes(32 * ib32 + 8 * l, g8, &signs);
+                            x->qs[4 * ib32 + l] = (uint16_t) (iq2xs_index.find(g8, 8, 2) | (iq_sign_index(signs) << 9));
+                        }
+                    }
+                } else {
+                    block_iq2_s * x = (block_iq2_s *) row + i;
+                    x->d = d;
+                    memset(x->qh, 0, sizeof(x->qh));
+                    uint8_t * signs_out = x->qs + QK_K / 8;
+                    for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                        x->scales[ib32] = (uint8_t) (ls[2 * ib32] | (ls[2 * ib32 + 1] << 4));
+                        for (int l = 0; l < 4; l++) {
+                            uint8_t g8[8], signs;
+                            grid_codes(32 * ib32 + 8 * l, g8, &signs);
+                            const int gi = iq2s_index.find(g8, 8, 2);
+                            x->qs[4 * ib32 + l]      = (uint8_t) (gi & 0xff);
+                            x->qh[ib32]             |= (uint8_t) ((gi >> 8) << (2 * l));
+                            signs_out[4 * ib32 + l]  = signs;
+                        }
+                    }
+                }
+            } break;
+
+            case GGML_TYPE_IQ1_S: {
+                block_iq1_s * x = (block_iq1_s *) row + i;
+                float s32[QK_K / 32];
+                int   ls[QK_K / 32];
+                for (int ib = 0; ib < QK_K / 32; ib++) {
+                    s32[ib] = sc[2 * ib];
+                }
+                iq_recover_odd_scales(s32, QK_K / 32, 7, 0.125f, &x->d, ls);
+                for (int ib = 0; ib < QK_K / 32; ib++) {
+                    // the delta sign is shared by the 32 values: bit 0 of the code
+                    uint16_t qh = (uint16_t) ((ls[ib] << 12) | ((c[32 * ib] & 1) ? 0 : 0x8000));
+                    for (int l = 0; l < 4; l++) {
+                        uint8_t g8[8], unused;
+                        grid_codes(32 * ib + 8 * l, g8, &unused);
+                        const int gi = iq1s_index.find(g8, 8, 2);
+                        x->qs[4 * ib + l] = (uint8_t) (gi & 0xff);
+                        qh |= (uint16_t) ((gi >> 8) << (3 * l));
+                    }
+                    x->qh[ib] = qh;
+                }
+            } break;
+
+            case GGML_TYPE_IQ1_M: {
+                block_iq1_m * x = (block_iq1_m *) row + i;
+                int ls[QK_K / 16];
+                iq1m_scale_t scale;
+                iq_recover_odd_scales(sc, QK_K / 16, 7, 0.125f, &scale.f16, ls);
+                uint16_t * sc16 = (uint16_t *) x->scales;
+                memset(x->scales, 0, sizeof(x->scales));
+                memset(x->qh, 0, sizeof(x->qh));
+                for (int ib = 0; ib < QK_K / 32; ib++) {
+                    sc16[ib / 2] |= (uint16_t) ((ls[2 * ib] | (ls[2 * ib + 1] << 3)) << (6 * (ib % 2)));
+                    for (int l = 0; l < 4; l++) {
+                        uint8_t g8[8], unused;
+                        grid_codes(32 * ib + 8 * l, g8, &unused);
+                        const int gi = iq1s_index.find(g8, 8, 2);
+                        const bool delta_neg = (c[32 * ib + 8 * l] & 1) == 0;
+                        x->qs[4 * ib + l] = (uint8_t) (gi & 0xff);
+                        x->qh[2 * ib + l / 2] |= (uint8_t) (((gi >> 8) | (delta_neg ? 0x08 : 0)) << (4 * (l % 2)));
+                    }
+                }
+                for (int j = 0; j < 4; j++) {
+                    sc16[j] |= (uint16_t) (((scale.u16 >> (4 * j)) & 0xf) << 12);
+                }
+            } break;
+
+            default:
+                GGML_ABORT("ggml-hex: %s is not a 3-bit codebook type", ggml_type_name(type));
+        }
+    }
+}
+
+// IQ4_NL blocks of 4-bit codes back into IQ3_XXS / IQ3_S blocks
+static void iq_lut4_from_iq4_nl(enum ggml_type type, const block_iq4_nl * y, int64_t nb, void * data) {
+    static const iq_grid_index iq3xxs_index(iq3xxs_grid, 256, 4, 3, iq3_xxs_mag_code);
+    static const iq_grid_index iq3s_index  (iq3s_grid,   512, 4, 3, iq3_s_mag_code);
+
+    for (int64_t i = 0; i < nb; i++) {
+        uint8_t c[QK_K];
+        float   db[QK_K / 32];
+        int     ls[QK_K / 32];
+        for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+            const block_iq4_nl * b = &y[i * (QK_K / 32) + ib32];
+            db[ib32] = GGML_FP16_TO_FP32(b->d);
+            for (int j = 0; j < 16; j++) {
+                c[32 * ib32 + j]      = b->qs[j] & 0xf;
+                c[32 * ib32 + j + 16] = b->qs[j] >> 4;
+            }
+        }
+
+        // magnitudes and sign bits of the 8 values starting at e
+        auto split = [&](int e, uint8_t * m8, uint8_t * signs) {
+            *signs = 0;
+            for (int j = 0; j < 8; j++) {
+                m8[j]   = c[e + j] & 7;
+                *signs |= (uint8_t) (((c[e + j] >> 3) & 1) << j);
+            }
+        };
+
+        if (type == GGML_TYPE_IQ3_XXS) {
+            block_iq3_xxs * x = (block_iq3_xxs *) data + i;
+            iq_recover_odd_scales(db, QK_K / 32, 15, 0.25f, &x->d, ls);
+            uint8_t * qs = x->qs;
+            uint8_t * scales_and_signs = x->qs + QK_K / 4;
+            for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                uint32_t aux32 = (uint32_t) ls[ib32] << 28;
+                for (int l = 0; l < 4; l++) {
+                    uint8_t m8[8], signs;
+                    split(32 * ib32 + 8 * l, m8, &signs);
+                    qs[2 * l + 0] = (uint8_t) iq3xxs_index.find(m8 + 0, 4, 3);
+                    qs[2 * l + 1] = (uint8_t) iq3xxs_index.find(m8 + 4, 4, 3);
+                    aux32 |= (uint32_t) iq_sign_index(signs) << (7 * l);
+                }
+                memcpy(scales_and_signs + 4 * ib32, &aux32, sizeof(aux32));
+                qs += 8;
+            }
+        } else {
+            GGML_ASSERT(type == GGML_TYPE_IQ3_S);
+            block_iq3_s * x = (block_iq3_s *) data + i;
+            iq_recover_odd_scales(db, QK_K / 32, 15, 1.0f, &x->d, ls);
+            memset(x->qh, 0, sizeof(x->qh));
+            memset(x->scales, 0, sizeof(x->scales));
+            for (int ib32 = 0; ib32 < QK_K / 32; ib32++) {
+                x->scales[ib32 / 2] |= (uint8_t) (ls[ib32] << (4 * (ib32 % 2)));
+                for (int l = 0; l < 4; l++) {
+                    uint8_t m8[8], signs;
+                    split(32 * ib32 + 8 * l, m8, &signs);
+                    const int g1 = iq3s_index.find(m8 + 0, 4, 3);
+                    const int g2 = iq3s_index.find(m8 + 4, 4, 3);
+                    x->qs[8 * ib32 + 2 * l + 0] = (uint8_t) (g1 & 0xff);
+                    x->qs[8 * ib32 + 2 * l + 1] = (uint8_t) (g2 & 0xff);
+                    x->qh[ib32] |= (uint8_t) (((g1 >> 8) << (2 * l)) | ((g2 >> 8) << (2 * l + 1)));
+                    x->signs[4 * ib32 + l] = signs;
+                }
+            }
+        }
+    }
+}
+
+// repack the tiles of an IQ2 / IQ1 / IQ3 tensor into its blocks (any offset: the whole tensor is unpacked)
+static void repack_tiled_iq_codebook(void * data, const ggml_tensor * t, size_t offset, size_t size) {
+    const int64_t ne0 = t->ne[0];
+    const int64_t ne1 = t->ne[1];
+    const int64_t nb  = ggml_nelements(t) / QK_K;
+    GGML_ASSERT(offset + size <= ggml_nbytes(t));
+
+    std::vector<uint8_t> blocks(ggml_nbytes(t));
+
+    if (t->type == GGML_TYPE_IQ3_XXS || t->type == GGML_TYPE_IQ3_S) {
+        ggml_tensor t_nl = *t;
+        t_nl.type = GGML_TYPE_IQ4_NL;
+        std::vector<block_iq4_nl> nl(nb * (QK_K / QK4_NL));
+        repack_tiled_q4_0(nl.data(), &t_nl, 0, nl.size() * sizeof(block_iq4_nl));
+        iq_lut4_from_iq4_nl(t->type, nl.data(), nb, blocks.data());
+    } else {
+        const int    n_col_tiles = hex_round_up(ne1, 32) / 32;
+        const int    n_k_tiles   = ne0 / 32;
+        const size_t tile_size   = HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS;
+        const size_t matrix_size = (size_t) n_col_tiles * n_k_tiles * tile_size;
+        const size_t row_size    = ggml_row_size(t->type, ne0);
+
+        std::vector<uint8_t> codes(ne0);
+        std::vector<float>   scales(ne0 / 16);
+
+        for (int64_t i23 = 0; i23 < t->ne[2] * t->ne[3]; i23++) {
+            const uint8_t * matrix_src = (const uint8_t *) t->data + i23 * matrix_size;
+            for (int64_t r = 0; r < ne1; r++) {
+                const int ct  = (int) (r / 32);
+                const int row = (int) (r % 32);
+                for (int kt = 0; kt < n_k_tiles; kt++) {
+                    const uint8_t   * tile  = matrix_src + ((size_t) ct * n_k_tiles + kt) * tile_size;
+                    const uint8_t   * lo_pl = tile;
+                    const uint8_t   * hi_pl = tile + 256;
+                    const ggml_half * sc_pl = (const ggml_half *) (tile + 384);
+                    for (int lk = 0; lk < 32; lk++) {
+                        const int g   = lk >> 2;
+                        const int pos = row * 4 + (lk & 3);
+                        codes[kt * 32 + lk] = (uint8_t) (((lo_pl[(g >> 2) * 128 + pos] >> ((g & 3) * 2)) & 3) |
+                                                         (((hi_pl[pos] >> g) & 1) << 2));
+                    }
+                    for (int sub = 0; sub < 2; sub++) {
+                        scales[kt * 2 + sub] = GGML_FP16_TO_FP32(sc_pl[sub * 32 + row]);
+                    }
+                }
+                iq_lut3_encode_row(t->type, codes.data(), scales.data(), ne0, blocks.data() + (i23 * ne1 + r) * row_size);
+            }
+        }
+    }
+
+    memcpy(data, blocks.data() + offset, size);
 }
 
 // repack q4_1 data into q4_1_tiled tensor
@@ -2436,9 +3177,97 @@ static void repack_tensor_tiled(ggml_tensor * tensor, const void * data, size_t 
             repack_q2_K_tiled(tensor, data, 0, size);
             break;
 
+        case GGML_TYPE_IQ4_XS:
+            repack_iq4_xs_tiled(tensor, data, size);
+            break;
+
+        case GGML_TYPE_IQ2_XXS:
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:
+        case GGML_TYPE_IQ1_S:
+        case GGML_TYPE_IQ1_M:
+            repack_iq_lut3_tiled(tensor, data, size);
+            break;
+
+        case GGML_TYPE_IQ3_XXS:
+        case GGML_TYPE_IQ3_S:
+            repack_iq_lut4_tiled(tensor, data, size);
+            break;
+
         default:
             break;
     }
+}
+
+// repack_tensor_tiled on opt_repack_threads threads: each group of 32 rows is a contiguous run of tiles in the
+// repacked layout, so the matrices are cut into row chunks (multiples of 32) and every chunk is repacked as a matrix
+// of its own
+static void repack_tensor_tiled_mt(ggml_tensor * tensor, const void * data, size_t size) {
+    const int64_t ne0      = tensor->ne[0];
+    const int64_t ne1      = tensor->ne[1];
+    const int64_t n_mat    = tensor->ne[2] * tensor->ne[3];
+    const int64_t n_groups = hex_round_up(ne1, 32) / 32;
+    const int     n_thr    = opt_repack_threads;
+
+    if (n_thr <= 1 || ggml_nbytes(tensor) < (4u << 20) || size < ggml_nbytes(tensor) || n_groups * n_mat < 2) {
+        repack_tensor_tiled(tensor, data, size);
+        return;
+    }
+
+    const size_t dst_row = ggml_hexagon_tiled_row_size(tensor->type, hex_round_up(ne0, 32));
+    const size_t dst_mat = dst_row * hex_round_up(ne1, 32);
+    const size_t src_row = ggml_row_size(tensor->type, ne0);
+
+    // chunks of about a quarter of a thread's share, so uneven chunks balance out
+    const int64_t per_chunk = std::max<int64_t>(1, (n_groups * n_mat) / (n_thr * 4));
+    struct chunk { int64_t mat, g0, ng; };
+    std::vector<chunk> chunks;
+    for (int64_t m = 0; m < n_mat; m++) {
+        for (int64_t g = 0; g < n_groups; g += per_chunk) {
+            chunks.push_back({ m, g, std::min(per_chunk, n_groups - g) });
+        }
+    }
+
+    std::atomic<size_t> next{0};
+    auto work = [&]() {
+        for (size_t c; (c = next.fetch_add(1)) < chunks.size();) {
+            const int64_t r0 = chunks[c].g0 * 32;
+            const int64_t nr = std::min<int64_t>(chunks[c].ng * 32, ne1 - r0);
+
+            ggml_tensor sub = *tensor;
+            sub.ne[1] = nr;
+            sub.ne[2] = 1;
+            sub.ne[3] = 1;
+            sub.nb[2] = sub.nb[1] * nr;
+            sub.nb[3] = sub.nb[2];
+            sub.data  = (char *) tensor->data + chunks[c].mat * dst_mat + r0 * dst_row;
+
+            const char * src = (const char *) data + (chunks[c].mat * ne1 + r0) * src_row;
+            repack_tensor_tiled(&sub, src, nr * src_row);
+        }
+    };
+
+    std::vector<std::thread> pool;
+    for (int t = 1; t < std::min<int>(n_thr, (int) chunks.size()); t++) {
+        pool.emplace_back(work);
+    }
+    work();
+    for (auto & th : pool) {
+        th.join();
+    }
+}
+
+// the scheduler names the copy of a tensor for another backend "<backend>#<tensor>#<copy>"
+static bool ggml_hexagon_is_offload_copy(const ggml_hexagon_session * sess, const ggml_tensor * t) {
+    if (sess->offload_weights.empty()) {
+        return false;
+    }
+    const char * a = strchr(t->name, '#');
+    const char * b = strrchr(t->name, '#');
+    if (!a || b <= a) {
+        return false;
+    }
+    return sess->offload_weights.count(std::string(a + 1, b - a - 1)) != 0;
 }
 
 static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
@@ -2455,6 +3284,10 @@ static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
         if (ggml_hexagon_is_repack_type(tensor->type)) {
             extra->flags |= GGML_HEXAGON_TENSOR_REPACK;
         }
+    } else if (ggml_hexagon_is_repack_type(tensor->type) && !tensor->view_src && ggml_hexagon_is_offload_copy(sess, tensor)) {
+        // the scheduler's copy of a host weight for an offloaded matmul: tiles like the weight itself, but not marked
+        // as a weight (its memory is reused for other tensors, so the DSP must track it like any compute tensor)
+        extra->flags |= GGML_HEXAGON_TENSOR_REPACK;
     }
 
     HEX_VERBOSE("ggml-hex: %s set-tensor %s : data %p offset %zu size %zu usage %d flags 0x%x\n",
@@ -2466,7 +3299,7 @@ static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
     }
 
     if (offset == 0 && size == ggml_nbytes(tensor) && extra->shadow_buf.empty()) {
-        repack_tensor_tiled(tensor, data, size);
+        repack_tensor_tiled_mt(tensor, data, size);
         return;
     }
 
@@ -2560,6 +3393,20 @@ static void ggml_backend_hexagon_buffer_get_tensor(ggml_backend_buffer_t buffer,
             GGML_ASSERT(offset == 0);
             GGML_ASSERT(offset + size <= ggml_nbytes(tensor));
             repack_tiled_q2_K(data, tensor, offset, size);
+            break;
+
+        case GGML_TYPE_IQ4_XS:
+            repack_tiled_iq4_xs(data, tensor, offset, size);
+            break;
+
+        case GGML_TYPE_IQ2_XXS:
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:
+        case GGML_TYPE_IQ1_S:
+        case GGML_TYPE_IQ1_M:
+        case GGML_TYPE_IQ3_XXS:
+        case GGML_TYPE_IQ3_S:
+            repack_tiled_iq_codebook(data, tensor, offset, size);
             break;
 
         default:
@@ -2697,6 +3544,20 @@ static void ggml_backend_hexagon_buffer_get_tensor_2d(ggml_backend_buffer_t buff
 
         case GGML_TYPE_Q2_K:
             repack_tiled_q2_K(temp_buf.data(), tensor, offset, temp_size);
+            break;
+
+        case GGML_TYPE_IQ4_XS:
+            repack_tiled_iq4_xs(temp_buf.data(), tensor, offset, temp_size);
+            break;
+
+        case GGML_TYPE_IQ2_XXS:
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:
+        case GGML_TYPE_IQ1_S:
+        case GGML_TYPE_IQ1_M:
+        case GGML_TYPE_IQ3_XXS:
+        case GGML_TYPE_IQ3_S:
+            repack_tiled_iq_codebook(temp_buf.data(), tensor, offset, temp_size);
             break;
 
         default:
@@ -3185,7 +4046,9 @@ struct ggml_hexagon_opbatch {
         int64_t nb2 = is_repack ? nb1 * ne1      : t->nb[2];
         int64_t nb3 = is_repack ? nb2 * t->ne[2] : t->nb[3];
 
-        return (h->type == t->type) &&
+        const int type = is_repack ? ggml_hexagon_tile_type(t->type) : t->type;
+
+        return (h->type == type) &&
                (h->ne[0] == ne0) && (h->ne[1] == ne1) && (h->ne[2] == t->ne[2]) && (h->ne[3] == t->ne[3]) &&
                (h->nb[0] == t->nb[0]) && (h->nb[1] == nb1) && (h->nb[2] == nb2) && (h->nb[3] == nb3);
     }
@@ -3224,6 +4087,7 @@ struct ggml_hexagon_opbatch {
 
         const bool is_repack = (extra->flags & GGML_HEXAGON_TENSOR_REPACK) != 0;
         if (is_repack) {
+            h.type  = ggml_hexagon_tile_type(t->type);
             h.ne[0] = hex_round_up(t->ne[0], 32);
             h.ne[1] = hex_round_up(t->ne[1], 32);
             h.ne[2] = t->ne[2];
@@ -5421,7 +6285,7 @@ static bool ggml_hexagon_matmul_is_hmx_eligible(
     const int ne00  = src0->ne[0];
     const int ne11  = src1->ne[1];
     const int ne12  = src1->ne[2];
-    const int wtype = src0->type;
+    const int wtype = ggml_hexagon_tile_type(src0->type);
 
     // HMX weight tiles accept non-32-aligned N for non-matmul_id.
     if (ne01_padded % 32 != 0 && is_matmul_id) {
@@ -5738,7 +6602,7 @@ static void ggml_hexagon_precompute_matmul_params_impl(
     const int ne12 = src1->ne[2];
     const int ne13 = src1->ne[3];
 
-    const int wtype = src0->type;
+    const int wtype = ggml_hexagon_tile_type(src0->type);
     const bool is_repack = ggml_hexagon_is_repack_type((ggml_type) wtype);
     const int ne00_padded = is_repack ? hex_round_up(ne00, 32) : ne00;
     const int ne01_padded = is_repack ? hex_round_up(ne01, 32) : ne01;
@@ -6791,7 +7655,7 @@ static void ggml_hexagon_precompute_fused_mmnx_params(
     const int ne12 = act->ne[2];
     const int ne13 = act->ne[3];
 
-    const int wtype = src0->type;
+    const int wtype = ggml_hexagon_tile_type(src0->type);
     const bool is_repack = ggml_hexagon_is_repack_type((ggml_type) wtype);
     const int ne00_padded = is_repack ? hex_round_up(ne00, 32) : ne00;
     const int ne01_padded = is_repack ? hex_round_up(ne01, 32) : ne01;
@@ -6915,12 +7779,19 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
         case GGML_TYPE_Q6_K:
         case GGML_TYPE_Q3_K:
         case GGML_TYPE_Q2_K:
+        case GGML_TYPE_IQ4_XS:
+        case GGML_TYPE_IQ2_XXS:
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:
+        case GGML_TYPE_IQ1_S:
+        case GGML_TYPE_IQ1_M:
+        case GGML_TYPE_IQ3_XXS:
+        case GGML_TYPE_IQ3_S:
             if (!ggml_is_contiguous(src0) || ggml_is_permuted(src0)) {
                 return false;
             }
 
-            if (src0->ne[0] % ((src0->type == GGML_TYPE_Q6_K || src0->type == GGML_TYPE_Q5_K || src0->type == GGML_TYPE_Q4_K ||
-                                src0->type == GGML_TYPE_Q3_K || src0->type == GGML_TYPE_Q2_K) ? QK_K : 32)) {
+            if (src0->ne[0] % ggml_blck_size(src0->type)) {
                 return false;
             }
 
@@ -7002,12 +7873,25 @@ static bool ggml_hexagon_supported_mul_mat_id(const struct ggml_hexagon_session 
         case GGML_TYPE_Q6_K:
         case GGML_TYPE_Q3_K:
         case GGML_TYPE_Q2_K:
+        case GGML_TYPE_IQ4_XS:
+        case GGML_TYPE_IQ2_XXS:
+        case GGML_TYPE_IQ2_XS:
+        case GGML_TYPE_IQ2_S:
+        case GGML_TYPE_IQ1_S:
+        case GGML_TYPE_IQ1_M:
+        case GGML_TYPE_IQ3_XXS:
+        case GGML_TYPE_IQ3_S:
             if (!ggml_is_contiguous(src0) || ggml_is_permuted(src0)) {
                 return false;
             }
 
-            if (src0->ne[0] % ((src0->type == GGML_TYPE_Q6_K || src0->type == GGML_TYPE_Q5_K || src0->type == GGML_TYPE_Q4_K ||
-                                src0->type == GGML_TYPE_Q3_K || src0->type == GGML_TYPE_Q2_K) ? QK_K : 32)) {
+            if (src0->ne[0] % ggml_blck_size(src0->type)) {
+                return false;
+            }
+
+            // each expert's rows are padded to whole 32-row tiles and the kernels write all 32 rows
+            // of the last tile, past the expert's output when it has fewer
+            if (src0->ne[1] % 32) {
                 return false;
             }
 
@@ -7927,13 +8811,13 @@ static bool mm_is_hmx_eligible(const ggml_tensor * t) {
 
     if (ggml_hexagon_matmul_can_collapse(src0, src1, t)) {
         const ggml_tensor src1_c = ggml_hexagon_tensor_collapse_rows(src1);
-        const int wtype = src0->type;
+        const int wtype = ggml_hexagon_tile_type(src0->type);
         const bool is_repack = ggml_hexagon_is_repack_type((ggml_type) wtype);
         const int ne01_padded = is_repack ? hex_round_up(src0->ne[1], 32) : src0->ne[1];
         return ggml_hexagon_matmul_is_hmx_eligible(src0, &src1_c, t, ne01_padded, false, false);
     }
 
-    const int wtype = src0->type;
+    const int wtype = ggml_hexagon_tile_type(src0->type);
     const bool is_repack    = ggml_hexagon_is_repack_type((ggml_type) wtype);
     const bool is_matmul_id = (t->op == GGML_OP_MUL_MAT_ID);
     const bool is_batched   = (src0->ne[2] * src0->ne[3] > 1 || src1->ne[2] * src1->ne[3] > 1);
@@ -9071,6 +9955,27 @@ static bool ggml_backend_hexagon_device_supports_buft(ggml_backend_dev_t dev, gg
     return supp;
 }
 
+// large-batch matmuls with host weights (prefill of the layers kept in host memory): see opt_offload_batch
+static bool ggml_backend_hexagon_device_offload_op(ggml_backend_dev_t dev, const struct ggml_tensor * op) {
+    if (opt_offload_batch <= 0 || op->op != GGML_OP_MUL_MAT) {
+        return false;
+    }
+    const ggml_tensor * w = op->src[0];
+    if (!ggml_hexagon_is_repack_type(w->type) || w->view_src || w->ne[2] * w->ne[3] != 1) {
+        return false;
+    }
+    if (op->src[1]->ne[1] * op->src[1]->ne[2] * op->src[1]->ne[3] < opt_offload_batch) {
+        return false;
+    }
+    // the repacked copy lives in a compute buffer
+    if (ggml_backend_buft_get_alloc_size(ggml_backend_dev_buffer_type(dev), w) > opt_mbuf_dyn / 2) {
+        return false;
+    }
+    auto dev_ctx = static_cast<ggml_backend_hexagon_device_context *>(dev->context);
+    dev_ctx->session()->offload_weights.insert(w->name);
+    return true;
+}
+
 static const struct ggml_backend_device_i ggml_backend_hexagon_device_i = {
     /* .get_name             = */ ggml_backend_hexagon_device_get_name,
     /* .get_description      = */ ggml_backend_hexagon_device_get_description,
@@ -9083,7 +9988,7 @@ static const struct ggml_backend_device_i ggml_backend_hexagon_device_i = {
     /* .buffer_from_host_ptr = */ NULL,  // ggml_backend_hexagon_device_buffer_from_ptr,
     /* .supports_op          = */ ggml_backend_hexagon_device_supports_op,
     /* .supports_buft        = */ ggml_backend_hexagon_device_supports_buft,
-    /* .offload_op           = */ NULL,  // ggml_backend_hexagon_device_offload_op,
+    /* .offload_op           = */ ggml_backend_hexagon_device_offload_op,
     /* .event_new            = */ ggml_backend_hexagon_device_event_new,
     /* .event_free           = */ ggml_backend_hexagon_device_event_free,
     /* .event_synchronize    = */ ggml_backend_hexagon_device_event_synchronize,
@@ -9315,6 +10220,9 @@ static void * ggml_backend_hexagon_get_proc_address(ggml_backend_reg_t reg, cons
     if (strcmp(name, "ggml_backend_comm_allreduce_tensor") == 0) {
         return (void *) ggml_backend_hexagon_comm_allreduce_tensor;
     }
+    if (strcmp(name, "ggml_backend_hexagon_rpcmem_bytes") == 0) {
+        return (void *) ggml_backend_hexagon_rpcmem_bytes;
+    }
     return NULL;
 }
 
@@ -9435,6 +10343,14 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
                   "please update hexagon_type to match ggml_type");
     static_assert((unsigned int) HTP_TYPE_IQ4_NL == (unsigned int) GGML_TYPE_IQ4_NL,
                   "please update hexagon_type to match ggml_type");
+    static_assert((unsigned int) HTP_TYPE_IQ2_XXS == (unsigned int) GGML_TYPE_IQ2_XXS,
+                  "please update hexagon_type to match ggml_type");
+    static_assert((unsigned int) HTP_TYPE_IQ3_XXS == (unsigned int) GGML_TYPE_IQ3_XXS,
+                  "please update hexagon_type to match ggml_type");
+    static_assert((unsigned int) HTP_TYPE_IQ1_S == (unsigned int) GGML_TYPE_IQ1_S,
+                  "please update hexagon_type to match ggml_type");
+    static_assert((unsigned int) HTP_TYPE_IQ3_S == (unsigned int) GGML_TYPE_IQ3_S,
+                  "please update hexagon_type to match ggml_type");
     static_assert((unsigned int) HTP_TYPE_Q4_K == (unsigned int) GGML_TYPE_Q4_K,
                   "please update hexagon_type to match ggml_type");
     static_assert((unsigned int) HTP_TYPE_Q5_K == (unsigned int) GGML_TYPE_Q5_K,
@@ -9469,6 +10385,8 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     const char * str_optrace  = getenv("GGML_HEXAGON_OPTRACE");
     const char * str_hostbuf  = getenv("GGML_HEXAGON_HOSTBUF");
     const char * str_dma64    = getenv("GGML_HEXAGON_DMA64");
+    const char * str_offload  = getenv("GGML_HEXAGON_OFFLOAD");
+    const char * str_rthreads = getenv("GGML_HEXAGON_REPACK_THREADS");
 
     // Init Arch first since it affects other defaults
     if (!str_arch) {
@@ -9497,6 +10415,13 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     // Update vmem default
     opt_vmem  = opt_arch >= 75 ? HTP_OP_MAX_VMEM_DEFAULT : 3000 * MiB;
     opt_dma64 = opt_arch > 79 && (!str_dma64 || atoi(str_dma64) != 0);
+
+    if (str_offload) {
+        opt_offload_batch = atoi(str_offload);
+    }
+    if (str_rthreads) {
+        opt_repack_threads = std::max(1, atoi(str_rthreads));
+    }
 
     auto RE_ICASE = std::regex_constants::icase;
 

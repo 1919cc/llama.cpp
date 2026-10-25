@@ -173,6 +173,54 @@ static const uint8_t __attribute__((aligned(VLEN))) kvalues_iq4nl_lut[] = {
     0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0, 0,    0,
 };
 
+// IQ2 tiles (IQ2_XXS/IQ2_XS/IQ2_S): 3-bit code = magnitude index (8, 25, 43) | sign << 2
+static const uint8_t __attribute__((aligned(VLEN))) kvalues_iq2_lut[] = {
+    0x08, 0x00, 0x19, 0x00, 0x2B, 0x00, 0x00, 0x00, 0xF8, 0x00, 0xE7, 0x00, 0xD5, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+// IQ1 tiles (IQ1_S/IQ1_M): 3-bit code = 2 * (grid + 1) + (delta > 0), value 8 * (grid + delta) = -9, -7, -1, 1, 7, 9
+static const uint8_t __attribute__((aligned(VLEN))) kvalues_iq1_lut[] = {
+    0xF7, 0x00, 0xF9, 0x00, 0xFF, 0x00, 0x01, 0x00, 0x07, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+// IQ3_XXS tiles: 4-bit code = magnitude index (4, 12, ..., 52, 62) | sign << 3
+static const uint8_t __attribute__((aligned(VLEN))) kvalues_iq3xxs_lut[] = {
+    0x04, 0x00, 0x0C, 0x00, 0x14, 0x00, 0x1C, 0x00, 0x24, 0x00, 0x2C, 0x00, 0x34, 0x00, 0x3E, 0x00,
+    0xFC, 0x00, 0xF4, 0x00, 0xEC, 0x00, 0xE4, 0x00, 0xDC, 0x00, 0xD4, 0x00, 0xCC, 0x00, 0xC2, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+// IQ3_S tiles: 4-bit code = magnitude index (1, 3, ..., 15) | sign << 3
+static const uint8_t __attribute__((aligned(VLEN))) kvalues_iq3s_lut[] = {
+    0x01, 0x00, 0x03, 0x00, 0x05, 0x00, 0x07, 0x00, 0x09, 0x00, 0x0B, 0x00, 0x0D, 0x00, 0x0F, 0x00,
+    0xFF, 0x00, 0xFD, 0x00, 0xFB, 0x00, 0xF9, 0x00, 0xF7, 0x00, 0xF5, 0x00, 0xF3, 0x00, 0xF1, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 static const uint8_t __attribute__((aligned(VLEN))) kvalues_mxfp4_lut[] = {
     0,    0, 1,    0, 2,    0, 3, 0, 4, 0, 6, 0, 8, 0, 12, 0, 0, 0, 0xff, 0, 0xfe, 0, 0xfd, 0, 0xfc, 0,
     0xfa, 0, 0xf8, 0, 0xf4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0,    0, 0,    0, 0,    0, 0,    0,
@@ -544,6 +592,10 @@ MATMUL_2D_REPACKED_IMPL(q6_k,       896,  tiled_vec_dot_q6_k_32x2,  tiled_vec_do
 MATMUL_2D_REPACKED_IMPL(q5_k,       768,  tiled_vec_dot_q5_k_32x2,  tiled_vec_dot_q5_k_32x1)
 MATMUL_2D_REPACKED_IMPL(q3_k,       512,  tiled_vec_dot_q3_k_32x2,  tiled_vec_dot_q3_k_32x1)
 MATMUL_2D_REPACKED_IMPL(q2_k,       512,  tiled_vec_dot_q2_k_32x2,  tiled_vec_dot_q2_k_32x1)
+MATMUL_2D_REPACKED_IMPL(iq2,        512,  tiled_vec_dot_iq2_32x2,   tiled_vec_dot_iq2_32x1)
+MATMUL_2D_REPACKED_IMPL(iq1,        512,  tiled_vec_dot_iq1_32x2,   tiled_vec_dot_iq1_32x1)
+MATMUL_2D_REPACKED_IMPL(iq3xxs,     576,  tiled_vec_dot_iq3xxs_32x2, tiled_vec_dot_iq3xxs_32x1)
+MATMUL_2D_REPACKED_IMPL(iq3s,       576,  tiled_vec_dot_iq3s_32x2,  tiled_vec_dot_iq3s_32x1)
 MATMUL_2D_REPACKED_IMPL(iq4nl,      576,  tiled_vec_dot_iq4nl_32x2, tiled_vec_dot_iq4nl_32x1)
 MATMUL_2D_REPACKED_IMPL(mxfp4,      544,  tiled_vec_dot_mxfp4_32x2, tiled_vec_dot_mxfp4_32x1)
 
@@ -762,6 +814,10 @@ MATVEC_2D_REPACKED_IMPL(q5_k,       768,  tiled_vec_dot_q5_k_32x1)
 MATVEC_2D_REPACKED_IMPL(q6_k,       896,  tiled_vec_dot_q6_k_32x1)
 MATVEC_2D_REPACKED_IMPL(q3_k,       512,  tiled_vec_dot_q3_k_32x1)
 MATVEC_2D_REPACKED_IMPL(q2_k,       512,  tiled_vec_dot_q2_k_32x1)
+MATVEC_2D_REPACKED_IMPL(iq2,        512,  tiled_vec_dot_iq2_32x1)
+MATVEC_2D_REPACKED_IMPL(iq1,        512,  tiled_vec_dot_iq1_32x1)
+MATVEC_2D_REPACKED_IMPL(iq3xxs,     576,  tiled_vec_dot_iq3xxs_32x1)
+MATVEC_2D_REPACKED_IMPL(iq3s,       576,  tiled_vec_dot_iq3s_32x1)
 MATVEC_2D_REPACKED_IMPL(iq4nl,      576,  tiled_vec_dot_iq4nl_32x1)
 MATVEC_2D_REPACKED_IMPL(mxfp4,      544,  tiled_vec_dot_mxfp4_32x1)
 
@@ -773,6 +829,10 @@ MATMUL_NX_2D_REPACKED_IMPL(mxfp4,   544,  tiled_vec_dot_mxfp4_32x2, tiled_vec_do
 MATMUL_NX_2D_REPACKED_IMPL(q5_k,    768,  tiled_vec_dot_q5_k_32x2,  tiled_vec_dot_q5_k_32x1)
 MATMUL_NX_2D_REPACKED_IMPL(q3_k,    512,  tiled_vec_dot_q3_k_32x2,  tiled_vec_dot_q3_k_32x1)
 MATMUL_NX_2D_REPACKED_IMPL(q2_k,    512,  tiled_vec_dot_q2_k_32x2,  tiled_vec_dot_q2_k_32x1)
+MATMUL_NX_2D_REPACKED_IMPL(iq2,     512,  tiled_vec_dot_iq2_32x2,   tiled_vec_dot_iq2_32x1)
+MATMUL_NX_2D_REPACKED_IMPL(iq1,     512,  tiled_vec_dot_iq1_32x2,   tiled_vec_dot_iq1_32x1)
+MATMUL_NX_2D_REPACKED_IMPL(iq3xxs,  576,  tiled_vec_dot_iq3xxs_32x2, tiled_vec_dot_iq3xxs_32x1)
+MATMUL_NX_2D_REPACKED_IMPL(iq3s,    576,  tiled_vec_dot_iq3s_32x2,  tiled_vec_dot_iq3s_32x1)
 
 #define MATMUL_4D_REPACKED_IMPL(SUFFIX, TILE_SIZE, DOT_2X2, DOT_2X1)                                                                                        \
 static void hvx_mm_4d_repacked_##SUFFIX(unsigned int nth, unsigned int ith, void * data) {                                                                  \
@@ -908,6 +968,10 @@ MATMUL_4D_REPACKED_IMPL(q6_k,       896,  tiled_vec_dot_q6_k_32x2,  tiled_vec_do
 MATMUL_4D_REPACKED_IMPL(q5_k,       768,  tiled_vec_dot_q5_k_32x2,  tiled_vec_dot_q5_k_32x1)
 MATMUL_4D_REPACKED_IMPL(q3_k,       512,  tiled_vec_dot_q3_k_32x2,  tiled_vec_dot_q3_k_32x1)
 MATMUL_4D_REPACKED_IMPL(q2_k,       512,  tiled_vec_dot_q2_k_32x2,  tiled_vec_dot_q2_k_32x1)
+MATMUL_4D_REPACKED_IMPL(iq2,        512,  tiled_vec_dot_iq2_32x2,   tiled_vec_dot_iq2_32x1)
+MATMUL_4D_REPACKED_IMPL(iq1,        512,  tiled_vec_dot_iq1_32x2,   tiled_vec_dot_iq1_32x1)
+MATMUL_4D_REPACKED_IMPL(iq3xxs,     576,  tiled_vec_dot_iq3xxs_32x2, tiled_vec_dot_iq3xxs_32x1)
+MATMUL_4D_REPACKED_IMPL(iq3s,       576,  tiled_vec_dot_iq3s_32x2,  tiled_vec_dot_iq3s_32x1)
 MATMUL_4D_REPACKED_IMPL(iq4nl,      576,  tiled_vec_dot_iq4nl_32x2, tiled_vec_dot_iq4nl_32x1)
 MATMUL_4D_REPACKED_IMPL(mxfp4,      544,  tiled_vec_dot_mxfp4_32x2, tiled_vec_dot_mxfp4_32x1)
 
@@ -1657,6 +1721,22 @@ static int hvx_mm_init_vec_dot(struct htp_mm_context * mmctx, enum htp_data_type
             mmctx->type         = "q2_k_tiled-f32";
             mmctx->vec_dot_32x1 = tiled_vec_dot_q2_k_32x1;
             return 0;
+        case HTP_TYPE_IQ2_XXS:
+            mmctx->type         = "iq2_tiled-f32";
+            mmctx->vec_dot_32x1 = tiled_vec_dot_iq2_32x1;
+            return 0;
+        case HTP_TYPE_IQ1_S:
+            mmctx->type         = "iq1_tiled-f32";
+            mmctx->vec_dot_32x1 = tiled_vec_dot_iq1_32x1;
+            return 0;
+        case HTP_TYPE_IQ3_XXS:
+            mmctx->type         = "iq3xxs_tiled-f32";
+            mmctx->vec_dot_32x1 = tiled_vec_dot_iq3xxs_32x1;
+            return 0;
+        case HTP_TYPE_IQ3_S:
+            mmctx->type         = "iq3s_tiled-f32";
+            mmctx->vec_dot_32x1 = tiled_vec_dot_iq3s_32x1;
+            return 0;
         case HTP_TYPE_IQ4_NL:
             mmctx->type         = "iq4nl_tiled-f32";
             mmctx->vec_dot_32x1 = tiled_vec_dot_iq4nl_32x1;
@@ -1705,11 +1785,7 @@ static int hvx_mm_matmul(struct htp_ops_context * octx) {
     mmctx->src0_row_start = src0_row_start;
     mmctx->src0_row_end   = src0_row_end;
 
-    bool is_repacked = (src0->type == HTP_TYPE_Q4_0 || src0->type == HTP_TYPE_Q4_1 ||
-                        src0->type == HTP_TYPE_Q8_0 || src0->type == HTP_TYPE_IQ4_NL ||
-                        src0->type == HTP_TYPE_MXFP4 || src0->type == HTP_TYPE_Q6_K ||
-                        src0->type == HTP_TYPE_Q4_K || src0->type == HTP_TYPE_Q5_K ||
-                        src0->type == HTP_TYPE_Q3_K || src0->type == HTP_TYPE_Q2_K);
+    bool is_repacked = htp_mm_is_repacked_type(src0->type);
 
     // Compute src0_nrows_per_thread
     mmctx->src0_nrows_per_thread  = fastdiv(nrows + octx->n_threads - 1, &octx->n_threads_div);
@@ -1740,6 +1816,10 @@ static int hvx_mm_matmul(struct htp_ops_context * octx) {
                 case HTP_TYPE_Q5_K:   matmul_job_func = hvx_mm_4d_repacked_q5_k;   break;
                 case HTP_TYPE_Q3_K:   matmul_job_func = hvx_mm_4d_repacked_q3_k;   break;
                 case HTP_TYPE_Q2_K:   matmul_job_func = hvx_mm_4d_repacked_q2_k;   break;
+                case HTP_TYPE_IQ2_XXS: matmul_job_func = hvx_mm_4d_repacked_iq2;    break;
+                case HTP_TYPE_IQ1_S:   matmul_job_func = hvx_mm_4d_repacked_iq1;    break;
+                case HTP_TYPE_IQ3_XXS: matmul_job_func = hvx_mm_4d_repacked_iq3xxs; break;
+                case HTP_TYPE_IQ3_S:   matmul_job_func = hvx_mm_4d_repacked_iq3s;   break;
                 case HTP_TYPE_IQ4_NL: matmul_job_func = hvx_mm_4d_repacked_iq4nl;  break;
                 case HTP_TYPE_MXFP4:  matmul_job_func = hvx_mm_4d_repacked_mxfp4;  break;
                 default:              return HTP_STATUS_NO_SUPPORT;
@@ -1758,6 +1838,10 @@ static int hvx_mm_matmul(struct htp_ops_context * octx) {
                 case HTP_TYPE_Q5_K:   matmul_job_func = hvx_mm_2d_repacked_q5_k;   break;
                 case HTP_TYPE_Q3_K:   matmul_job_func = hvx_mm_2d_repacked_q3_k;   break;
                 case HTP_TYPE_Q2_K:   matmul_job_func = hvx_mm_2d_repacked_q2_k;   break;
+                case HTP_TYPE_IQ2_XXS: matmul_job_func = hvx_mm_2d_repacked_iq2;    break;
+                case HTP_TYPE_IQ1_S:   matmul_job_func = hvx_mm_2d_repacked_iq1;    break;
+                case HTP_TYPE_IQ3_XXS: matmul_job_func = hvx_mm_2d_repacked_iq3xxs; break;
+                case HTP_TYPE_IQ3_S:   matmul_job_func = hvx_mm_2d_repacked_iq3s;   break;
                 case HTP_TYPE_IQ4_NL: matmul_job_func = hvx_mm_2d_repacked_iq4nl;  break;
                 case HTP_TYPE_MXFP4:  matmul_job_func = hvx_mm_2d_repacked_mxfp4;  break;
                 default:              return HTP_STATUS_NO_SUPPORT;
@@ -1776,6 +1860,10 @@ static int hvx_mm_matmul(struct htp_ops_context * octx) {
                 case HTP_TYPE_Q6_K:   matmul_job_func = hvx_mv_2d_repacked_q6_k;   break;
                 case HTP_TYPE_Q3_K:   matmul_job_func = hvx_mv_2d_repacked_q3_k;   break;
                 case HTP_TYPE_Q2_K:   matmul_job_func = hvx_mv_2d_repacked_q2_k;   break;
+                case HTP_TYPE_IQ2_XXS: matmul_job_func = hvx_mv_2d_repacked_iq2;    break;
+                case HTP_TYPE_IQ1_S:   matmul_job_func = hvx_mv_2d_repacked_iq1;    break;
+                case HTP_TYPE_IQ3_XXS: matmul_job_func = hvx_mv_2d_repacked_iq3xxs; break;
+                case HTP_TYPE_IQ3_S:   matmul_job_func = hvx_mv_2d_repacked_iq3s;   break;
                 case HTP_TYPE_IQ4_NL: matmul_job_func = hvx_mv_2d_repacked_iq4nl;  break;
                 case HTP_TYPE_MXFP4:  matmul_job_func = hvx_mv_2d_repacked_mxfp4;  break;
                 default:              return HTP_STATUS_NO_SUPPORT;
@@ -2073,6 +2161,10 @@ DEQUANTIZE_WORKER_LOOP_IMPL(q6_k)
 DEQUANTIZE_WORKER_LOOP_IMPL(q5_k)
 DEQUANTIZE_WORKER_LOOP_IMPL(q3_k)
 DEQUANTIZE_WORKER_LOOP_IMPL(q2_k)
+DEQUANTIZE_WORKER_LOOP_IMPL(iq2)
+DEQUANTIZE_WORKER_LOOP_IMPL(iq1)
+DEQUANTIZE_WORKER_LOOP_IMPL(iq3_xxs)
+DEQUANTIZE_WORKER_LOOP_IMPL(iq3_s)
 
 static void convert_f16_worker_loop(unsigned int n, unsigned int i, void *data) {
     tiled_dequantize_state_t *state = (tiled_dequantize_state_t *)data;
@@ -2789,6 +2881,10 @@ static int hmx_mm_2d_f32(struct htp_context *ctx,
         case HTP_TYPE_Q6_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q6_k; break;
         case HTP_TYPE_Q3_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q3_k; break;
         case HTP_TYPE_Q2_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q2_k; break;
+        case HTP_TYPE_IQ2_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq2; break;
+        case HTP_TYPE_IQ1_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq1; break;
+        case HTP_TYPE_IQ3_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq3_xxs; break;
+        case HTP_TYPE_IQ3_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq3_s; break;
         case HTP_TYPE_F16:    dequant_worker_fn = convert_f16_worker_loop; break;
         case HTP_TYPE_F32:    dequant_worker_fn = quantize_f32_worker_loop; break;
         default:
@@ -3060,6 +3156,10 @@ static int hmx_mm_nx_2d_f32(struct htp_ops_context * octx, const struct htp_mm_k
         case HTP_TYPE_Q6_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q6_k; break;
         case HTP_TYPE_Q3_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q3_k; break;
         case HTP_TYPE_Q2_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q2_k; break;
+        case HTP_TYPE_IQ2_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq2; break;
+        case HTP_TYPE_IQ1_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq1; break;
+        case HTP_TYPE_IQ3_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq3_xxs; break;
+        case HTP_TYPE_IQ3_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq3_s; break;
         case HTP_TYPE_F16:    dequant_worker_fn = convert_f16_worker_loop; break;
         case HTP_TYPE_F32:    dequant_worker_fn = quantize_f32_worker_loop; break;
         default:
@@ -3675,6 +3775,10 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
         case HTP_TYPE_Q6_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q6_k; break;
         case HTP_TYPE_Q3_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q3_k; break;
         case HTP_TYPE_Q2_K:   dequant_worker_fn = dequantize_tiled_worker_loop_q2_k; break;
+        case HTP_TYPE_IQ2_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq2; break;
+        case HTP_TYPE_IQ1_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq1; break;
+        case HTP_TYPE_IQ3_XXS: dequant_worker_fn = dequantize_tiled_worker_loop_iq3_xxs; break;
+        case HTP_TYPE_IQ3_S:   dequant_worker_fn = dequantize_tiled_worker_loop_iq3_s; break;
         case HTP_TYPE_F16:    dequant_worker_fn = convert_f16_worker_loop; break;
         case HTP_TYPE_F32:    dequant_worker_fn = quantize_f32_worker_loop; break;
         default:
@@ -4584,11 +4688,8 @@ static int op_matmul_nx_impl(struct htp_ops_context * octx) {
     const struct htp_tensor * restrict src0 = octx->src[0]; // first weight
     const struct htp_tensor * restrict act  = octx->src[n_weights]; // activation x
 
-    bool is_repacked = (src0->type == HTP_TYPE_Q4_0 || src0->type == HTP_TYPE_Q4_1 ||
-                        src0->type == HTP_TYPE_Q8_0 || src0->type == HTP_TYPE_IQ4_NL ||
-                        src0->type == HTP_TYPE_MXFP4 || src0->type == HTP_TYPE_Q4_K ||
-                        src0->type == HTP_TYPE_Q5_K || src0->type == HTP_TYPE_Q3_K ||
-                        src0->type == HTP_TYPE_Q2_K);
+    // Q6_K has no fused HVX kernel
+    bool is_repacked = htp_mm_is_repacked_type(src0->type) && src0->type != HTP_TYPE_Q6_K;
 
     struct htp_mm_context mmctx_struct = {0};
     struct htp_mm_context * mmctx = &mmctx_struct;
@@ -4670,6 +4771,10 @@ static int op_matmul_nx_impl(struct htp_ops_context * octx) {
             case HTP_TYPE_Q5_K:   matmul_job_func = hvx_mm_nx_2d_repacked_q5_k;   break;
             case HTP_TYPE_Q3_K:   matmul_job_func = hvx_mm_nx_2d_repacked_q3_k;   break;
             case HTP_TYPE_Q2_K:   matmul_job_func = hvx_mm_nx_2d_repacked_q2_k;   break;
+            case HTP_TYPE_IQ2_XXS: matmul_job_func = hvx_mm_nx_2d_repacked_iq2;    break;
+            case HTP_TYPE_IQ1_S:   matmul_job_func = hvx_mm_nx_2d_repacked_iq1;    break;
+            case HTP_TYPE_IQ3_XXS: matmul_job_func = hvx_mm_nx_2d_repacked_iq3xxs; break;
+            case HTP_TYPE_IQ3_S:   matmul_job_func = hvx_mm_nx_2d_repacked_iq3s;   break;
             case HTP_TYPE_Q8_0:   matmul_job_func = hvx_mm_nx_2d_repacked_q8_0;   break;
             case HTP_TYPE_IQ4_NL: matmul_job_func = hvx_mm_nx_2d_repacked_iq4nl;  break;
             case HTP_TYPE_MXFP4:  matmul_job_func = hvx_mm_nx_2d_repacked_mxfp4;  break;

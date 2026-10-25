@@ -343,6 +343,7 @@ struct llama_layer {
     struct ggml_tensor * ffn_gate_inp_s    = nullptr; // gemma4
     struct ggml_tensor * ffn_gate_exps     = nullptr;
     struct ggml_tensor * ffn_down_exps     = nullptr;
+    struct ggml_tensor * ffn_down_blk      = nullptr;
     struct ggml_tensor * ffn_up_exps       = nullptr;
     struct ggml_tensor * ffn_gate_up_exps  = nullptr;
     struct ggml_tensor * ffn_gate_inp_b    = nullptr;

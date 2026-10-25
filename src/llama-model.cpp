@@ -1,4 +1,9 @@
 #include "llama-model.h"
+#include "llama-weight-stream.h"
+
+#if defined(__unix__) || defined(__APPLE__)
+#include <unistd.h>
+#endif
 
 #include "llama-arch.h"
 #include "llama-ext.h"
@@ -1307,6 +1312,7 @@ llama_model::llama_model(const llama_model_params & params) : params(params), pi
 }
 
 llama_model::~llama_model() {
+    llama_weight_stream_release(*this);
     for (auto * lora : loras) {
         delete lora;
     }
@@ -1837,7 +1843,22 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     // per-tensor activation precision policy
     prec_policy.load(ml, *this);
 
-    ml.init_mappings(true, use_mlock ? &pimpl->mlock_mmaps : nullptr);
+    // prefetching the whole mapping (MAP_POPULATE / WILLNEED) only helps a model that stays in RAM: a model larger than
+    // half the RAM is paged from storage anyway and would be read in full at load (LLAMA_MMAP_PREFETCH=0/1 overrides)
+    bool mmap_prefetch = true;
+    if (const char * e = getenv("LLAMA_MMAP_PREFETCH")) {
+        mmap_prefetch = atoi(e) != 0;
+    } else {
+#if defined(_SC_PHYS_PAGES) && defined(_SC_PAGESIZE)
+        const long pages = sysconf(_SC_PHYS_PAGES);
+        const long psize = sysconf(_SC_PAGESIZE);
+        if (pages > 0 && psize > 0 && ml.n_bytes > (uint64_t) pages * (uint64_t) psize / 2) {
+            mmap_prefetch = false;
+            LLAMA_LOG_INFO("%s: model (%.1f GiB) is larger than half the RAM, not prefetching the mapping\n", __func__, ml.n_bytes / 1073741824.0);
+        }
+#endif
+    }
+    ml.init_mappings(mmap_prefetch, use_mlock ? &pimpl->mlock_mmaps : nullptr);
     pimpl->mappings.reserve(ml.mappings.size());
 
     // create the backend buffers

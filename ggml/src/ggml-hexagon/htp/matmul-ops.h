@@ -43,6 +43,17 @@ extern "C" {
 //   vector 2: fp16 scales per row, d * (scales[] & 0xF), same lanes as Q3_K vector 3
 //   vector 3: fp16 offsets per row, -dmin * (scales[] >> 4), same lanes
 #define HTP_MM_WEIGHT_TILE_SIZE_Q2_K   512
+// Codebook i-quants, transcoded on the host into tiles of small integer codes that a per-type LUT maps to int8:
+// IQ2_XXS: the IQ2_XXS/IQ2_XS/IQ2_S family (magnitudes 8, 25, 43 and a sign), IQ1_S: the IQ1_S/IQ1_M family
+// (8 * (grid + delta) = -9, -7, -1, 1, 7, 9). Both use the Q3_K tile with a 3-bit code:
+//   vectors 0..1: low 2 bits of the code, as in Q3_K
+//   vector 2: bit 2 of the code of group g at bit g
+//   vector 3: fp16 scales per row, as in Q3_K
+#define HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS 512
+#define HTP_MM_WEIGHT_TILE_SIZE_IQ1_S   512
+// IQ3_XXS and IQ3_S: the IQ4_NL tile with a 4-bit code (magnitude index, sign in bit 3)
+#define HTP_MM_WEIGHT_TILE_SIZE_IQ3_XXS 576
+#define HTP_MM_WEIGHT_TILE_SIZE_IQ3_S   576
 
 // --- Weight Repacked Aligned Tile Sizes ---
 #define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q4_0   640
@@ -54,6 +65,10 @@ extern "C" {
 #define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q6_K   896
 #define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q3_K   512
 #define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q2_K   512
+#define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ2_XXS 512
+#define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ1_S   512
+#define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ3_XXS 640
+#define HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ3_S   640
 
 // --- Activation Tiled Block Sizes (including padding) ---
 #define HTP_MM_ACT_TILE_SIZE_Q8_0      1152
@@ -231,6 +246,14 @@ static inline uint32_t htp_mm_get_weight_tile_size(int weight_type) {
             return HTP_MM_WEIGHT_TILE_SIZE_Q3_K;
         case HTP_TYPE_Q2_K:
             return HTP_MM_WEIGHT_TILE_SIZE_Q2_K;
+        case HTP_TYPE_IQ2_XXS:
+            return HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS;
+        case HTP_TYPE_IQ1_S:
+            return HTP_MM_WEIGHT_TILE_SIZE_IQ1_S;
+        case HTP_TYPE_IQ3_XXS:
+            return HTP_MM_WEIGHT_TILE_SIZE_IQ3_XXS;
+        case HTP_TYPE_IQ3_S:
+            return HTP_MM_WEIGHT_TILE_SIZE_IQ3_S;
         case HTP_TYPE_MXFP4:
             return HTP_MM_WEIGHT_TILE_SIZE_MXFP4;
         default:
@@ -256,11 +279,24 @@ static inline uint32_t htp_mm_get_weight_aligned_tile_size(int weight_type) {
             return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q3_K;
         case HTP_TYPE_Q2_K:
             return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_Q2_K;
+        case HTP_TYPE_IQ2_XXS:
+            return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ2_XXS;
+        case HTP_TYPE_IQ1_S:
+            return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ1_S;
+        case HTP_TYPE_IQ3_XXS:
+            return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ3_XXS;
+        case HTP_TYPE_IQ3_S:
+            return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_IQ3_S;
         case HTP_TYPE_MXFP4:
             return HTP_MM_WEIGHT_ALIGNED_TILE_SIZE_MXFP4;
         default:
             return 0;
     }
+}
+
+// weight types stored as repacked tiles
+static inline bool htp_mm_is_repacked_type(int weight_type) {
+    return htp_mm_get_weight_tile_size(weight_type) != 0;
 }
 
 // weight types whose tiles carry a per-block offset (x = d * q + m): the activations need block sums (q8_1)
@@ -296,6 +332,10 @@ static inline size_t htp_mm_get_tiled_row_stride(int weight_type, uint32_t k) {
         case HTP_TYPE_Q3_K:
         case HTP_TYPE_Q2_K:
         case HTP_TYPE_MXFP4:
+        case HTP_TYPE_IQ2_XXS:
+        case HTP_TYPE_IQ1_S:
+        case HTP_TYPE_IQ3_XXS:
+        case HTP_TYPE_IQ3_S:
             return (size_t) nb * htp_mm_get_weight_tile_size(weight_type);
         case HTP_TYPE_F16:
             return (size_t) k * sizeof(__fp16);
@@ -527,11 +567,7 @@ static inline void htp_mm_hvx_vtcm_layout_build(
     size_t dst_sz     = 0;
     size_t act_raw_sz = 0;
 
-    const bool is_repack = (wtype == HTP_TYPE_Q4_0 || wtype == HTP_TYPE_Q4_1 ||
-                            wtype == HTP_TYPE_Q8_0 || wtype == HTP_TYPE_IQ4_NL ||
-                            wtype == HTP_TYPE_MXFP4 || wtype == HTP_TYPE_Q6_K ||
-                            wtype == HTP_TYPE_Q4_K || wtype == HTP_TYPE_Q5_K ||
-                            wtype == HTP_TYPE_Q3_K || wtype == HTP_TYPE_Q2_K);
+    const bool is_repack = htp_mm_is_repacked_type(wtype);
 
     if (is_fused_nx) {
         const size_t src0_row_size_padded = hex_round_up(src0_row_size, 128);

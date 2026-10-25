@@ -7,6 +7,24 @@
 extern "C" {
 #endif
 
+    // Per-expert data of a MUL_MAT_ID weight that override `data + e*nb[2]`: a caller that keeps some experts of an
+    // mmap-ed expert tensor in its own memory (an expert cache) attaches this table as the tensor's `extra`; a null
+    // entry keeps the default address. Only consulted for tensors in plain CPU buffers.
+    #define GGML_CPU_EXPERT_REMAP_MAGIC 0x52505845u
+    struct ggml_cpu_expert_remap {
+        uint32_t magic;
+        int32_t  n_expert;
+        const char * const volatile * ptr; // [n_expert]
+    };
+
+    static inline const char * ggml_cpu_expert_data(const struct ggml_tensor * w, int64_t e) {
+        const struct ggml_cpu_expert_remap * r = (const struct ggml_cpu_expert_remap *) w->extra;
+        if (r && r->magic == GGML_CPU_EXPERT_REMAP_MAGIC && e >= 0 && e < r->n_expert && r->ptr[e]) {
+            return r->ptr[e];
+        }
+        return (const char *) w->data + e * w->nb[2];
+    }
+
     // the compute plan that needs to be prepared for ggml_graph_compute()
     // since https://github.com/ggml-org/ggml/issues/287
     struct ggml_cplan {

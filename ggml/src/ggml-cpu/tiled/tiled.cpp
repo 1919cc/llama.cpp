@@ -856,7 +856,7 @@ static void ggml_compute_forward_mul_mat_id_tiled_one_expert(
     const size_t nbw1 = (src1->type == vec_dot_type) ? nb11 : ggml_row_size(vec_dot_type, ne10);
     const void * wdata = (src1->type == vec_dot_type) ? src1->data : params->wdata;
 
-    const char * src0_cur = (const char *) src0->data + cur_a * nb02;
+    const char * src0_cur = ggml_cpu_expert_data(src0, cur_a); // data + cur_a*nb02 unless an expert cache holds it
 
     // this thread's workspace
     tiled_ws * ws = (tiled_ws *) (scratch + (size_t) ith * ggml_tiled_ws_size());

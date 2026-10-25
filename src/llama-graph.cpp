@@ -2,7 +2,20 @@
 
 #include "llama-impl.h"
 #include "llama-model.h"
+#include "llama-expert-cache.h"
 #include "llama-moe-cache.h"
+#include "llama-mmap.h"
+#include "llama-weight-stream.h"
+
+#if defined(__linux__)
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+#include <set>
+#include <mutex>
+#include <thread>
+#include <deque>
+#include <condition_variable>
 #include "llama-batch.h"
 #include "llama-cparams.h"
 #include "llama-sampler.h"
@@ -19,6 +32,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <numeric>
 #include <sstream>
@@ -2212,6 +2226,8 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     //call early so that topk-moe can be used
     ggml_build_forward_expand(gf, weights);
 
+    build_expert_prefetch(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
+
     // the experts of host-resident layers may be read from the MoE cache
     ggml_tensor * slots = build_moe_cache_slots(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
 
@@ -2417,6 +2433,268 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     cb(moe_out, "ffn_moe_out", il);
 
     return moe_out;
+}
+
+// madvise(WILLNEED) can block while the kernel queues the reads, so the graph ops only hand the ranges to this
+// thread and return: the reads then overlap the compute instead of sitting on its critical path
+class llama_async_prefetcher {
+public:
+    static llama_async_prefetcher & get() {
+        static llama_async_prefetcher p;
+        return p;
+    }
+
+    void push(llama_memory_ranges mr) {
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (queue.size() >= 64) {
+                queue.pop_front(); // stale requests: the compute has moved past them
+            }
+            queue.push_back(std::move(mr));
+        }
+        cv.notify_one();
+    }
+
+private:
+    llama_async_prefetcher() : worker([this] { run(); }) { worker.detach(); }
+
+    [[noreturn]] void run() {
+        for (;;) {
+            llama_memory_ranges mr;
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                cv.wait(lock, [this] { return !queue.empty(); });
+                mr = std::move(queue.front());
+                queue.pop_front();
+            }
+            llama_prefetch(std::move(mr));
+        }
+    }
+
+    std::mutex                      mtx;
+    std::condition_variable         cv;
+    std::deque<llama_memory_ranges> queue;
+    std::thread                     worker;
+};
+
+// LLAMA_EXPERT_PREFETCH: 0 = off (default), 1 = madvise(WILLNEED) the experts of the layer, 2 = also the predicted
+// experts of the next layer, 3 = read the layer's experts into the page cache with parallel preads before they are used
+// and the predicted next ones in the background
+int llama_expert_prefetch_level() {
+    const char * s = getenv("LLAMA_EXPERT_PREFETCH");
+    return s ? atoi(s) : 0;
+}
+
+// the layer of an expert-prefetch op: build_expert_prefetch names it "ffn_moe_prefetch-<layer>" (the predicted layer
+// for a prediction)
+static int llama_prefetch_layer(const ggml_tensor * op) {
+    const char * dash = strrchr(op->name, '-');
+    return dash ? atoi(dash + 1) : -1;
+}
+
+// LLAMA_EXPERT_TRACE=<file>: appends the experts each MoE layer selects, as int16 records
+// [layer, n_tokens, n_used, ids[n_tokens * n_used]...], for offline analysis of the expert access pattern
+static void llama_expert_trace(const ggml_tensor * op, const ggml_tensor * ids) {
+    static const char * path = getenv("LLAMA_EXPERT_TRACE");
+    if (!path) {
+        return;
+    }
+    static std::mutex mtx;
+    static FILE * f = fopen(path, "ab");
+    if (!f) {
+        return;
+    }
+    // the op is named "ffn_moe_prefetch-<layer>" by build_expert_prefetch
+    const int16_t il = (int16_t) llama_prefetch_layer(op);
+    std::vector<int16_t> rec = { il, (int16_t) ids->ne[1], (int16_t) ids->ne[0] };
+    for (int64_t t = 0; t < ids->ne[1]; ++t) {
+        const int32_t * row = (const int32_t *) ((const char *) ids->data + t * ids->nb[1]);
+        for (int64_t i = 0; i < ids->ne[0]; ++i) {
+            rec.push_back((int16_t) row[i]);
+        }
+    }
+    std::lock_guard<std::mutex> lock(mtx);
+    fwrite(rec.data(), sizeof(int16_t), rec.size(), f);
+    fflush(f);
+}
+
+// src[0]: expert ids [n_used, n_tokens], src[1..]: expert tensors [.., .., n_expert] in host memory
+static void llama_expert_prefetch_op(ggml_tensor * dst, int ith, int nth, void * userdata) {
+    GGML_UNUSED(nth);
+    if (ith != 0) {
+        return;
+    }
+
+    const ggml_tensor * ids = dst->src[0];
+    const int64_t n_expert = dst->src[1]->ne[2];
+    const int il = llama_prefetch_layer(dst);
+    if (userdata == nullptr) {
+        llama_expert_trace(dst, ids);
+    }
+
+    std::vector<bool> used(n_expert, false);
+    std::vector<int32_t> distinct;
+    for (int64_t t = 0; t < ids->ne[1]; ++t) {
+        const int32_t * row = (const int32_t *) ((const char *) ids->data + t * ids->nb[1]);
+        for (int64_t i = 0; i < ids->ne[0]; ++i) {
+            if (row[i] >= 0 && row[i] < n_expert && !used[row[i]]) {
+                used[row[i]] = true;
+                distinct.push_back(row[i]);
+            }
+        }
+    }
+
+    // the expert cache (LLAMA_EXPERT_CACHE_MB) makes this layer's experts resident: hits need nothing, misses are read
+    // straight into their slots; the MUL_MAT_ID that follows finds them through the tensors' remap tables
+    if (userdata == nullptr && llama_expert_cache_enabled()) {
+        const ggml_tensor * ws[GGML_MAX_SRC];
+        int n_ws = 0;
+        for (int s = 1; s < GGML_MAX_SRC && dst->src[s]; ++s) {
+            ws[n_ws++] = dst->src[s];
+        }
+        if (llama_expert_cache_use(il, distinct.data(), distinct.size(), ws, n_ws)) {
+            return;
+        }
+    }
+
+    // cached experts (a prediction may name them) are resident: nothing to read
+    llama_memory_ranges mr;
+    for (int s = 1; s < GGML_MAX_SRC && dst->src[s]; ++s) {
+        const ggml_tensor * w = dst->src[s];
+        for (int32_t e : distinct) {
+            if (!llama_expert_cache_has(il, e)) {
+                mr.push_back({ (const char *) w->data + e * w->nb[2], w->nb[2] });
+            }
+        }
+    }
+    if (llama_expert_prefetch_level() >= 3) {
+        // userdata != nullptr: a prediction for the next layer, read in the background
+        std::vector<std::pair<const void *, size_t>> ranges;
+        for (const auto & r : mr) {
+            ranges.emplace_back(r.addr, r.size);
+        }
+        llama_page_fill(ranges, userdata == nullptr);
+        return;
+    }
+    llama_async_prefetcher::get().push(std::move(mr));
+}
+
+int llama_layer_prefetch_distance() {
+    const char * s = getenv("LLAMA_LAYER_PREFETCH");
+    return s ? atoi(s) : 0;
+}
+
+// src[0]: anchor (the layer input, orders the op at the start of the layer), src[1..]: weights to page in
+static void llama_layer_prefetch_op(ggml_tensor * dst, int ith, int nth, void * userdata) {
+    GGML_UNUSED(nth);
+    GGML_UNUSED(userdata);
+    if (ith != 0) {
+        return;
+    }
+    llama_memory_ranges mr;
+    for (int s = 1; s < GGML_MAX_SRC && dst->src[s]; ++s) {
+        mr.push_back({ dst->src[s]->data, ggml_nbytes(dst->src[s]) });
+    }
+    llama_async_prefetcher::get().push(std::move(mr));
+}
+
+void llm_graph_context::build_layer_prefetch(const llama_model & mdl, ggml_tensor * cur, int il) const {
+    const int dist = llama_layer_prefetch_distance();
+    if (dist <= 0) {
+        return;
+    }
+
+    // layer 0 also starts the reads of layers 1 .. dist - 1
+    for (int target = il == 0 ? 1 : il + dist; target <= il + dist && target < (int) hparams.n_layer(); ++target) {
+        char prefix[32];
+        snprintf(prefix, sizeof(prefix), "blk.%d.", target);
+
+        // the largest weights of the layer that live in host memory (mmap-ed file pages)
+        std::vector<ggml_tensor *> ws;
+        for (const auto & it : mdl.tensors_by_name) {
+            ggml_tensor * w = it.second;
+            if (it.first.rfind(prefix, 0) == 0 && w->buffer && ggml_backend_buffer_is_host(w->buffer) && ggml_nbytes(w) >= (1 << 20)) {
+                ws.push_back(w);
+            }
+        }
+        if (ws.empty()) {
+            continue;
+        }
+        std::sort(ws.begin(), ws.end(), [](const ggml_tensor * a, const ggml_tensor * b) { return ggml_nbytes(a) > ggml_nbytes(b); });
+
+        for (size_t i = 0; i < ws.size(); i += GGML_MAX_SRC - 1) {
+            ggml_tensor * args[GGML_MAX_SRC] = { cur };
+            int n_args = 1;
+            for (size_t j = i; j < ws.size() && n_args < GGML_MAX_SRC; ++j) {
+                args[n_args++] = ws[j];
+            }
+            ggml_tensor * op = ggml_custom_4d(ctx0, GGML_TYPE_I32, 1, 1, 1, 1, args, n_args, llama_layer_prefetch_op, 1, nullptr);
+            cb(op, "layer_prefetch", il);
+            ggml_build_forward_expand(gf, op);
+        }
+    }
+}
+
+void llm_graph_context::build_layer_stream(const llama_model & mdl, ggml_tensor * cur, int il) const {
+    void * ud = llama_weight_stream_layer(llama_weight_stream_get(mdl), il);
+    if (!ud) {
+        return;
+    }
+    ggml_tensor * args[1] = { cur };
+    ggml_tensor * op = ggml_custom_4d(ctx0, GGML_TYPE_I32, 1, 1, 1, 1, args, 1, llama_weight_stream_op, 1, ud);
+    cb(op, "weight_stream", il);
+    ggml_build_forward_expand(gf, op);
+}
+
+// The model file is mapped with sequential access advice, which widens readahead: right for dense weights read front to
+// back, wasteful for expert slices read at random (each fault pulls in neighbouring experts). Advise random access on
+// the expert tensors once.
+static void llama_advise_random(const ggml_tensor * w) {
+#if defined(__linux__)
+    static std::mutex mtx;
+    static std::set<const void *> done;
+    std::lock_guard<std::mutex> lock(mtx);
+    if (!done.insert(w->data).second) {
+        return;
+    }
+    const size_t page = (size_t) sysconf(_SC_PAGESIZE);
+    const uintptr_t beg = (uintptr_t) w->data / page * page;
+    const uintptr_t end = ((uintptr_t) w->data + ggml_nbytes(w) + page - 1) / page * page;
+    posix_madvise((void *) beg, end - beg, POSIX_MADV_RANDOM);
+#else
+    GGML_UNUSED(w);
+#endif
+}
+
+void llm_graph_context::build_expert_prefetch(
+         ggml_tensor * selected_experts,
+         ggml_tensor * up_exps,
+         ggml_tensor * gate_exps,
+         ggml_tensor * down_exps,
+         ggml_tensor * gate_up_exps,
+                 int   il,
+                bool   predicted) const {
+    if (llama_expert_prefetch_level() <= 0) {
+        return;
+    }
+
+    ggml_tensor * args[GGML_MAX_SRC] = { selected_experts };
+    int n_args = 1;
+    for (ggml_tensor * w : { up_exps, gate_exps, down_exps, gate_up_exps }) {
+        // only mmap-ed experts in host memory are paged in by the OS
+        if (w && w->buffer && ggml_backend_buffer_is_host(w->buffer) && ggml_n_dims(w) == 3 && n_args < GGML_MAX_SRC) {
+            args[n_args++] = w;
+            llama_advise_random(w);
+        }
+    }
+    if (n_args == 1) {
+        return;
+    }
+
+    // the user data only marks predictions (any non-null pointer)
+    ggml_tensor * op = ggml_custom_4d(ctx0, GGML_TYPE_I32, 1, 1, 1, 1, args, n_args, llama_expert_prefetch_op, 1, predicted ? (void *) this : nullptr);
+    cb(op, "ffn_moe_prefetch", il);
+    ggml_build_forward_expand(gf, op);
 }
 
 ggml_tensor * llm_graph_context::build_moe_cache_slots(

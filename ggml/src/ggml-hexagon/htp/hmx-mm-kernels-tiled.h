@@ -12,6 +12,17 @@ static const __fp16 iq4_nl_to_fp16_lut[64] __attribute__((aligned(VLEN))) = {
     1,    0, 13,   0, 25,  0, 38,  0, 53,  0, 69,  0, 89,  0, 113, 0,
 };
 
+// IQ3 tiles: code = magnitude index | sign << 3, see HTP_MM_WEIGHT_TILE_SIZE_IQ3_XXS
+static const __fp16 iq3_xxs_to_fp16_lut[64] __attribute__((aligned(VLEN))) = {
+    4,  0, 12,  0, 20,  0, 28,  0, 36,  0, 44,  0, 52,  0, 62,  0,
+    -4, 0, -12, 0, -20, 0, -28, 0, -36, 0, -44, 0, -52, 0, -62, 0,
+};
+
+static const __fp16 iq3_s_to_fp16_lut[64] __attribute__((aligned(VLEN))) = {
+    1,  0, 3,  0, 5,  0, 7,  0, 9,  0, 11,  0, 13,  0, 15,  0,
+    -1, 0, -3, 0, -5, 0, -7, 0, -9, 0, -11, 0, -13, 0, -15, 0,
+};
+
 // --- tiled format dequantizers ---
 
 typedef struct {
@@ -227,12 +238,13 @@ static void dequantize_tiled_weight_to_fp16_task_q4_1(
     }
 }
 
-static void dequantize_tiled_weight_to_fp16_task_iq4_nl(
+// IQ4_NL tiles and the IQ3 tiles that share their layout: 4-bit codes mapped through an fp16 LUT
+static inline void dequantize_tiled_weight_to_fp16_lut4(
         const tiled_dequantize_state_t *state,
-        uint32_t start_tile, uint32_t end_tile) {
+        uint32_t start_tile, uint32_t end_tile, const __fp16 * lut) {
 
     const HVX_Vector mask_h4 = Q6_Vb_vsplat_R(0x0F);
-    const HVX_Vector vlut_cvt = hvx_vmem(iq4_nl_to_fp16_lut);
+    const HVX_Vector vlut_cvt = hvx_vmem(lut);
 
     for (uint32_t t = start_tile; t < end_tile; t++) {
         const uint8_t * tile_src = state->src + t * state->aligned_tile_size;
@@ -324,6 +336,24 @@ static void dequantize_tiled_weight_to_fp16_task_iq4_nl(
         hvx_vmem(dst_ptr + 14 * 64) = v_grp3_2;
         hvx_vmem(dst_ptr + 15 * 64) = v_grp3_3;
     }
+}
+
+static void dequantize_tiled_weight_to_fp16_task_iq4_nl(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile) {
+    dequantize_tiled_weight_to_fp16_lut4(state, start_tile, end_tile, iq4_nl_to_fp16_lut);
+}
+
+static void dequantize_tiled_weight_to_fp16_task_iq3_xxs(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile) {
+    dequantize_tiled_weight_to_fp16_lut4(state, start_tile, end_tile, iq3_xxs_to_fp16_lut);
+}
+
+static void dequantize_tiled_weight_to_fp16_task_iq3_s(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile) {
+    dequantize_tiled_weight_to_fp16_lut4(state, start_tile, end_tile, iq3_s_to_fp16_lut);
 }
 
 static void dequantize_tiled_weight_to_fp16_task_mxfp4(
@@ -699,6 +729,51 @@ static void dequantize_tiled_weight_to_fp16_task_q3_k(
                 Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_Vhf_equals_Vh(Q6_V_hi_W(vp_k)), v_scale));
         }
     }
+}
+
+// IQ2_XXS / IQ1_S tiles: the Q3_K tile with the 3-bit code mapped through an int8 LUT, see HTP_MM_WEIGHT_TILE_SIZE_IQ2_XXS.
+static inline void dequantize_tiled_weight_to_fp16_lut3(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile, const uint8_t * lut_bytes) {
+
+    const HVX_Vector mask_03 = Q6_Vb_vsplat_R(0x03);
+    const HVX_Vector lut     = hvx_vmem(lut_bytes);
+
+    for (uint32_t t = start_tile; t < end_tile; t++) {
+        const HVX_Vector * vptr = (const HVX_Vector *) (state->src + t * state->aligned_tile_size);
+        __fp16 * dst_ptr = state->dst + t * HTP_MM_HMX_TILE_N_ELMS;
+
+        HVX_Vector v_sc      = vptr[3];
+        HVX_Vector v_sc_k16  = Q6_V_vror_VR(v_sc, 64);
+        HVX_Vector v_scale_k0  = Q6_V_lo_W(Q6_W_vshuff_VVR(v_sc, v_sc, -2));
+        HVX_Vector v_scale_k16 = Q6_V_lo_W(Q6_W_vshuff_VVR(v_sc_k16, v_sc_k16, -2));
+
+        #pragma unroll
+        for (int g = 0; g < 8; g++) {
+            const HVX_Vector v_scale = (g < 4) ? v_scale_k0 : v_scale_k16;
+
+            HVX_Vector     v_q   = unpack_lut3_group(vptr, g, mask_03, lut);
+            HVX_VectorPair vp16  = Q6_Wh_vunpack_Vb(v_q);
+            HVX_VectorPair vp_k  = Q6_W_vdeal_VVR(Q6_V_hi_W(vp16), Q6_V_lo_W(vp16), -4);
+
+            hvx_vmem(dst_ptr + (2 * g + 0) * 64) =
+                Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_Vhf_equals_Vh(Q6_V_lo_W(vp_k)), v_scale));
+            hvx_vmem(dst_ptr + (2 * g + 1) * 64) =
+                Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_Vhf_equals_Vh(Q6_V_hi_W(vp_k)), v_scale));
+        }
+    }
+}
+
+static void dequantize_tiled_weight_to_fp16_task_iq2(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile) {
+    dequantize_tiled_weight_to_fp16_lut3(state, start_tile, end_tile, kvalues_iq2_lut);
+}
+
+static void dequantize_tiled_weight_to_fp16_task_iq1(
+        const tiled_dequantize_state_t *state,
+        uint32_t start_tile, uint32_t end_tile) {
+    dequantize_tiled_weight_to_fp16_lut3(state, start_tile, end_tile, kvalues_iq1_lut);
 }
 
 // Q2_K stores 2-bit weights and one fp16 scale and offset per 16 k, see HTP_MM_WEIGHT_TILE_SIZE_Q2_K.
