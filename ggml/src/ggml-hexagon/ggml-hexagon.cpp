@@ -469,7 +469,7 @@ static std::atomic<size_t> g_rpcmem_bytes{0};
 static size_t              g_rpcmem_baseline = 0;
 static std::mutex          g_rpcmem_mutex;
 
-extern "C" size_t ggml_backend_hexagon_rpcmem_bytes() {
+static size_t ggml_backend_hexagon_rpcmem_bytes() {
     return g_rpcmem_bytes.load();
 }
 
