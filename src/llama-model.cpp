@@ -1760,7 +1760,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             if (!layer.ffn_gate_s && layer.ffn_gate) {
                 layer.ffn_gate_s = create_tensor(tn(LLM_TENSOR_FFN_GATE, "scale", i), {1}, TENSOR_NOT_REQUIRED);
             }
-            if (!layer.ffn_down_s && layer.ffn_down) {
+            if (!layer.ffn_down_s && (layer.ffn_down || layer.ffn_down_blk)) {
                 layer.ffn_down_s = create_tensor(tn(LLM_TENSOR_FFN_DOWN, "scale", i), {1}, TENSOR_NOT_REQUIRED);
             }
             if (!layer.ffn_up_s && layer.ffn_up) {

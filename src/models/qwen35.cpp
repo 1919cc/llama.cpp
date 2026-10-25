@@ -517,11 +517,17 @@ ggml_tensor * llama_model_qwen35::graph::build_layer_ffn(ggml_tensor * cur, cons
 
         ggml_tensor * up_exps = ggml_reshape_3d(ctx0, layer.ffn_up, n_embd, n_bs, n_blk);
         ggml_tensor * up      = ggml_mul_mat_id(ctx0, up_exps, ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tok), ids); // [n_bs, n_used, n_tok]
+        if (layer.ffn_up_s) {
+            up = ggml_mul(ctx0, up, layer.ffn_up_s);
+        }
 
         ggml_tensor * par = ggml_mul(ctx0, ggml_get_rows(ctx0, gate, ids), up);
         cb(par, "ffn_par", il);
 
         ggml_tensor * down = ggml_mul_mat_id(ctx0, layer.ffn_down_blk, par, ids); // [n_embd, n_used, n_tok]
+        if (layer.ffn_down_s) {
+            down = ggml_mul(ctx0, down, layer.ffn_down_s);
+        }
         down = ggml_sum_rows(ctx0, ggml_cont(ctx0, ggml_permute(ctx0, down, 1, 0, 2, 3)));
         cur  = ggml_reshape_2d(ctx0, down, n_embd, n_tok);
         cb(cur, "ffn_out", il);

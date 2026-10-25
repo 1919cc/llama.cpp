@@ -2611,8 +2611,9 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
 class llama_async_prefetcher {
 public:
     static llama_async_prefetcher & get() {
-        static llama_async_prefetcher p;
-        return p;
+        // never destroyed: the detached worker waits on cv until the process exits
+        static llama_async_prefetcher * p = new llama_async_prefetcher();
+        return *p;
     }
 
     void push(llama_memory_ranges mr) {

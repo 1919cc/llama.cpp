@@ -389,8 +389,9 @@ namespace {
 class llama_page_filler {
 public:
     static llama_page_filler & get() {
-        static llama_page_filler f;
-        return f;
+        // never destroyed: the detached workers wait on cv_work until the process exits
+        static llama_page_filler * f = new llama_page_filler();
+        return *f;
     }
 
     void fill(const std::vector<std::pair<const void *, size_t>> & ranges, bool wait) {
@@ -450,16 +451,21 @@ public:
         auto req = std::make_shared<request>();
         {
             std::lock_guard<std::mutex> lock(mtx);
-            for (const auto & r : reqs) {
-                const uintptr_t a = (uintptr_t) r.src;
-                const ws_map * m = find_map(a, r.len);
+            // resolve all requests first: nothing may be queued into the caller's buffers when we return false
+            std::vector<std::pair<int, size_t>> src(reqs.size());
+            for (size_t i = 0; i < reqs.size(); ++i) {
+                const uintptr_t a = (uintptr_t) reqs[i].src;
+                const ws_map * m = find_map(a, reqs[i].len);
                 const int fd = m ? fd_of(m->path) : -1;
                 if (fd < 0) {
                     return false;
                 }
-                const size_t off = m->off + (a - m->start);
+                src[i] = { fd, m->off + (a - m->start) };
+            }
+            for (size_t i = 0; i < reqs.size(); ++i) {
+                const auto & r = reqs[i];
                 for (size_t o = 0; o < r.len; o += WS_CHUNK) {
-                    queue.push_back({ req, fd, off + o, std::min(WS_CHUNK, r.len - o), (char *) r.dst + o });
+                    queue.push_back({ req, src[i].first, src[i].second + o, std::min(WS_CHUNK, r.len - o), (char *) r.dst + o });
                     req->pending++;
                 }
             }
