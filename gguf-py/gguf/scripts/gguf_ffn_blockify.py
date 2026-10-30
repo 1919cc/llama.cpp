@@ -23,16 +23,16 @@ logger = logging.getLogger("gguf-ffn-blockify")
 
 
 def blockify(data: np.ndarray, qtype: gguf.GGMLQuantizationType, block: int) -> np.ndarray:
-    # data: [n_embd, row_bytes] (rows of n_ff values)
+    # data: [n_embd, row_items], items are bytes for quantized types and values for float types
     blck_size, type_size = gguf.GGML_QUANT_SIZES[qtype]
     if block % blck_size != 0:
         raise ValueError(f"block {block} is not a multiple of the {qtype.name} block size {blck_size}")
-    n_embd, row_bytes = data.shape
-    bytes_per_block = block // blck_size * type_size
-    n_blk = row_bytes // bytes_per_block
-    if n_blk * bytes_per_block != row_bytes:
-        raise ValueError(f"row of {row_bytes} bytes is not a whole number of {bytes_per_block}-byte blocks")
-    return np.ascontiguousarray(data.reshape(n_embd, n_blk, bytes_per_block).transpose(1, 0, 2))
+    n_embd, row_items = data.shape
+    items_per_block = block // blck_size * type_size // data.dtype.itemsize
+    n_blk = row_items // items_per_block
+    if n_blk * items_per_block != row_items:
+        raise ValueError(f"row of {row_items} items is not a whole number of {items_per_block}-item blocks")
+    return np.ascontiguousarray(data.reshape(n_embd, n_blk, items_per_block).transpose(1, 0, 2))
 
 
 def main() -> None:

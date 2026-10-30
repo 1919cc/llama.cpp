@@ -2313,10 +2313,13 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     //call early so that topk-moe can be used
     ggml_build_forward_expand(gf, weights);
 
-    build_expert_prefetch(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
-
     // the experts of host-resident layers may be read from the MoE cache
     ggml_tensor * slots = build_moe_cache_slots(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
+
+    // the MoE cache uploads its own experts, and a prefetch op can put the selection in the split of the lookup
+    if (slots == nullptr) {
+        build_expert_prefetch(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
+    }
 
     cur = ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tokens);
 
@@ -2731,10 +2734,11 @@ void llm_graph_context::build_layer_prefetch(const llama_model & mdl, ggml_tenso
         }
         std::sort(ws.begin(), ws.end(), [](const ggml_tensor * a, const ggml_tensor * b) { return ggml_nbytes(a) > ggml_nbytes(b); });
 
-        for (size_t i = 0; i < ws.size(); i += GGML_MAX_SRC - 1) {
+        // ggml_custom_4d takes less than GGML_MAX_SRC args
+        for (size_t i = 0; i < ws.size(); i += GGML_MAX_SRC - 2) {
             ggml_tensor * args[GGML_MAX_SRC] = { cur };
             int n_args = 1;
-            for (size_t j = i; j < ws.size() && n_args < GGML_MAX_SRC; ++j) {
+            for (size_t j = i; j < ws.size() && n_args < GGML_MAX_SRC - 1; ++j) {
                 args[n_args++] = ws[j];
             }
             ggml_tensor * op = ggml_custom_4d(ctx0, GGML_TYPE_I32, 1, 1, 1, 1, args, n_args, llama_layer_prefetch_op, 1, nullptr);

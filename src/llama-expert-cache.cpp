@@ -81,7 +81,7 @@ public:
         for (size_t i = 0; i < n; ++i) {
             const int e = ids[i];
             const int s = slot_of[il * EC_MAX_EXPERTS + e];
-            if (s >= 0) {
+            if (s >= 0 && tabs[0]->ptr[e]) {
                 lru.splice(lru.end(), lru, pos[s]);
                 n_hit++;
             } else {
@@ -92,21 +92,24 @@ public:
         std::vector<llama_read_req> reads;
         std::vector<std::pair<int32_t, int>> placed; // expert, slot
         for (int32_t e : misses) {
-            int s;
-            if (!free_slots.empty()) {
+            // a slot with this key but no table entry belongs to tensors of another model: reuse it
+            int s = slot_of[il * EC_MAX_EXPERTS + e];
+            if (s < 0 && !free_slots.empty()) {
                 s = free_slots.back();
                 free_slots.pop_back();
                 pos[s] = lru.insert(lru.end(), s);
             } else {
-                s = lru.front();
+                if (s < 0) {
+                    s = lru.front();
+                    n_evict++;
+                }
                 lru.splice(lru.end(), lru, pos[s]);
-                // the evicted expert is read from the mmap again from now on
+                // the old expert is read from the mmap again from now on
                 const int64_t old = key_of[s];
                 slot_of[old] = -1;
                 for (ec_table * t : owner_tabs[s]) {
                     t->ptr[old % EC_MAX_EXPERTS] = nullptr;
                 }
-                n_evict++;
             }
             key_of[s] = (int64_t) il * EC_MAX_EXPERTS + e;
             slot_of[key_of[s]] = s;
@@ -164,7 +167,12 @@ private:
     ec_table * table_of(const ggml_tensor * w, int il, size_t part_off) {
         auto it = tables.find(w);
         if (it != tables.end()) {
-            return it->second.get();
+            if (w->extra == &it->second->remap) {
+                return it->second.get();
+            }
+            // the address was reused by a new tensor; slots can still point to the old table, so keep it
+            retired.push_back(std::move(it->second));
+            tables.erase(it);
         }
         if (w->extra != nullptr || w->ne[2] > EC_MAX_EXPERTS) {
             return nullptr;
@@ -196,6 +204,7 @@ private:
     std::vector<std::vector<ec_table *>>     owner_tabs; // [slot] -> the tables pointing into it
     std::vector<int>                         free_slots;
     std::unordered_map<const ggml_tensor *, std::unique_ptr<ec_table>> tables;
+    std::vector<std::unique_ptr<ec_table>>   retired;
 
     size_t n_hit = 0, n_miss = 0, n_evict = 0;
 };

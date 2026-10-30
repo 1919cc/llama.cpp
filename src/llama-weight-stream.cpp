@@ -6,6 +6,8 @@
 #include "ggml-backend.h"
 
 #include <algorithm>
+#include <atomic>
+#include <cerrno>
 #include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
@@ -20,6 +22,7 @@
 
 #if defined(__linux__)
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #define LLAMA_WS_SUPPORTED 1
 #endif
@@ -30,6 +33,8 @@ constexpr size_t WS_ALIGN = 4096;           // O_DIRECT offset / length / buffer
 [[maybe_unused]] constexpr size_t WS_MIN_TENSOR = 64 << 10;  // smaller tensors stay mmap-ed (they stay in the page cache)
 [[maybe_unused]] constexpr size_t WS_MERGE_GAP = 1 << 20;    // read through gaps smaller than this between tensors
 constexpr size_t WS_CHUNK = 4 << 20;        // bytes per pread
+
+std::atomic<uint64_t> g_maps_generation{0}; // changes when a model is released: cached mappings can be stale
 
 size_t align_down(size_t v) { return v / WS_ALIGN * WS_ALIGN; }
 size_t align_up(size_t v)   { return (v + WS_ALIGN - 1) / WS_ALIGN * WS_ALIGN; }
@@ -159,8 +164,16 @@ struct llama_weight_stream {
             size_t done = 0;
             while (done < c.len) {
                 const ssize_t n = pread(c.fd, c.dst + done, c.len - done, (off_t) (c.off + done));
+                if (n < 0 && errno == EINTR) {
+                    continue;
+                }
                 if (n <= 0) {
-                    break; // end of file (the last run is rounded up past it) or an error: the tensors end before
+                    // the last run is rounded up past the end of the file; any other failure leaves bad weights
+                    struct stat st;
+                    if (fstat(c.fd, &st) != 0 || (off_t) (c.off + done) < st.st_size) {
+                        GGML_ABORT("weight stream: read failed at offset %zu: %s", c.off + done, strerror(errno));
+                    }
+                    break;
                 }
                 done += (size_t) n;
             }
@@ -361,6 +374,7 @@ llama_weight_stream * llama_weight_stream_get(const llama_model & model) {
 }
 
 void llama_weight_stream_release(const llama_model & model) {
+    g_maps_generation++;
     std::lock_guard<std::mutex> lock(g_ws_mutex);
     g_ws.erase(&model);
     g_ws_failed.erase(&model);
@@ -434,7 +448,8 @@ public:
 
 private:
     struct request {
-        int pending = 0;
+        int  pending = 0;
+        bool failed  = false;
     };
     struct chunk {
         std::shared_ptr<request> req;
@@ -476,7 +491,7 @@ public:
         cv_work.notify_all();
         std::unique_lock<std::mutex> lock(mtx);
         cv_done.wait(lock, [&] { return req->pending == 0; });
-        return true;
+        return !req->failed;
 #else
         GGML_UNUSED(reqs);
         return false;
@@ -495,6 +510,11 @@ private:
 
     // with mtx held; re-reads /proc/self/maps when an address is not in the cached copy (a model was loaded since)
     const ws_map * find_map(uintptr_t a, size_t n) {
+        const uint64_t generation = g_maps_generation.load();
+        if (maps_generation != generation) {
+            maps_generation = generation;
+            maps.clear();
+        }
         for (int pass = 0; pass < 2; ++pass) {
             for (const auto & m : maps) {
                 if (a >= m.start && a + n <= m.end) {
@@ -531,12 +551,15 @@ private:
                 c = std::move(queue.front());
                 queue.pop_front();
             }
+            size_t done = 0;
 #ifdef LLAMA_WS_SUPPORTED
             // a buffered read leaves the data in the page cache, which is all we want from it
-            size_t done = 0;
             while (done < c.len) {
                 char * to = c.dst ? c.dst + done : buf.data();
                 const ssize_t r = pread(c.fd, to, c.len - done, (off_t) (c.off + done));
+                if (r < 0 && errno == EINTR) {
+                    continue;
+                }
                 if (r <= 0) {
                     break;
                 }
@@ -545,6 +568,7 @@ private:
 #endif
             {
                 std::lock_guard<std::mutex> lock(mtx);
+                c.req->failed = c.req->failed || (c.dst && done < c.len);
                 if (--c.req->pending == 0) {
                     cv_done.notify_all();
                 }
@@ -557,6 +581,7 @@ private:
     std::condition_variable    cv_done;
     std::deque<chunk>          queue;
     std::vector<ws_map>        maps;
+    uint64_t                   maps_generation = 0;
     std::map<std::string, int> fds;
 };
 
