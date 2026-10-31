@@ -184,6 +184,19 @@ def normalize_cmd_device_args(cmd_args):
             cmd_args[i] = "--device=" + device_arg_from_devices(arg.split("=", 1)[1])
 
 
+def is_partial_offload(cmd_args):
+    # layers kept on the CPU: -ngl below the default 99 (any of a llama-bench list), or weights forced to the CPU
+    for i, arg in enumerate(cmd_args):
+        name, _, val = arg.partition("=")
+        if name in ("-cmoe", "--cpu-moe", "-ncmoe", "--n-cpu-moe", "-ot", "--override-tensor"):
+            return True
+        if name in ("-ngl", "--gpu-layers", "--n-gpu-layers"):
+            val = val or (cmd_args[i + 1] if i + 1 < len(cmd_args) else "")
+            if any(v.isdigit() and int(v) < 99 for v in val.split(",")):
+                return True
+    return False
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     # Split arguments at '--'
@@ -220,7 +233,7 @@ def main():
     parser.add_argument("--hex-dma64", nargs="?", const="1", help="Enable (1) or disable (0) 64-bit DMA for model weights (GGML_HEXAGON_DMA64)")
     parser.add_argument("--hex-opbatch", help="Maximum number of operations to batch into a single HTP execution (GGML_HEXAGON_OPBATCH)")
     parser.add_argument("--hex-opqueue", help="Size of the asynchronous NPU operation queue (GGML_HEXAGON_OPQUEUE)")
-    parser.add_argument("--hex-oppoll", default="1", help="Enable (1) or Disable (0) polling for NPU opbatch completion (GGML_HEXAGON_OPPOLL) (default: 1)")
+    parser.add_argument("--hex-oppoll", help="Enable (1) or Disable (0) polling for NPU opbatch completion (GGML_HEXAGON_OPPOLL) (default: 1, 0 with layers kept on the CPU)")
     parser.add_argument("--hex-opfilter", help="Regex pattern to filter/select which operators are offloaded to NPU (GGML_HEXAGON_OPFILTER)")
     parser.add_argument("--hex-opfusion", help="NPU graph node fusion optimization level (0: disabled, 1: enabled) (GGML_HEXAGON_OPFUSION)")
     parser.add_argument("--hex-rt-repack", help="Runtime weight repacking mode (0: disabled, 1: quantized only, 2: always) (GGML_HEXAGON_RT_REPACK)")
@@ -366,7 +379,9 @@ def main():
     set_env("GGML_HEXAGON_DMA64", args.hex_dma64)
     set_env("GGML_HEXAGON_OPBATCH", args.hex_opbatch)
     set_env("GGML_HEXAGON_OPQUEUE", args.hex_opqueue)
-    set_env("GGML_HEXAGON_OPPOLL", args.hex_oppoll)
+    # polling the NPU while the CPU threadpool spins can collapse generation with several host threads
+    hex_oppoll_val = args.hex_oppoll if args.hex_oppoll is not None else ("0" if is_partial_offload(cmd_args) else "1")
+    set_env("GGML_HEXAGON_OPPOLL", hex_oppoll_val)
     set_env("GGML_HEXAGON_OPFILTER", args.hex_opfilter)
     set_env("GGML_HEXAGON_OPFUSION", args.hex_opfusion)
     set_env("GGML_HEXAGON_RT_REPACK", args.hex_rt_repack)
