@@ -1784,9 +1784,14 @@ void ggml_hexagon_session::flush_pending(bool all) {
         // Read response packet from queue
         const uint32_t timeo = opt_oppoll ? 0 : DSPQUEUE_TIMEOUT;
 
+        const int64_t t_wait_start = ggml_time_us();
         int err = dspqueue_read(this->queue, &flags, 1, &n_dbufs, &dbuf, sizeof(rsp), &rsp_size, (uint8_t *) &rsp, timeo);
-        if (err == AEE_EEXPIRED || err == AEE_EWOULDBLOCK) {
-            continue;
+        while (err == AEE_EEXPIRED || err == AEE_EWOULDBLOCK) {
+            // a lost response must not spin forever
+            if (ggml_time_us() - t_wait_start > 120 * 1000000LL) {
+                GGML_ABORT("ggml-hex: %s no response from DSP for 120 s (seq %u of %u)\n", this->c_name(), (unsigned) this->batch_rsp_seq, (unsigned) this->batch_req_seq);
+            }
+            err = dspqueue_read(this->queue, &flags, 1, &n_dbufs, &dbuf, sizeof(rsp), &rsp_size, (uint8_t *) &rsp, timeo);
         }
 
         if (err != 0) {

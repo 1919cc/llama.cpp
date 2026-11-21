@@ -69,26 +69,26 @@ static void work_queue_thread(void * context) {
 
         prev_seqn = seqn;
 
-        // Process all active tasks in the queue
-        unsigned int ir = atomic_load_explicit(&q->idx_read, memory_order_relaxed);
-        unsigned int iw = atomic_load_explicit(&q->idx_write, memory_order_relaxed);
+        if (atomic_load_explicit(&q->killed, memory_order_relaxed)) {
+            break;
+        }
 
-        while (ir != iw) {
-            struct work_queue_task_s * task = &q->queue[ir];
+        // the producer waits for each task, so only the latest task can be pending
+        struct work_queue_task_s * task = &q->queue[(seqn - 1) & q->idx_mask];
 
-            unsigned int n = task->n_threads;
-            unsigned int i = me->id;
-            if (i < n) {
-                task->func(n, i, task->data);
+        work_queue_func_t func = task->func;
+        void *            data = task->data;
+        unsigned int      n    = task->n_threads;
 
-                atomic_fetch_sub_explicit(&task->barrier, 1, memory_order_release);
-            } else {
-                while (atomic_load_explicit(&task->barrier, memory_order_relaxed) > 0) {
-                    hex_pause();
-                }
-            }
+        // if seqn moved, this worker was not part of that task and the slot can be reused
+        atomic_thread_fence(memory_order_acquire);
+        if (atomic_load_explicit(&q->seqn, memory_order_relaxed) != seqn) {
+            continue;
+        }
 
-            ir = (ir + 1) & q->idx_mask;
+        if (me->id < n) {
+            func(n, me->id, data);
+            atomic_fetch_sub_explicit(&task->barrier, 1, memory_order_release);
         }
     }
 
