@@ -1,0 +1,8 @@
+=== --kv-unified --no-cache-idle-slots -dev none -ngl 0 -t 6
+           ~~~~~~~~~~~~~~~~~~~~^^^
+TimeoutError: timed out
+0.01.890.721 I cmn          init: llama threadpool init, n_threads = 6
+=== --kv-unified --no-cache-idle-slots -fa off
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.3969745635986328, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.3969745635986328, None)
+q=1.1 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.6706333160400391, None) cold0-cold2=(-1, 0.5564355850219727, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.5564355850219727, None)
+0.01.760.107 I cmn          init: llama threadpool init, n_threads = 2

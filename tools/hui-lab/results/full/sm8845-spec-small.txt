@@ -1,0 +1,69 @@
+=== SmolLM2-135M-Instruct-Q4_0
+|    64 |    128 |    1 |    192 |    0.017 |  3787.65 |    0.679 |   188.52 |    0.696 |   275.92 |
+|    64 |    128 |    2 |    384 |    0.026 |  4968.56 |    0.782 |   327.25 |    0.808 |   475.22 |
+|    64 |    128 |    4 |    768 |    0.044 |  5876.55 |    0.992 |   516.05 |    1.036 |   741.52 |
+|    64 |    128 |    1 |    192 |    0.017 |  3785.86 |    0.642 |   199.35 |    0.659 |   291.35 |
+|    64 |    128 |    2 |    384 |    0.025 |  5051.30 |    0.738 |   346.85 |    0.763 |   503.01 |
+|    64 |    128 |    4 |    768 |    0.043 |  6015.04 |    0.948 |   539.87 |    0.991 |   775.02 |
+|    64 |    128 |    1 |    192 |    0.016 |  3885.15 |    0.614 |   208.41 |    0.631 |   304.45 |
+|    64 |    128 |    2 |    384 |    0.025 |  5149.04 |    0.716 |   357.32 |    0.741 |   518.00 |
+|    64 |    128 |    4 |    768 |    0.042 |  6062.47 |    0.948 |   539.99 |    0.990 |   775.45 |
+Explain why the sky is blue in two sentences. [end of text]   
+
+=== gemma-3-270m-it-Q4_0
+|    64 |    128 |    1 |    192 |    0.015 |  4228.61 |    1.085 |   117.92 |    1.101 |   174.45 |
+|    64 |    128 |    2 |    384 |    0.022 |  5875.33 |    1.173 |   218.29 |    1.195 |   321.47 |
+|    64 |    128 |    4 |    768 |    0.032 |  8092.81 |    1.406 |   364.23 |    1.437 |   534.33 |
+|    64 |    128 |    1 |    192 |    0.017 |  3857.98 |    1.080 |   118.52 |    1.097 |   175.09 |
+|    64 |    128 |    2 |    384 |    0.022 |  5908.15 |    1.143 |   223.99 |    1.165 |   329.74 |
+|    64 |    128 |    4 |    768 |    0.028 |  9066.44 |    1.168 |   438.46 |    1.196 |   642.17 |
+|    64 |    128 |    1 |    192 |    0.015 |  4185.47 |    1.094 |   116.95 |    1.110 |   173.01 |
+|    64 |    128 |    2 |    384 |    0.021 |  6067.79 |    1.119 |   228.84 |    1.140 |   336.91 |
+|    64 |    128 |    4 |    768 |    0.031 |  8180.22 |    1.398 |   366.27 |    1.429 |   537.38 |
+Explain why the sky is blue in two sentences.  The blue color of the sky is due to a combination of Rayleigh scattering phenomena.  The blue color of the sky is due to the absorption of sunlight by the Earth's atmosphere.  The blue color of the sky is due to the scattering of light by different wavelengths of light.  The  
+
+=== LFM2-350M-Q4_0
+|    64 |    128 |    1 |    192 |    0.016 |  4009.27 |    0.897 |   142.64 |    0.913 |   210.22 |
+|    64 |    128 |    2 |    384 |    0.025 |  5211.30 |    0.985 |   259.93 |    1.009 |   380.41 |
+|    64 |    128 |    4 |    768 |    0.043 |  5992.37 |    1.362 |   375.87 |    1.405 |   546.66 |
+|    64 |    128 |    1 |    192 |    0.018 |  3570.03 |    1.056 |   121.16 |    1.074 |   178.71 |
+|    64 |    128 |    2 |    384 |    0.027 |  4704.50 |    1.075 |   238.23 |    1.102 |   348.52 |
+|    64 |    128 |    4 |    768 |    0.045 |  5649.84 |    1.425 |   359.35 |    1.470 |   522.41 |
+|    64 |    128 |    1 |    192 |    0.017 |  3674.15 |    0.954 |   134.21 |    0.971 |   197.70 |
+|    64 |    128 |    2 |    384 |    0.025 |  5148.21 |    0.983 |   260.56 |    1.007 |   381.19 |
+|    64 |    128 |    4 |    768 |    0.043 |  5976.42 |    1.395 |   367.07 |    1.438 |   534.20 |
+Explain why the sky is blue in two sentences. The primary reason is due to the scattering of sunlight by the atmosphere, which leaves the shorter blue wavelengths more prominent, while the longer red wavelengths are less scattered. The sky appears blue because shorter blue wavelengths are scattered more than longer red wavelengths by the Earth's atmosphere, making the blue visible in the sky  
+
+=== qwen2.5-0.5b-instruct-q4_0
+|    64 |    128 |    1 |    192 |    0.023 |  2795.98 |    1.234 |   103.74 |    1.257 |   152.78 |
+|    64 |    128 |    2 |    384 |    0.032 |  4048.45 |    1.356 |   188.81 |    1.387 |   276.76 |
+|    64 |    128 |    4 |    768 |    0.053 |  4810.31 |    2.015 |   254.11 |    2.068 |   371.35 |
+|    64 |    128 |    1 |    192 |    0.025 |  2566.57 |    1.493 |    85.72 |    1.518 |   126.47 |
+|    64 |    128 |    2 |    384 |    0.035 |  3630.38 |    1.594 |   160.63 |    1.629 |   235.73 |
+|    64 |    128 |    4 |    768 |    0.063 |  4069.76 |    2.111 |   242.49 |    2.174 |   353.21 |
+|    64 |    128 |    1 |    192 |    0.022 |  2905.66 |    1.331 |    96.19 |    1.353 |   141.94 |
+|    64 |    128 |    2 |    384 |    0.037 |  3460.21 |    1.555 |   164.63 |    1.592 |   241.21 |
+|    64 |    128 |    4 |    768 |    0.061 |  4171.49 |    2.050 |   249.78 |    2.111 |   363.78 |
+Explain why the sky is blue in two sentences. The sky is blue because it reflects sunlight, which is a type of electromagnetic radiation. The electromagnetic spectrum includes all the different types of light, including visible light, infrared, ultraviolet, X-rays, and gamma rays. The visible light spectrum is composed of the red, orange, yellow, green,  
+
+=== speculation qwen35-2b target
+edit nodraft #0 rc=0 md5=c3ad5b2e decoded 1001 tokens in 31.083 seconds, speed: 32.204 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #0 rc=0 md5=efbeab05 decoded 1033 tokens in 5.051 seconds, speed: 204.516 t/s;n_drafted = 958;n_accept = 958;
+open nodraft #0 rc=0 md5=f89ee640 decoded 301 tokens in 10.455 seconds, speed: 28.790 t/s;n_drafted = 0;n_accept = 0;
+open draft0.5b-cpu n4 #0 rc=134 md5=3d47dc43 
+open draft0.5b-cpu n8 #0 rc=134 md5=3d47dc43 
+edit nodraft #1 rc=0 md5=c3ad5b2e decoded 1001 tokens in 38.509 seconds, speed: 25.994 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #1 rc=0 md5=efbeab05 decoded 1033 tokens in 5.950 seconds, speed: 173.623 t/s;n_drafted = 958;n_accept = 958;
+open nodraft #1 rc=0 md5=f89ee640 decoded 301 tokens in 11.094 seconds, speed: 27.131 t/s;n_drafted = 0;n_accept = 0;
+open draft0.5b-cpu n4 #1 rc=134 md5=3d47dc43 
+open draft0.5b-cpu n8 #1 rc=134 md5=3d47dc43 
+8: 0x7577744b08 __libc_init
+libc++abi: terminating due to uncaught exception of type std::runtime_error: draft model vocab type must match target model to use speculation
+Aborted 
+=== fusion softplus mask=1 vs 16382
+mask=1 ops=324 last_batch=37028 37413 37222 37070 36908 
+mask=16382 ops=324 last_batch=32209 32717 31294 30430 31241 
+mask=1 ops=324 last_batch=31635 31349 30446 30397 30510 
+mask=16382 ops=324 last_batch=36056 35623 36631 36034 36096 
+a4fdad2ac2ee6724d4a3f9e1defb3a19  -
+a4fdad2ac2ee6724d4a3f9e1defb3a19  -

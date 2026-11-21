@@ -1,0 +1,3363 @@
+{
+ "sm8845-throttled-doze": {
+  "opt_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1271.524488,
+     "min": 1267.058844,
+     "max": 1282.822209
+    },
+    "pp512": {
+     "n": 5,
+     "median": 1557.526477,
+     "min": 1536.467662,
+     "max": 1579.676065
+    },
+    "tg64": {
+     "n": 5,
+     "median": 27.33662,
+     "min": 26.289885,
+     "max": 29.715408
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2279.10546875,
+   "min_avail_mb": 2876.4296875,
+   "peak_c": 71.4,
+   "start_c": 48.2,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 40,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1282.956136,
+     "min": 1263.378674,
+     "max": 1313.970945
+    },
+    "pp512": {
+     "n": 5,
+     "median": 1551.127614,
+     "min": 1528.968893,
+     "max": 1569.459654
+    },
+    "tg64": {
+     "n": 5,
+     "median": 28.26044,
+     "min": 27.78606,
+     "max": 29.24357
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2279.6875,
+   "min_avail_mb": 2844.4609375,
+   "peak_c": 71.0,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 50,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 135.87109,
+     "min": 25.098193,
+     "max": 149.134358
+    },
+    "pp512": {
+     "n": 3,
+     "median": 134.832824,
+     "min": 122.230999,
+     "max": 162.248957
+    },
+    "tg64": {
+     "n": 3,
+     "median": 29.656409,
+     "min": 29.584432,
+     "max": 32.951614
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4736.1875,
+   "min_avail_mb": 5144.734375,
+   "peak_c": 92.3,
+   "start_c": 46.3,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 135.188121,
+     "min": 12.33145,
+     "max": 182.055786
+    },
+    "pp512": {
+     "n": 3,
+     "median": 134.679124,
+     "min": 121.609679,
+     "max": 163.143594
+    },
+    "tg64": {
+     "n": 3,
+     "median": 29.739273,
+     "min": 29.157322,
+     "max": 32.645517
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4736.41796875,
+   "min_avail_mb": 5138.3046875,
+   "peak_c": 92.3,
+   "start_c": 48.4,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 331.023603,
+     "min": 325.04269,
+     "max": 331.291654
+    },
+    "pp512": {
+     "n": 3,
+     "median": 308.194669,
+     "min": 306.990987,
+     "max": 317.7936
+    },
+    "tg64": {
+     "n": 3,
+     "median": 17.47552,
+     "min": 17.118146,
+     "max": 17.773408
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2029.58203125,
+   "min_avail_mb": 1933.7109375,
+   "peak_c": 82.2,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 40,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 3476.49,
+     "min": 3255.61,
+     "max": 5018.39
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 59.21,
+     "min": 58.19,
+     "max": 59.91
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 27.435245471959707,
+     "min": 25.69903674503343,
+     "max": 29.13843880407522
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 56,
+     "min": 56,
+     "max": 56
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2282.83203125,
+   "min_avail_mb": 3035.16796875,
+   "peak_c": 69.5,
+   "start_c": 48.0,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 60,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere. The shorter, blue wavelengths of light are scattered more effectively by the gas molecules in the atmosphere than the longer, red wavelengths. This preferential scattering of blue light makes the sky appear blue to our eyes. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 3198.71,
+     "min": 2995.72,
+     "max": 5699.22
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 58.68,
+     "min": 58.02,
+     "max": 60.05
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 29.050314106521277,
+     "min": 25.649246553382493,
+     "max": 29.48749677480504
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 56,
+     "min": 56,
+     "max": 56
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2279.9375,
+   "min_avail_mb": 3084.41015625,
+   "peak_c": 66.8,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 40,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere. The shorter, blue wavelengths of light are scattered more effectively by the gas molecules in the atmosphere than the longer, red wavelengths. This preferential scattering of blue light makes the sky appear blue to our eyes. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gen_cpu": {
+   "metrics": {
+    "load_ms": {
+     "n": 3,
+     "median": 2104.49,
+     "min": 2055.87,
+     "max": 2129.25
+    },
+    "prompt_ms": {
+     "n": 3,
+     "median": 4844.8,
+     "min": 4826.8,
+     "max": 5096.9
+    },
+    "eval_ts": {
+     "n": 3,
+     "median": 0.3698645774473729,
+     "min": 0.2759467041552807,
+     "max": 9.227633126084422
+    },
+    "eval_n": {
+     "n": 3,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4640.8203125,
+   "min_avail_mb": 4762.71484375,
+   "peak_c": 76.0,
+   "start_c": 47.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 20,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t1": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1272.375025,
+     "min": 1271.103597,
+     "max": 1279.488205
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1553.6087,
+     "min": 1547.132832,
+     "max": 1555.195489
+    },
+    "tg64": {
+     "n": 3,
+     "median": 26.132658,
+     "min": 25.907336,
+     "max": 28.453523
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2281.5859375,
+   "min_avail_mb": 2942.9453125,
+   "peak_c": 71.4,
+   "start_c": 48.2,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1280.322744,
+     "min": 1274.426373,
+     "max": 1282.579177
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1572.315325,
+     "min": 1541.806104,
+     "max": 1574.260685
+    },
+    "tg64": {
+     "n": 3,
+     "median": 28.842898,
+     "min": 27.667598,
+     "max": 28.990038
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2281.765625,
+   "min_avail_mb": 3123.01953125,
+   "peak_c": 70.2,
+   "start_c": 48.2,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t6": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1268.65807,
+     "min": 1264.888541,
+     "max": 1276.472417
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1574.806429,
+     "min": 1559.495753,
+     "max": 1582.985229
+    },
+    "tg64": {
+     "n": 3,
+     "median": 28.956445,
+     "min": 27.998353,
+     "max": 30.127186
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2285.4765625,
+   "min_avail_mb": 2996.796875,
+   "peak_c": 71.0,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "power_balanced": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1185.001181,
+     "min": 1176.93314,
+     "max": 1189.922266
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1444.995537,
+     "min": 1437.465978,
+     "max": 1532.865529
+    },
+    "tg64": {
+     "n": 3,
+     "median": 26.043606,
+     "min": 25.287527,
+     "max": 26.780648
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2283.67578125,
+   "min_avail_mb": 2952.61328125,
+   "peak_c": 69.5,
+   "start_c": 47.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 40.592446,
+     "min": 40.257775,
+     "max": 225.519284
+    },
+    "pp512": {
+     "n": 3,
+     "median": 221.709172,
+     "min": 105.088176,
+     "max": 233.744676
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.816318,
+     "min": 0.420847,
+     "max": 1.0393
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2839.17578125,
+   "min_avail_mb": 2883.9375,
+   "peak_c": 76.0,
+   "start_c": 47.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 40,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_base": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 40.340116,
+     "min": 37.029357,
+     "max": 106.658524
+    },
+    "pp512": {
+     "n": 3,
+     "median": 157.45151,
+     "min": 103.652559,
+     "max": 236.318611
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.62722,
+     "min": 0.437019,
+     "max": 0.756096
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2818.83203125,
+   "min_avail_mb": 2880.76953125,
+   "peak_c": 75.2,
+   "start_c": 48.2,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 20,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_stream": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 234.590087,
+     "min": 37.874965,
+     "max": 246.902839
+    },
+    "pp512": {
+     "n": 3,
+     "median": 106.045583,
+     "min": 101.728123,
+     "max": 217.904287
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.546525,
+     "min": 0.36842,
+     "max": 0.969899
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2788.0625,
+   "min_avail_mb": 2860.93359375,
+   "peak_c": 76.4,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_layerpf": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 40.443732,
+     "min": 37.824419,
+     "max": 40.484521
+    },
+    "pp512": {
+     "n": 3,
+     "median": 202.416837,
+     "min": 98.584299,
+     "max": 237.746407
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.460447,
+     "min": 0.391048,
+     "max": 0.864593
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2838.07421875,
+   "min_avail_mb": 2843.41015625,
+   "peak_c": 79.5,
+   "start_c": 47.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "sm8845": {
+  "opt_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1275.737569,
+     "min": 1266.131905,
+     "max": 1282.90123
+    },
+    "pp512": {
+     "n": 5,
+     "median": 1562.45381,
+     "min": 1542.726533,
+     "max": 1613.274593
+    },
+    "tg64": {
+     "n": 5,
+     "median": 28.19145,
+     "min": 26.261426,
+     "max": 30.846198
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2285.234375,
+   "min_avail_mb": 2919.6484375,
+   "peak_c": 67.9,
+   "start_c": 45.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 605,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "base_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1352.529388,
+     "min": 1280.276719,
+     "max": 1440.680104
+    },
+    "pp512": {
+     "n": 5,
+     "median": 1569.425579,
+     "min": 1540.949338,
+     "max": 1695.824284
+    },
+    "tg64": {
+     "n": 5,
+     "median": 28.97722,
+     "min": 26.241405,
+     "max": 29.259257
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2283.8984375,
+   "min_avail_mb": 2894.42578125,
+   "peak_c": 67.9,
+   "start_c": 45.9,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "opt_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 12.374385,
+     "min": 12.190517,
+     "max": 149.130729
+    },
+    "pp512": {
+     "n": 3,
+     "median": 134.360618,
+     "min": 134.181012,
+     "max": 134.382041
+    },
+    "tg64": {
+     "n": 3,
+     "median": 29.845254,
+     "min": 29.815321,
+     "max": 29.92047
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4736.01953125,
+   "min_avail_mb": 5150.96484375,
+   "peak_c": 81.4,
+   "start_c": 45.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "base_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 24.961249,
+     "min": 24.748956,
+     "max": 149.550718
+    },
+    "pp512": {
+     "n": 3,
+     "median": 134.595447,
+     "min": 130.53214,
+     "max": 135.590467
+    },
+    "tg64": {
+     "n": 3,
+     "median": 29.791901,
+     "min": 29.495526,
+     "max": 29.797133
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4735.7421875,
+   "min_avail_mb": 5105.015625,
+   "peak_c": 82.2,
+   "start_c": 46.7,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 220,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "opt_gpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 331.947293,
+     "min": 330.650343,
+     "max": 335.440071
+    },
+    "pp512": {
+     "n": 3,
+     "median": 318.278932,
+     "min": 315.612493,
+     "max": 320.214529
+    },
+    "tg64": {
+     "n": 3,
+     "median": 17.148689,
+     "min": 16.949258,
+     "max": 17.345188
+    }
+   },
+   "failures": 0,
+   "rss_mb": 1858.75,
+   "min_avail_mb": 2148.4296875,
+   "peak_c": 70.6,
+   "start_c": 46.9,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 210,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "opt_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 3148.39,
+     "min": 2809.17,
+     "max": 3648.08
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 59.24,
+     "min": 57.59,
+     "max": 60.19
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 28.07510089489384,
+     "min": 25.757903306670837,
+     "max": 29.422118077264585
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 56,
+     "min": 56,
+     "max": 56
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2282.3671875,
+   "min_avail_mb": 3093.625,
+   "peak_c": 63.3,
+   "start_c": 44.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 335,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere. The shorter, blue wavelengths of light are scattered more effectively by the gas molecules in the atmosphere than the longer, red wavelengths. This preferential scattering of blue light makes the sky appear blue to our eyes. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "base_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 2987.04,
+     "min": 2719.64,
+     "max": 3256.51
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 58.68,
+     "min": 58.51,
+     "max": 59.16
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 27.906930387158823,
+     "min": 25.787556582964555,
+     "max": 29.30080943486064
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 56,
+     "min": 56,
+     "max": 56
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2283.046875,
+   "min_avail_mb": 3093.3671875,
+   "peak_c": 64.5,
+   "start_c": 46.3,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 20,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere. The shorter, blue wavelengths of light are scattered more effectively by the gas molecules in the atmosphere than the longer, red wavelengths. This preferential scattering of blue light makes the sky appear blue to our eyes. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "opt_gen_cpu": {
+   "metrics": {
+    "load_ms": {
+     "n": 3,
+     "median": 2033.98,
+     "min": 1970.36,
+     "max": 2038.86
+    },
+    "prompt_ms": {
+     "n": 3,
+     "median": 4824.13,
+     "min": 123.48,
+     "max": 4860.85
+    },
+    "eval_ts": {
+     "n": 3,
+     "median": 5.151444668020612,
+     "min": 0.38656410925613705,
+     "max": 28.48584771293171
+    },
+    "eval_n": {
+     "n": 3,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4640.20703125,
+   "min_avail_mb": 5142.75390625,
+   "peak_c": 80.2,
+   "start_c": 47.1,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 10,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "t1": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1277.028253,
+     "min": 1264.894391,
+     "max": 1285.999315
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1565.446788,
+     "min": 1555.382497,
+     "max": 1579.556516
+    },
+    "tg64": {
+     "n": 3,
+     "median": 28.656537,
+     "min": 26.150559,
+     "max": 31.164573
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2284.26171875,
+   "min_avail_mb": 2960.359375,
+   "peak_c": 68.3,
+   "start_c": 44.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 225,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1280.506863,
+     "min": 1276.426007,
+     "max": 1283.636311
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1548.493684,
+     "min": 1547.880466,
+     "max": 1560.027346
+    },
+    "tg64": {
+     "n": 3,
+     "median": 26.882647,
+     "min": 26.406319,
+     "max": 27.685725
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2284.484375,
+   "min_avail_mb": 3046.0,
+   "peak_c": 66.8,
+   "start_c": 45.1,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 20,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "t6": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1278.467169,
+     "min": 1272.062192,
+     "max": 1280.256717
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1565.445544,
+     "min": 1555.136688,
+     "max": 1565.479446
+    },
+    "tg64": {
+     "n": 3,
+     "median": 29.682594,
+     "min": 29.616632,
+     "max": 30.486018
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2283.59765625,
+   "min_avail_mb": 3037.84375,
+   "peak_c": 67.5,
+   "start_c": 44.9,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 20,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "power_balanced": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1253.889064,
+     "min": 1158.891598,
+     "max": 1309.136469
+    },
+    "pp512": {
+     "n": 3,
+     "median": 1448.849869,
+     "min": 1440.523035,
+     "max": 1533.233709
+    },
+    "tg64": {
+     "n": 3,
+     "median": 26.822245,
+     "min": 25.583438,
+     "max": 28.614746
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2286.734375,
+   "min_avail_mb": 2983.56640625,
+   "peak_c": 66.0,
+   "start_c": 44.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "ngl16": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 40.915503,
+     "min": 40.541771,
+     "max": 245.534943
+    },
+    "pp512": {
+     "n": 3,
+     "median": 107.632074,
+     "min": 107.206635,
+     "max": 237.589143
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.896147,
+     "min": 0.576492,
+     "max": 0.984396
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2820.66796875,
+   "min_avail_mb": 2955.3125,
+   "peak_c": 74.8,
+   "start_c": 45.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "ngl16_base": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 264.462468,
+     "min": 248.715838,
+     "max": 272.903683
+    },
+    "pp512": {
+     "n": 3,
+     "median": 124.124011,
+     "min": 105.804386,
+     "max": 262.103643
+    },
+    "tg64": {
+     "n": 3,
+     "median": 1.042832,
+     "min": 0.313654,
+     "max": 22.615939
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2800.87109375,
+   "min_avail_mb": 2316.9140625,
+   "peak_c": 88.4,
+   "start_c": 51.3,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 1220,
+   "texts": [],
+   "thermal": [
+    "0",
+    "1"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2188.8,
+    2707.2
+   ],
+   "cap6_mhz": [
+    1651.2,
+    2227.2
+   ]
+  },
+  "ngl16_stream": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 40.849764,
+     "min": 40.602205,
+     "max": 207.608441
+    },
+    "pp512": {
+     "n": 3,
+     "median": 200.191879,
+     "min": 142.911672,
+     "max": 228.98284
+    },
+    "tg64": {
+     "n": 3,
+     "median": 1.049487,
+     "min": 0.705258,
+     "max": 22.964198
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2789.953125,
+   "min_avail_mb": 2220.01953125,
+   "peak_c": 88.0,
+   "start_c": 48.2,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 190,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2707.2
+   ],
+   "cap6_mhz": [
+    1651.2,
+    2227.2
+   ]
+  },
+  "ngl16_layerpf": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 247.150121,
+     "min": 218.999391,
+     "max": 251.797397
+    },
+    "pp512": {
+     "n": 3,
+     "median": 139.852583,
+     "min": 106.084187,
+     "max": 239.240429
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.699418,
+     "min": 0.345696,
+     "max": 0.930411
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2821.89453125,
+   "min_avail_mb": 2332.64453125,
+   "peak_c": 83.0,
+   "start_c": 46.7,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 260,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2707.2
+   ],
+   "cap6_mhz": [
+    1651.2,
+    2227.2
+   ]
+  },
+  "cpu_t2": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 53.345731,
+     "min": 52.174306,
+     "max": 74.545371
+    },
+    "pp512": {
+     "n": 3,
+     "median": 65.717276,
+     "min": 61.784738,
+     "max": 65.827637
+    },
+    "tg64": {
+     "n": 3,
+     "median": 18.057571,
+     "min": 18.054198,
+     "max": 18.081901
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4734.4453125,
+   "min_avail_mb": 4934.9609375,
+   "peak_c": 71.8,
+   "start_c": 42.8,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 340,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "cpu_t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 116.023844,
+     "min": 23.255972,
+     "max": 117.656848
+    },
+    "pp512": {
+     "n": 3,
+     "median": 104.761341,
+     "min": 104.034192,
+     "max": 104.780166
+    },
+    "tg64": {
+     "n": 3,
+     "median": 26.338771,
+     "min": 26.289371,
+     "max": 26.382221
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4734.6328125,
+   "min_avail_mb": 4901.17578125,
+   "peak_c": 77.6,
+   "start_c": 45.1,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 170,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "ngl16_t2": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 102.394488,
+     "min": 48.962847,
+     "max": 134.29258
+    },
+    "pp512": {
+     "n": 3,
+     "median": 121.160692,
+     "min": 120.88253,
+     "max": 121.246526
+    },
+    "tg64": {
+     "n": 3,
+     "median": 25.048904,
+     "min": 23.782773,
+     "max": 25.765873
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2820.40234375,
+   "min_avail_mb": 2772.46484375,
+   "peak_c": 68.3,
+   "start_c": 45.5,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "ngl16_t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 143.868838,
+     "min": 37.176972,
+     "max": 204.196022
+    },
+    "pp512": {
+     "n": 3,
+     "median": 93.767252,
+     "min": 92.173818,
+     "max": 133.184772
+    },
+    "tg64": {
+     "n": 3,
+     "median": 1.676416,
+     "min": 1.030015,
+     "max": 2.724357
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2863.64453125,
+   "min_avail_mb": 2933.49609375,
+   "peak_c": 69.1,
+   "start_c": 45.9,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 30,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  },
+  "ngl16_nooffload": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 244.791239,
+     "min": 39.710576,
+     "max": 247.020968
+    },
+    "pp512": {
+     "n": 3,
+     "median": 107.648468,
+     "min": 102.931465,
+     "max": 237.206477
+    },
+    "tg64": {
+     "n": 3,
+     "median": 0.95029,
+     "min": 0.863827,
+     "max": 1.204236
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2895.85546875,
+   "min_avail_mb": 3009.35546875,
+   "peak_c": 74.9,
+   "start_c": 44.9,
+   "min_cap_mhz": 1651.2,
+   "cool_wait_s": 135,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Awake"
+   ],
+   "cap0_mhz": [
+    2265.6,
+    2265.6
+   ],
+   "cap6_mhz": [
+    1651.2,
+    1651.2
+   ]
+  }
+ },
+ "sm8850": {
+  "opt_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1654.272204,
+     "min": 1646.043139,
+     "max": 1680.9654
+    },
+    "pp512": {
+     "n": 5,
+     "median": 2239.471548,
+     "min": 2232.57994,
+     "max": 2242.127105
+    },
+    "tg64": {
+     "n": 5,
+     "median": 36.343978,
+     "min": 36.153176,
+     "max": 36.391541
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.109375,
+   "min_avail_mb": 15458.8359375,
+   "peak_c": 100.0,
+   "start_c": 45.9,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1655.105539,
+     "min": 1651.124682,
+     "max": 1658.784245
+    },
+    "pp512": {
+     "n": 5,
+     "median": 2243.911733,
+     "min": 2240.493387,
+     "max": 2251.619074
+    },
+    "tg64": {
+     "n": 5,
+     "median": 36.298753,
+     "min": 36.199308,
+     "max": 36.560332
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.80078125,
+   "min_avail_mb": 15423.91796875,
+   "peak_c": 100.4,
+   "start_c": 44.8,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 294.854374,
+     "min": 290.134506,
+     "max": 302.969523
+    },
+    "pp512": {
+     "n": 3,
+     "median": 234.721931,
+     "min": 228.897782,
+     "max": 248.485714
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.343808,
+     "min": 37.872097,
+     "max": 38.647528
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4764.7265625,
+   "min_avail_mb": 17629.80859375,
+   "peak_c": 105.0,
+   "start_c": 42.0,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 284.532933,
+     "min": 283.816992,
+     "max": 294.634713
+    },
+    "pp512": {
+     "n": 3,
+     "median": 233.477812,
+     "min": 223.442314,
+     "max": 242.117971
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.065323,
+     "min": 37.679277,
+     "max": 38.255597
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4764.77734375,
+   "min_avail_mb": 17655.38671875,
+   "peak_c": 104.6,
+   "start_c": 44.0,
+   "min_cap_mhz": 3129.6,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 457.643234,
+     "min": 455.321402,
+     "max": 458.43998
+    },
+    "pp512": {
+     "n": 3,
+     "median": 453.826007,
+     "min": 453.306427,
+     "max": 457.238902
+    },
+    "tg64": {
+     "n": 3,
+     "median": 31.615247,
+     "min": 31.539519,
+     "max": 31.636208
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2445.3515625,
+   "min_avail_mb": 14477.9453125,
+   "peak_c": 100.8,
+   "start_c": 46.3,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 807.16,
+     "min": 741.1,
+     "max": 904.57
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 43.34,
+     "min": 43.09,
+     "max": 43.46
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 35.510599375874314,
+     "min": 35.45832572232908,
+     "max": 35.61657141932037
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2308.22265625,
+   "min_avail_mb": 14775.3984375,
+   "peak_c": 99.6,
+   "start_c": 45.9,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "base_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 776.18,
+     "min": 700.58,
+     "max": 792.35
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 43.43,
+     "min": 43.36,
+     "max": 43.51
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 35.499139414802066,
+     "min": 35.40411653318599,
+     "max": 35.591026747195855
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2308.84375,
+   "min_avail_mb": 14785.453125,
+   "peak_c": 99.6,
+   "start_c": 46.3,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 0,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "opt_gen_cpu": {
+   "metrics": {
+    "load_ms": {
+     "n": 3,
+     "median": 543.38,
+     "min": 531.12,
+     "max": 548.85
+    },
+    "prompt_ms": {
+     "n": 3,
+     "median": 68.67,
+     "min": 64.34,
+     "max": 73.0
+    },
+    "eval_ts": {
+     "n": 3,
+     "median": 39.03223707944243,
+     "min": 38.64689038922103,
+     "max": 39.592319090096524
+    },
+    "eval_n": {
+     "n": 3,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4699.625,
+   "min_avail_mb": 17620.3828125,
+   "peak_c": 103.5,
+   "start_c": 44.0,
+   "min_cap_mhz": 3398.4,
+   "cool_wait_s": 0,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t1": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1650.52475,
+     "min": 1650.522536,
+     "max": 1652.930363
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2239.102764,
+     "min": 2233.861971,
+     "max": 2243.586522
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.284449,
+     "min": 36.232198,
+     "max": 36.295072
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.0625,
+   "min_avail_mb": 15460.07421875,
+   "peak_c": 100.0,
+   "start_c": 43.2,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1649.808991,
+     "min": 1647.586945,
+     "max": 1651.79718
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2234.465191,
+     "min": 2219.762448,
+     "max": 2243.415508
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.177,
+     "min": 36.092718,
+     "max": 36.289663
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.625,
+   "min_avail_mb": 15396.01953125,
+   "peak_c": 99.6,
+   "start_c": 42.8,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "t6": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1649.794574,
+     "min": 1649.598584,
+     "max": 1657.125529
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2239.231283,
+     "min": 2229.889286,
+     "max": 2240.920878
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.244056,
+     "min": 36.241787,
+     "max": 36.352363
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.5546875,
+   "min_avail_mb": 15358.765625,
+   "peak_c": 101.5,
+   "start_c": 42.8,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "power_balanced": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1563.32397,
+     "min": 1563.173832,
+     "max": 1566.477787
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2105.198686,
+     "min": 2104.695678,
+     "max": 2109.659186
+    },
+    "tg64": {
+     "n": 3,
+     "median": 35.289684,
+     "min": 35.277944,
+     "max": 35.442541
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.93359375,
+   "min_avail_mb": 15373.34765625,
+   "peak_c": 100.8,
+   "start_c": 44.0,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 495.345454,
+     "min": 492.264106,
+     "max": 502.965791
+    },
+    "pp512": {
+     "n": 3,
+     "median": 410.247782,
+     "min": 405.740897,
+     "max": 414.445874
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.442406,
+     "min": 38.37106,
+     "max": 38.90164
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.46484375,
+   "min_avail_mb": 14706.37109375,
+   "peak_c": 104.6,
+   "start_c": 43.2,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_base": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 492.10058,
+     "min": 490.202533,
+     "max": 501.106367
+    },
+    "pp512": {
+     "n": 3,
+     "median": 410.453504,
+     "min": 397.197765,
+     "max": 416.651479
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.768424,
+     "min": 38.602557,
+     "max": 38.994312
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.796875,
+   "min_avail_mb": 14796.16796875,
+   "peak_c": 105.0,
+   "start_c": 44.4,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_stream": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 492.106198,
+     "min": 491.273478,
+     "max": 503.524219
+    },
+    "pp512": {
+     "n": 3,
+     "median": 400.614843,
+     "min": 393.933542,
+     "max": 415.545047
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.636479,
+     "min": 38.33424,
+     "max": 38.671462
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2929.53125,
+   "min_avail_mb": 14795.30078125,
+   "peak_c": 104.6,
+   "start_c": 44.0,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  },
+  "ngl16_layerpf": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 492.600568,
+     "min": 486.088737,
+     "max": 497.674946
+    },
+    "pp512": {
+     "n": 3,
+     "median": 409.053335,
+     "min": 404.882545,
+     "max": 414.568185
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.681846,
+     "min": 38.618713,
+     "max": 38.775712
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2929.01171875,
+   "min_avail_mb": 14854.1875,
+   "peak_c": 105.0,
+   "start_c": 45.5,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "None"
+   ],
+   "wake": [
+    "None"
+   ],
+   "cap0_mhz": [
+    0.0,
+    0.0
+   ],
+   "cap6_mhz": [
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "sm8850b": {
+  "opt_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1653.059341,
+     "min": 1642.230786,
+     "max": 1688.050063
+    },
+    "pp512": {
+     "n": 5,
+     "median": 2229.325439,
+     "min": 2198.425922,
+     "max": 2238.543928
+    },
+    "tg64": {
+     "n": 5,
+     "median": 36.511313,
+     "min": 36.443446,
+     "max": 36.798876
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.08984375,
+   "min_avail_mb": 15301.31640625,
+   "peak_c": 100.4,
+   "start_c": 48.0,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 20,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "base_htp": {
+   "metrics": {
+    "pp128": {
+     "n": 5,
+     "median": 1650.06042,
+     "min": 1616.020276,
+     "max": 1654.882631
+    },
+    "pp512": {
+     "n": 5,
+     "median": 2233.679242,
+     "min": 2214.000707,
+     "max": 2242.14142
+    },
+    "tg64": {
+     "n": 5,
+     "median": 36.496035,
+     "min": 36.368427,
+     "max": 36.849065
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.796875,
+   "min_avail_mb": 15484.078125,
+   "peak_c": 100.4,
+   "start_c": 47.7,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "opt_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 293.665823,
+     "min": 278.16462,
+     "max": 303.664023
+    },
+    "pp512": {
+     "n": 3,
+     "median": 233.302681,
+     "min": 225.999736,
+     "max": 252.495027
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.003045,
+     "min": 37.458933,
+     "max": 38.05068
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4765.078125,
+   "min_avail_mb": 17700.75,
+   "peak_c": 105.1,
+   "start_c": 46.1,
+   "min_cap_mhz": 3129.6,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "base_cpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 291.410643,
+     "min": 284.575237,
+     "max": 302.853448
+    },
+    "pp512": {
+     "n": 3,
+     "median": 229.993896,
+     "min": 222.831078,
+     "max": 246.852167
+    },
+    "tg64": {
+     "n": 3,
+     "median": 37.714111,
+     "min": 37.144677,
+     "max": 38.439295
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4764.796875,
+   "min_avail_mb": 17708.234375,
+   "peak_c": 104.7,
+   "start_c": 46.5,
+   "min_cap_mhz": 3398.4,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "opt_gpu": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 470.925577,
+     "min": 470.0455,
+     "max": 472.013022
+    },
+    "pp512": {
+     "n": 3,
+     "median": 461.095707,
+     "min": 459.863653,
+     "max": 462.765096
+    },
+    "tg64": {
+     "n": 3,
+     "median": 32.3986,
+     "min": 31.840329,
+     "max": 32.503064
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2445.23828125,
+   "min_avail_mb": 14514.93359375,
+   "peak_c": 99.6,
+   "start_c": 47.7,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "opt_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 754.53,
+     "min": 686.2,
+     "max": 826.43
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 43.47,
+     "min": 43.26,
+     "max": 43.55
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 35.90429872376538,
+     "min": 35.63945828023414,
+     "max": 36.04410487742274
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2308.3515625,
+   "min_avail_mb": 14683.2109375,
+   "peak_c": 98.9,
+   "start_c": 47.3,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 10,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "base_gen": {
+   "metrics": {
+    "load_ms": {
+     "n": 5,
+     "median": 744.2,
+     "min": 727.13,
+     "max": 751.24
+    },
+    "prompt_ms": {
+     "n": 5,
+     "median": 43.35,
+     "min": 43.31,
+     "max": 43.44
+    },
+    "eval_ts": {
+     "n": 5,
+     "median": 35.71042095011362,
+     "min": 35.58411869999353,
+     "max": 35.86001553934007
+    },
+    "eval_n": {
+     "n": 5,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2308.4375,
+   "min_avail_mb": 14763.0078125,
+   "peak_c": 99.3,
+   "start_c": 47.7,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 0,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "opt_gen_cpu": {
+   "metrics": {
+    "load_ms": {
+     "n": 3,
+     "median": 537.48,
+     "min": 523.2,
+     "max": 539.91
+    },
+    "prompt_ms": {
+     "n": 3,
+     "median": 62.89,
+     "min": 62.13,
+     "max": 62.92
+    },
+    "eval_ts": {
+     "n": 3,
+     "median": 39.08655896148198,
+     "min": 38.430856484042465,
+     "max": 39.18658156449458
+    },
+    "eval_n": {
+     "n": 3,
+     "median": 66,
+     "min": 66,
+     "max": 66
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4699.71484375,
+   "min_avail_mb": 17645.84765625,
+   "peak_c": 104.7,
+   "start_c": 44.9,
+   "min_cap_mhz": 3398.4,
+   "cool_wait_s": 0,
+   "texts": [
+    "Explain in three sentences why the sky is blue. This phenomenon is caused by the scattering of sunlight by the Earth's atmosphere, which is composed of tiny molecules that are much more effective at scattering shorter wavelengths of light, such as blue and violet, than longer wavelengths like red. Because blue light is scattered in all directions across the sky, our eyes perceive the sky as blue. [end of text]"
+   ],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "t1": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1649.309637,
+     "min": 1633.605929,
+     "max": 1650.747592
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2227.816847,
+     "min": 2225.894407,
+     "max": 2238.750899
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.481475,
+     "min": 36.476912,
+     "max": 36.820358
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.14453125,
+   "min_avail_mb": 15365.36328125,
+   "peak_c": 100.0,
+   "start_c": 45.3,
+   "min_cap_mhz": 4512.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1648.176975,
+     "min": 1620.799189,
+     "max": 1649.020791
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2225.421246,
+     "min": 2208.456807,
+     "max": 2230.124014
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.572896,
+     "min": 36.501846,
+     "max": 36.803276
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.07421875,
+   "min_avail_mb": 15393.05078125,
+   "peak_c": 100.0,
+   "start_c": 44.6,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "t6": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1643.283829,
+     "min": 1638.130246,
+     "max": 1647.947103
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2232.15107,
+     "min": 2212.722937,
+     "max": 2241.244797
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.557154,
+     "min": 36.475732,
+     "max": 36.738466
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2314.23828125,
+   "min_avail_mb": 15375.84765625,
+   "peak_c": 99.6,
+   "start_c": 44.6,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "power_balanced": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 1559.162342,
+     "min": 1535.402157,
+     "max": 1562.823916
+    },
+    "pp512": {
+     "n": 3,
+     "median": 2103.405,
+     "min": 2098.496834,
+     "max": 2105.310952
+    },
+    "tg64": {
+     "n": 3,
+     "median": 35.563581,
+     "min": 35.545296,
+     "max": 35.704732
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2313.59765625,
+   "min_avail_mb": 15381.03125,
+   "peak_c": 98.9,
+   "start_c": 45.3,
+   "min_cap_mhz": 4608.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 492.349413,
+     "min": 484.245566,
+     "max": 503.515864
+    },
+    "pp512": {
+     "n": 3,
+     "median": 415.497239,
+     "min": 401.595007,
+     "max": 428.876329
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.377675,
+     "min": 38.176353,
+     "max": 38.901145
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2929.1640625,
+   "min_avail_mb": 14605.07421875,
+   "peak_c": 103.9,
+   "start_c": 45.3,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_base": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 497.395636,
+     "min": 494.936647,
+     "max": 498.775386
+    },
+    "pp512": {
+     "n": 3,
+     "median": 414.308548,
+     "min": 405.687751,
+     "max": 420.313475
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.706154,
+     "min": 38.409257,
+     "max": 39.088034
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.5078125,
+   "min_avail_mb": 14667.87109375,
+   "peak_c": 104.7,
+   "start_c": 48.4,
+   "min_cap_mhz": 3398.4,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_stream": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 492.261346,
+     "min": 486.4688,
+     "max": 501.466077
+    },
+    "pp512": {
+     "n": 3,
+     "median": 405.061205,
+     "min": 395.091595,
+     "max": 420.437279
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.699539,
+     "min": 38.657256,
+     "max": 38.789357
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.65625,
+   "min_avail_mb": 14687.20703125,
+   "peak_c": 105.1,
+   "start_c": 48.8,
+   "min_cap_mhz": 3398.4,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_layerpf": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 489.394169,
+     "min": 489.112101,
+     "max": 501.21122
+    },
+    "pp512": {
+     "n": 3,
+     "median": 404.868054,
+     "min": 400.34672,
+     "max": 416.564649
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.782119,
+     "min": 38.722956,
+     "max": 38.794553
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.61328125,
+   "min_avail_mb": 14696.55859375,
+   "peak_c": 104.7,
+   "start_c": 47.7,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_nooffload": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 491.642321,
+     "min": 460.52613,
+     "max": 500.493447
+    },
+    "pp512": {
+     "n": 3,
+     "median": 406.604208,
+     "min": 397.920245,
+     "max": 422.217731
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.591518,
+     "min": 38.442169,
+     "max": 38.746396
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2929.078125,
+   "min_avail_mb": 14681.3671875,
+   "peak_c": 105.1,
+   "start_c": 48.0,
+   "min_cap_mhz": 2880.0,
+   "cool_wait_s": 20,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "cpu_t2": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 172.223061,
+     "min": 170.548716,
+     "max": 176.298586
+    },
+    "pp512": {
+     "n": 3,
+     "median": 143.201896,
+     "min": 142.361882,
+     "max": 147.485221
+    },
+    "tg64": {
+     "n": 3,
+     "median": 33.325192,
+     "min": 33.15461,
+     "max": 34.620487
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4766.15625,
+   "min_avail_mb": 17613.8203125,
+   "peak_c": 103.1,
+   "start_c": 47.3,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "cpu_t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 219.690238,
+     "min": 219.213859,
+     "max": 220.075949
+    },
+    "pp512": {
+     "n": 3,
+     "median": 185.584633,
+     "min": 185.356885,
+     "max": 189.894218
+    },
+    "tg64": {
+     "n": 3,
+     "median": 36.282157,
+     "min": 36.067738,
+     "max": 37.622206
+    }
+   },
+   "failures": 0,
+   "rss_mb": 4764.359375,
+   "min_avail_mb": 17721.80078125,
+   "peak_c": 104.3,
+   "start_c": 49.2,
+   "min_cap_mhz": 3129.6,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_t2": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 311.016798,
+     "min": 308.045701,
+     "max": 315.854695
+    },
+    "pp512": {
+     "n": 3,
+     "median": 260.210911,
+     "min": 258.702457,
+     "max": 265.845484
+    },
+    "tg64": {
+     "n": 3,
+     "median": 35.127577,
+     "min": 34.983013,
+     "max": 35.357511
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2930.15234375,
+   "min_avail_mb": 14788.87890625,
+   "peak_c": 102.4,
+   "start_c": 48.0,
+   "min_cap_mhz": 3763.2,
+   "cool_wait_s": 10,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  },
+  "ngl16_t4": {
+   "metrics": {
+    "pp128": {
+     "n": 3,
+     "median": 384.59161,
+     "min": 383.759251,
+     "max": 385.476919
+    },
+    "pp512": {
+     "n": 3,
+     "median": 336.324838,
+     "min": 330.737915,
+     "max": 336.773156
+    },
+    "tg64": {
+     "n": 3,
+     "median": 38.188091,
+     "min": 38.016444,
+     "max": 38.476824
+    }
+   },
+   "failures": 0,
+   "rss_mb": 2928.55078125,
+   "min_avail_mb": 14809.40234375,
+   "peak_c": 103.9,
+   "start_c": 50.0,
+   "min_cap_mhz": 3648.0,
+   "cool_wait_s": 0,
+   "texts": [],
+   "thermal": [
+    "0"
+   ],
+   "wake": [
+    "Dozing"
+   ],
+   "cap0_mhz": [
+    3628.8,
+    3628.8
+   ],
+   "cap6_mhz": [
+    4608.0,
+    4608.0
+   ]
+  }
+ }
+}

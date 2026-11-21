@@ -1,0 +1,13 @@
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-origq.so: 1 file pushed, 0 skipped. 305.0 MB/s (955680 bytes in 0.003s)
+tag=cold-origq batt=431 round=1 elapsed=243s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=196 wall=243s total_tps=51.6 stream_tps_med=18.4 ttft_med=965ms ttft_max=3210ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-fix.so: 1 file pushed, 0 skipped. 102.5 MB/s (955680 bytes in 0.009s)
+tag=cold-fix batt=422 round=1 elapsed=266s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=200 wall=266s total_tps=48.1 stream_tps_med=18.8 ttft_med=963ms ttft_max=5177ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-origq.so: 1 file pushed, 0 skipped. 200.5 MB/s (955680 bytes in 0.005s)
+tag=cold-origq batt=412 round=1 elapsed=268s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=200 wall=268s total_tps=47.8 stream_tps_med=18.6 ttft_med=968ms ttft_max=5768ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-fix.so: 1 file pushed, 0 skipped. 120.6 MB/s (955680 bytes in 0.008s)
+tag=cold-fix batt=413 round=1 elapsed=275s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=200 wall=275s total_tps=46.5 stream_tps_med=18.6 ttft_med=958ms ttft_max=6177ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-origq.so: 1 file pushed, 0 skipped. 127.0 MB/s (955680 bytes in 0.007s)
+tag=cold-origq batt=408 round=1 elapsed=244s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=200 wall=243s total_tps=52.7 stream_tps_med=18.6 ttft_med=965ms ttft_max=6343ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-fix.so: 1 file pushed, 0 skipped. 114.3 MB/s (955680 bytes in 0.008s)
+tag=cold-fix batt=409 round=1 elapsed=257s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=204 wall=257s total_tps=50.7 stream_tps_med=18.5 ttft_med=956ms ttft_max=5227ms
+/private/tmp/claude-501/-Users-will-code-inference/378637e7-7142-4277-99bd-733108a3499b/scratchpad/htp-v81-fix.so: 1 file pushed, 0 skipped. 122.2 MB/s (955680 bytes in 0.007s)

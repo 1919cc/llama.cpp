@@ -1,0 +1,17 @@
+off=2 nodraft 3d34fe09   32.246 t/s draft e5a9389c   29.470 t/s
+off=4 nodraft 3d34fe09   30.664 t/s draft e5a9389c   24.029 t/s
+off=8 nodraft 3d34fe09   32.328 t/s draft e5a9389c   29.982 t/s
+off=16 nodraft 3d34fe09   29.045 t/s draft e5a9389c   26.506 t/s
+off=32 nodraft 3d34fe09   28.290 t/s draft e5a9389c   29.773 t/s
+off=128 nodraft 3d34fe09   31.683 t/s draft e5a9389c   30.083 t/s
+off=256 nodraft 7032ce6a   31.606 t/s draft 7032ce6a   29.918 t/s
+off=512 nodraft 3d34fe09   32.099 t/s draft e5a9389c   30.153 t/s
+off=1024 nodraft 3d34fe09   28.244 t/s draft e5a9389c   30.091 t/s
+off=2048 nodraft 3d34fe09   31.439 t/s draft e5a9389c   28.284 t/s
+only=4 nodraft 7032ce6a   31.076 t/s draft 7032ce6a   29.737 t/s
+only=8 nodraft 7032ce6a   30.879 t/s draft 7032ce6a   28.827 t/s
+only=16 nodraft 7032ce6a   30.642 t/s draft 7032ce6a   29.078 t/s
+only=256 nodraft 3d34fe09   29.855 t/s draft e5a9389c   28.344 t/s
+only=512 nodraft 7032ce6a   30.063 t/s draft 7032ce6a   29.018 t/s
+only=1024 nodraft 7032ce6a   30.406 t/s draft 7032ce6a   28.882 t/s
+only=2048 nodraft 7032ce6a   30.196 t/s draft 7032ce6a   28.592 t/s

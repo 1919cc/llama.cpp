@@ -1,0 +1,4 @@
+=== --kv-unified --no-cache-idle-slots -dev none -ngl 0 -t 6
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.5440969467163086, None)
+=== --no-kv-unified --no-cache-idle-slots -dev none -ngl 0 -t 6
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.0, None)

@@ -1,0 +1,40 @@
+== npu under256 X=0
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_5 positions=50 top1_flips=0 max_abs=2.56204 mean_pos_max=0.41792 rms=0.265515 differing=100.00% min_margin=1.2315
+batch_8 positions=50 top1_flips=0 max_abs=2.55059 mean_pos_max=0.42015 rms=0.264441 differing=100.00% min_margin=1.2315
+== npu under256 GGML_HEXAGON_MM_SELECT=1
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_5 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_8 positions=50 top1_flips=0 max_abs=0.66055 mean_pos_max=0.30053 rms=0.102570 differing=80.00% min_margin=1.0952
+== npu under256 GGML_HEXAGON_FA_SELECT=1
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2005
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2005
+batch_5 positions=50 top1_flips=0 max_abs=1.24473 mean_pos_max=0.40687 rms=0.142316 differing=100.00% min_margin=1.2005
+batch_8 positions=50 top1_flips=0 max_abs=1.24473 mean_pos_max=0.40780 rms=0.142413 differing=100.00% min_margin=1.2005
+== npu under256 GGML_HEXAGON_OPFUSION=0
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_5 positions=50 top1_flips=0 max_abs=1.20589 mean_pos_max=0.37249 rms=0.152424 differing=100.00% min_margin=1.2029
+batch_8 positions=50 top1_flips=0 max_abs=1.20589 mean_pos_max=0.37265 rms=0.152428 differing=100.00% min_margin=1.2029
+== npu under256 GGML_HEXAGON_GDN_SELECT=1
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_5 positions=50 top1_flips=0 max_abs=2.56204 mean_pos_max=0.41792 rms=0.265515 differing=100.00% min_margin=1.2315
+batch_8 positions=50 top1_flips=0 max_abs=2.55059 mean_pos_max=0.42015 rms=0.264441 differing=100.00% min_margin=1.2315
+== npu under256 MM=1 FA=1 FUS=0
+batch_3 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.1525
+batch_4 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.1525
+batch_5 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.1525
+batch_8 positions=50 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.1525
+== cpu cross256
+batch_3 positions=64 top1_flips=0 max_abs=0.47158 mean_pos_max=0.05320 rms=0.042261 differing=12.50% min_margin=1.1639
+batch_4 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_5 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_8 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+== cpu cross256 no graph reuse
+batch_3 positions=64 top1_flips=0 max_abs=0.47158 mean_pos_max=0.05320 rms=0.042261 differing=12.50% min_margin=1.1639
+batch_4 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_5 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_8 positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639

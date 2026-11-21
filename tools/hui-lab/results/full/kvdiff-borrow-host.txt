@@ -1,0 +1,67 @@
+=== Qwen3.5-2B-BF16.gguf fa=on
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.13409900665283203, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.10895347595214844, None) cold0-cold2=(-1, 0.14396095275878906, None) own-cold0=(-1, 0.2164020538330078, None) own-borrow=(-1, 0.16530799865722656, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.1780986785888672, None) cold0-cold2=(-1, 0.1349201202392578, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.13805770874023438, None)
+q=4.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.1438579559326172, None) cold0-cold2=(-1, 0.14544391632080078, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.12970352172851562, None)
+borrowed=1
+=== smol-f32.gguf fa=on
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.006932258605957031, None) cold0-cold2=(-1, 0.005529165267944336, None) own-cold0=(-1, 0.012259483337402344, None) own-borrow=(-1, 0.009162425994873047, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.007486581802368164, None) cold0-cold2=(-1, 0.004198551177978516, None) own-cold0=(-1, 0.010172605514526367, None) own-borrow=(-1, 0.012633323669433594, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.009627819061279297, None) cold0-cold2=(-1, 0.011293172836303711, None) own-cold0=(-1, 0.015968918800354004, None) own-borrow=(-1, 0.027317047119140625, None)
+q=4.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.005852699279785156, None) cold0-cold2=(-1, 0.0035696029663085938, None) own-cold0=(-1, 0.006726980209350586, None) own-borrow=(-1, 0.006552696228027344, None)
+borrowed=1
+=== smol-f32.gguf fa=off
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.010582685470581055, None) cold0-cold2=(-1, 0.011513233184814453, None) own-cold0=(-1, 0.0173797607421875, None) own-borrow=(-1, 0.009701013565063477, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.017254352569580078, None) cold0-cold2=(-1, 0.009651660919189453, None) own-cold0=(-1, 0.007740497589111328, None) own-borrow=(-1, 0.012477636337280273, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.008974790573120117, None) cold0-cold2=(-1, 0.010763406753540039, None) own-cold0=(-1, 0.014548540115356445, None) own-borrow=(-1, 0.01297450065612793, None)
+q=4.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.005476593971252441, None) cold0-cold2=(-1, 0.007226228713989258, None) own-cold0=(-1, 0.004624605178833008, None) own-borrow=(-1, 0.005373954772949219, None)
+borrowed=1
+=== SmolLM2-135M-Instruct-Q4_0.gguf fa=on
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.28406190872192383, None) own-cold0=(-1, 0.2591567039489746, None) own-borrow=(-1, 0.17889761924743652, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.16281843185424805, None) cold0-cold2=(-1, 0.204315185546875, None) own-cold0=(-1, 0.2861669063568115, None) own-borrow=(-1, 0.20025014877319336, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.1523888111114502, None) cold0-cold2=(-1, 0.29564523696899414, None) own-cold0=(-1, 0.302825927734375, None) own-borrow=(-1, 0.1823204755783081, None)
+q=4.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.21704387664794922, None) cold0-cold2=(-1, 0.1855170726776123, None) own-cold0=(-1, 0.20666170120239258, None) own-borrow=(3, 0.24649906158447266, 0.1488248109817505)
+borrowed=1
+=== host f32 trim path
+own-cold0=(-1, 0.012259483337402344, None) own-borrow=(-1, 0.009162425994873047, None)
+  borrowed=1
+own-cold0=(-1, 0.014698982238769531, None) own-borrow=(-1, 0.01816415786743164, None)
+  borrowed=1
+own-cold0=(-1, 0.012124776840209961, None) own-borrow=(-1, 0.00885462760925293, None)
+  borrowed=1
+own-cold0=(-1, 0.007068157196044922, None) own-borrow=(-1, 0.01575326919555664, None)
+  borrowed=1
+own-cold0=(-1, 0.014225244522094727, None) own-borrow=(-1, 0.022707462310791016, None)
+  borrowed=1
+=== host q4 trim path
+own-cold0=(-1, 0.2591567039489746, None) own-borrow=(-1, 0.17889761924743652, None)
+  borrowed=1
+own-cold0=(-1, 0.2729947566986084, None) own-borrow=(-1, 0.29520392417907715, None)
+  borrowed=1
+own-cold0=(-1, 0.2551569938659668, None) own-borrow=(-1, 0.2099924087524414, None)
+  borrowed=1
+own-cold0=(-1, 0.2144908905029297, None) own-borrow=(3, 0.162459135055542, 0.1404857635498047)
+  borrowed=1
+own-cold0=(-1, 0.2941572666168213, None) own-borrow=(-1, 0.29826784133911133, None)
+  borrowed=1
+=== host bf16 recurrent path
+own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.13409900665283203, None)
+  borrowed=1
+own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.2916545867919922, None)
+  borrowed=1
+own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.2250232696533203, None)
+  borrowed=1
+own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.12804698944091797, None)
+  borrowed=1
+own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.3799152374267578, None)
+  borrowed=1
+  borrowed=0
+  borrowed=0
+  borrowed=0
+  borrowed=0
+  borrowed=0
+  borrowed=0
+q=1.0 cold0-cold1=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.034839630126953125, None)
+  borrowed=1
+q=2.0 cold0-cold1=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.01645660400390625, None)
+  borrowed=1

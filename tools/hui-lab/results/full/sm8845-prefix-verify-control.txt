@@ -1,0 +1,50 @@
+=== control own-vs-own qwen2.5-0.5b-instruct-q4_0
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=3
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=808 ttft own=
+verify2 fired=3 mismatches=1
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=4
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=808 ttft own=4
+verify2 q=2 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=4
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 q=2 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=3
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=808 ttft own=5
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=808 ttft own=
+verify2 fired=3 mismatches=1
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=3
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=808 ttft own=4
+verify2 q=2 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=4
+verify2 q=1 own==borrow False own_cache=810 borrow_cache=808 ttft own=
+verify2 q=2 own==borrow True own_cache=810 borrow_cache=808 ttft own=3
+verify2 fired=3 mismatches=1
+=== control own-vs-own qwen35-2b-Q4_0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=2
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=1
+verify2 fired=3 mismatches=0

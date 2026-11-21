@@ -1,0 +1,36 @@
+  pristine fa=1 vs exact fa=0        max|dlogit|=0.020400 top 356/356
+  fa=1 two batches vs exact          max|dlogit|=0.025405 top 356/356
+  offset 1 vs fa=1                   max|dlogit|=0.011723 top 356/356
+  offset 1 vs exact                  max|dlogit|=0.022540 top 356/356
+  offset 4 vs fa=1                   max|dlogit|=0.010642 top 356/356
+  offset 4 vs exact                  max|dlogit|=0.019480 top 356/356
+  offset 8 vs fa=1                   max|dlogit|=0.010079 top 356/356
+  offset 8 vs exact                  max|dlogit|=0.019146 top 356/356
+  offset 16 vs fa=1                  max|dlogit|=0.011668 top 356/356
+  offset 16 vs exact                 max|dlogit|=0.020644 top 356/356
+  offset 32 vs fa=1                  max|dlogit|=0.008817 top 356/356
+  offset 32 vs exact                 max|dlogit|=0.018988 top 356/356
+  offset 64 vs fa=1                  max|dlogit|=0.000000 top 356/356
+  offset 64 vs exact                 max|dlogit|=0.020400 top 356/356
+  offset 100 vs fa=1                 max|dlogit|=0.010841 top 356/356
+  offset 100 vs exact                max|dlogit|=0.019776 top 356/356
+  offset 128 vs fa=1                 max|dlogit|=0.000000 top 356/356
+  offset 128 vs exact                max|dlogit|=0.020400 top 356/356
+## F16
+## F32
+## Q4_0
+  pristine fa=1 vs exact fa=0        max|dlogit|=0.399563 top 198/198
+  offset 1 vs fa=1                   max|dlogit|=0.377439 top 198/198
+  offset 1 vs exact                  max|dlogit|=0.430090 top 198/198
+  offset 64 vs fa=1                  max|dlogit|=0.000000 top 198/198
+  offset 64 vs exact                 max|dlogit|=0.399563 top 198/198
+  offset 100 vs fa=1                 max|dlogit|=0.334208 top 198/198
+  offset 100 vs exact                max|dlogit|=0.340906 top 198/198
+## SmolLM2 F32 (dequantized from Q4_0)
+  pristine fa=1 vs exact fa=0        max|dlogit|=0.008350 top 198/198
+  offset 1 vs fa=1                   max|dlogit|=0.002903 top 198/198
+  offset 1 vs exact                  max|dlogit|=0.009319 top 198/198
+  offset 64 vs fa=1                  max|dlogit|=0.000000 top 198/198
+  offset 64 vs exact                 max|dlogit|=0.008350 top 198/198
+  offset 100 vs fa=1                 max|dlogit|=0.002422 top 198/198
+  offset 100 vs exact                max|dlogit|=0.008043 top 198/198

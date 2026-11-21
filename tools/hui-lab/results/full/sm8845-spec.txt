@@ -1,0 +1,24 @@
+edit none #0 rc=1 md5=d5366263 
+edit none #1 rc=1 md5=d5366263 
+edit ngram-mod #0 rc=0 md5=7aa39019 0.11.830.062 I decoded 336 tokens in 7.838 seconds, speed: 42.868 t/s;0.11.830.063 I n_draft = 3;0.11.830.063 I n_predict = 336;0.11.830.063 I n_drafted = 333;0.11.830.063 I n_accept = 100;0.11.830.064 I accept = 30.030%;
+edit ngram-mod #1 rc=0 md5=7aa39019 0.11.968.313 I decoded 336 tokens in 7.966 seconds, speed: 42.178 t/s;0.11.968.313 I n_draft = 3;0.11.968.313 I n_predict = 336;0.11.968.313 I n_drafted = 333;0.11.968.314 I n_accept = 100;0.11.968.314 I accept = 30.030%;
+edit ngram-map-k #0 rc=0 md5=35e20225 0.09.574.599 I decoded 308 tokens in 5.698 seconds, speed: 54.056 t/s;0.09.574.599 I n_draft = 3;0.09.574.599 I n_predict = 308;0.09.574.599 I n_drafted = 785;0.09.574.600 I n_accept = 169;0.09.574.600 I accept = 21.529%;
+edit ngram-map-k #1 rc=0 md5=35e20225 0.08.760.446 I decoded 308 tokens in 5.027 seconds, speed: 61.267 t/s;0.08.760.447 I n_draft = 3;0.08.760.447 I n_predict = 308;0.08.760.447 I n_drafted = 785;0.08.760.447 I n_accept = 169;0.08.760.447 I accept = 21.529%;
+edit ngram-simple #0 rc=0 md5=7aa39019 0.08.565.407 I decoded 336 tokens in 4.957 seconds, speed: 67.778 t/s;0.08.565.408 I n_draft = 3;0.08.565.408 I n_predict = 336;0.08.565.408 I n_drafted = 737;0.08.565.408 I n_accept = 199;0.08.565.409 I accept = 27.001%;
+edit ngram-simple #1 rc=0 md5=7aa39019 0.08.702.211 I decoded 336 tokens in 5.018 seconds, speed: 66.953 t/s;0.08.702.212 I n_draft = 3;0.08.702.212 I n_predict = 336;0.08.702.212 I n_drafted = 737;0.08.702.212 I n_accept = 199;0.08.702.213 I accept = 27.001%;
+mixed none #0 rc=1 md5=fdda35c0 
+mixed none #1 rc=1 md5=fdda35c0 
+mixed ngram-mod #0 rc=0 md5=0537b2d3 0.12.907.169 I decoded 301 tokens in 9.275 seconds, speed: 32.452 t/s;0.12.907.170 I n_draft = 3;0.12.907.171 I n_predict = 301;0.12.907.172 I n_drafted = 0;0.12.907.172 I n_accept = 0;0.12.907.173 I accept = nan%;
+mixed ngram-mod #1 rc=0 md5=0537b2d3 0.13.021.936 I decoded 301 tokens in 9.272 seconds, speed: 32.462 t/s;0.13.021.938 I n_draft = 3;0.13.021.939 I n_predict = 301;0.13.021.939 I n_drafted = 0;0.13.021.940 I n_accept = 0;0.13.021.940 I accept = nan%;
+mixed ngram-map-k #0 rc=0 md5=0537b2d3 0.11.696.981 I decoded 301 tokens in 8.060 seconds, speed: 37.345 t/s;0.11.696.981 I n_draft = 3;0.11.696.982 I n_predict = 301;0.11.696.982 I n_drafted = 362;0.11.696.982 I n_accept = 57;0.11.696.982 I accept = 15.746%;
+mixed ngram-map-k #1 rc=0 md5=0537b2d3 0.12.094.660 I decoded 301 tokens in 8.432 seconds, speed: 35.696 t/s;0.12.094.660 I n_draft = 3;0.12.094.661 I n_predict = 301;0.12.094.661 I n_drafted = 362;0.12.094.661 I n_accept = 57;0.12.094.661 I accept = 15.746%;
+mixed ngram-simple #0 rc=0 md5=0537b2d3 0.11.779.737 I decoded 301 tokens in 8.077 seconds, speed: 37.267 t/s;0.11.779.738 I n_draft = 3;0.11.779.739 I n_predict = 301;0.11.779.739 I n_drafted = 499;0.11.779.740 I n_accept = 57;0.11.779.741 I accept = 11.423%;
+mixed ngram-simple #1 rc=0 md5=0537b2d3 0.11.646.937 I decoded 301 tokens in 8.018 seconds, speed: 37.540 t/s;0.11.646.938 I n_draft = 3;0.11.646.938 I n_predict = 301;0.11.646.938 I n_drafted = 499;0.11.646.938 I n_accept = 57;0.11.646.939 I accept = 11.423%;
+open none #0 rc=1 md5=52ed8424 
+open none #1 rc=1 md5=52ed8424 
+open ngram-mod #0 rc=0 md5=3d34fe09 0.09.213.750 I decoded 210 tokens in 6.386 seconds, speed: 32.884 t/s;0.09.213.751 I n_draft = 3;0.09.213.752 I n_predict = 210;0.09.213.752 I n_drafted = 0;0.09.213.753 I n_accept = 0;0.09.213.754 I accept = nan%;
+open ngram-mod #1 rc=0 md5=3d34fe09 0.09.331.300 I decoded 210 tokens in 6.419 seconds, speed: 32.716 t/s;0.09.331.301 I n_draft = 3;0.09.331.302 I n_predict = 210;0.09.331.302 I n_drafted = 0;0.09.331.303 I n_accept = 0;0.09.331.304 I accept = nan%;
+open ngram-map-k #0 rc=0 md5=3d34fe09 0.09.298.770 I decoded 210 tokens in 6.434 seconds, speed: 32.639 t/s;0.09.298.771 I n_draft = 3;0.09.298.772 I n_predict = 210;0.09.298.773 I n_drafted = 0;0.09.298.773 I n_accept = 0;0.09.298.774 I accept = nan%;
+open ngram-map-k #1 rc=0 md5=3d34fe09 0.09.128.819 I decoded 210 tokens in 6.375 seconds, speed: 32.943 t/s;0.09.128.820 I n_draft = 3;0.09.128.821 I n_predict = 210;0.09.128.822 I n_drafted = 0;0.09.128.822 I n_accept = 0;0.09.128.823 I accept = nan%;
+open ngram-simple #0 rc=0 md5=3d34fe09 0.09.283.511 I decoded 210 tokens in 6.413 seconds, speed: 32.745 t/s;0.09.283.513 I n_draft = 3;0.09.283.513 I n_predict = 210;0.09.283.514 I n_drafted = 0;0.09.283.515 I n_accept = 0;0.09.283.516 I accept = nan%;
+open ngram-simple #1 rc=0 md5=3d34fe09 0.09.240.085 I decoded 210 tokens in 6.396 seconds, speed: 32.833 t/s;0.09.240.086 I n_draft = 3;0.09.240.087 I n_predict = 210;0.09.240.088 I n_drafted = 0;0.09.240.088 I n_accept = 0;0.09.240.089 I accept = nan%;

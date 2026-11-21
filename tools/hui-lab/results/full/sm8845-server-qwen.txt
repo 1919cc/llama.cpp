@@ -1,0 +1,38 @@
+prefix=1800w cold#0 ttft=954ms prompt_n=1816 prompt_tps=1975 cache_n=0 decode_tps=36.2
+prefix=1800w hit#0 ttft=141ms prompt_n=20 prompt_tps=176 cache_n=1797 decode_tps=36.2
+prefix=1800w cold#1 ttft=920ms prompt_n=1816 prompt_tps=2010 cache_n=0 decode_tps=36.2
+prefix=1800w hit#1 ttft=141ms prompt_n=20 prompt_tps=178 cache_n=1797 decode_tps=36.1
+---cross
+cross round=0 client=0 ttft=1310ms prompt_n=22 prompt_tps=17 cache_n=797 decode_tps=18.6
+cross round=0 client=1 ttft=1429ms prompt_n=819 prompt_tps=595 cache_n=0 decode_tps=19.5
+cross round=0 client=2 ttft=1427ms prompt_n=819 prompt_tps=595 cache_n=0 decode_tps=19.5
+cross round=0 client=3 ttft=1427ms prompt_n=819 prompt_tps=593 cache_n=0 decode_tps=19.5
+cross round=1 client=0 ttft=999ms prompt_n=22 prompt_tps=25 cache_n=797 decode_tps=19.2
+cross round=1 client=1 ttft=1000ms prompt_n=516 prompt_tps=593 cache_n=303 decode_tps=19.2
+cross round=1 client=2 ttft=999ms prompt_n=516 prompt_tps=588 cache_n=303 decode_tps=19.2
+cross round=1 client=3 ttft=998ms prompt_n=516 prompt_tps=582 cache_n=303 decode_tps=19.2
+cross round=2 client=0 ttft=980ms prompt_n=22 prompt_tps=25 cache_n=797 decode_tps=19.2
+cross round=2 client=1 ttft=982ms prompt_n=516 prompt_tps=596 cache_n=303 decode_tps=19.2
+cross round=2 client=2 ttft=981ms prompt_n=516 prompt_tps=590 cache_n=303 decode_tps=19.2
+cross round=2 client=3 ttft=980ms prompt_n=516 prompt_tps=584 cache_n=303 decode_tps=19.2
+---ways
+ways=1 cache=True n=64 think=0s reqs=21 wall=46s total_tps=29.2 stream_tps_med=31.1 ttft_med=129ms ttft_max=241ms
+ways=2 cache=True n=64 think=0s reqs=40 wall=45s total_tps=56.4 stream_tps_med=32.5 ttft_med=316ms ttft_max=338ms
+ways=3 cache=True n=64 think=0s reqs=42 wall=45s total_tps=59.4 stream_tps_med=23.6 ttft_med=554ms ttft_max=594ms
+ways=4 cache=True n=64 think=0s reqs=16 wall=135s total_tps=5.7 stream_tps_med=18.9 ttft_med=718ms ttft_max=1057ms
+client 1 failed: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+no completed requests
+client 1 failed: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+no completed requests
+client 0 failed: Remote end closed connection without response
+client 1 failed: Remote end closed connection without response
+client 3 failed: Remote end closed connection without response
+client 2 failed: Remote end closed connection without response
+no completed requests
+client 0 failed: Remote end closed connection without response
+client 3 failed: Remote end closed connection without response
+client 2 failed: Remote end closed connection without response
+client 1 failed: Remote end closed connection without response
+no completed requests

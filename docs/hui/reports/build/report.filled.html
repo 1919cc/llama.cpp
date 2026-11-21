@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>端侧大模型推理技术方案</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root {
+    --ink: #1b2430; --muted: #5b6676; --line: #d7dde5; --soft: #f3f6f9;
+    --brand: #0b6e6e; --brand2: #13a3a3; --warn: #b5541c; --ok: #1f8a4c; --bad: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif; color: var(--ink);
+         font-size: 10.2pt; line-height: 1.62; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4mm; letter-spacing: .5px; }
+  h2 { font-size: 15pt; margin: 9mm 0 3mm; color: var(--brand); break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 5mm 0 2mm; break-after: avoid; }
+  h4 { font-size: 10.4pt; margin: 3mm 0 1.5mm; color: var(--muted); break-after: avoid; }
+  p { margin: 0 0 2.4mm; text-align: justify; }
+  code, .mono { font-family: "SF Mono", Menlo, monospace; font-size: 8.8pt; }
+  code { background: var(--soft); padding: 0 3px; border-radius: 3px; }
+  pre { font-family: "SF Mono", Menlo, monospace; font-size: 8.2pt; line-height: 1.45; background: var(--soft);
+        border: 1px solid var(--line); border-radius: 6px; padding: 3mm 3.5mm; white-space: pre-wrap; break-inside: avoid; margin: 0 0 3mm; }
+  table { border-collapse: collapse; width: 100%; margin: 1.5mm 0 4mm; font-size: 8.9pt; break-inside: avoid; }
+  th, td { border-bottom: 1px solid var(--line); padding: 1.6mm 2mm; text-align: left; vertical-align: top; }
+  th { background: var(--soft); font-weight: 600; border-bottom: 1.5px solid #b9c3cf; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
+  .cover .top { margin-top: 32mm; }
+  .cover .kicker { color: var(--brand); font-weight: 600; letter-spacing: 2px; font-size: 10pt; }
+  .cover h1 { font-size: 30pt; line-height: 1.25; margin-top: 6mm; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-top: 4mm; }
+  .cover .meta { font-size: 9.5pt; color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 4mm 0 5mm; }
+  .stat { background: var(--soft); border-radius: 8px; padding: 3mm; }
+  .stat b { display: block; font-size: 17pt; color: var(--brand); line-height: 1.2; }
+  .stat span { font-size: 8.4pt; color: var(--muted); }
+  .note { background: #fff7ef; border: 1px solid #f1d2b8; border-radius: 6px; padding: 2.5mm 3.5mm; margin: 2mm 0 4mm; font-size: 9.3pt; break-inside: avoid; }
+  .ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; } .warn { color: var(--warn); font-weight: 600; }
+  .fig { margin: 2mm 0 4mm; break-inside: avoid; text-align: center; }
+  .fig figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.5mm; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .two p, .two li { text-align: left; }
+  td:first-child, th:first-child { min-width: 20mm; }
+  .toc { columns: 2; font-size: 9.6pt; }
+  .toc div { break-inside: avoid; }
+  .pb { break-before: page; }
+  .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+  .shots img { width: 100%; border: 1px solid var(--line); border-radius: 8px; }
+  ul, ol { margin: 0 0 2.5mm; padding-left: 5.5mm; } li { margin-bottom: .8mm; }
+  svg text { font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="top">
+    <div class="kicker">EDGE LLM · HEXAGON NPU · TECHNICAL REPORT</div>
+    <h1>在 12 GB 手机上运行 27B 稠密与 125B MoE 大模型<br>端侧推理技术方案</h1>
+    <div class="sub">llama.cpp + Hexagon v81 NPU · 闪存分页 · 三种部署方案 · EdgeAgent 自进化助手</div>
+  </div>
+  <div class="meta">
+    设备：一加 Ace 6T（PLR110）· Snapdragon 8 Gen 5（SM8845）· Hexagon v81 NPU · 12 GB LPDDR · UFS 4.x · Android 16<br>
+    代码：llama.cpp 分支 <code>hexagon-27b-streaming</code> · Android 工程 <code>EdgeAgent</code><br>
+    版本：2026-10-12 · 文中所有数字均为该设备实测，测量条件随表注明
+  </div>
+</section>
+
+<h2 style="margin-top:0">0 摘要</h2>
+<p>目标是在一台 12 GB 内存的骁龙 8 Gen 5 手机上，把远超内存容量的开源大模型跑起来：Qwen3.8-27B（稠密，64 层）和 Qwen3.8-Flash-Next（125B MoE，48 层 × 512 专家）。约束只有三条：NPU 可用内存约 4–6 GB 且不可换出；闪存顺序读 2.6–3.9 GB/s；模型权重 8.8 GB（27B @2.5 bpw）与 72.5 GB（125B @1.56 bpw）。方案的核心是把“权重放在哪一层存储、由哪个计算单元在何时读取”做成分层调度：NPU 常驻热权重，其余权重以文件页留在闪存上按需分页，并通过投机解码与预取把一次读取摊到多个 token。</p>
+<div class="stats">
+  <div class="stat"><b>8 种</b><span>新增 NPU 量化格式（IQ1/IQ2/IQ3/IQ4_XS），全部 test-backend-ops 通过</span></div>
+  <div class="stat"><b>0.614</b><span>方案 A：27B 生成速度 tok/s（NPU 14 层 + O_DIRECT 逐层流式 + MTP；比 mmap 缺页快 3.2×）</span></div>
+  <div class="stat"><b>0.079</b><span>方案 B：27B 块稀疏 FFN 生成 tok/s（m=60 + MTP；块稀疏未减少闪存读取）</span></div>
+  <div class="stat"><b>1.12</b><span>方案 C：125B MoE 生成 tok/s（稠密 40 层上 NPU + 专家闪存分页 + 并行预读 + 2 线程）</span></div>
+</div>
+<table>
+  <tr><th>方案</th><th>模型</th><th>核心思想</th><th>NPU 职责</th><th>闪存职责</th><th>关键开关</th></tr>
+  <tr><td><b>A 层级分层 + MTP</b></td><td>Qwen3.8-27B GSQ-RCO IQ2_XS（8.8 GB）</td><td>按每层 tile 字节在内存预算内选 NPU 常驻层；其余层 mmap，从 UFS 分页；MTP 草拟 3 token、一次前向验证</td><td>常驻层的全部算子</td><td>非常驻层权重（页缓存 = LRU 层）</td><td><code>-ngl auto</code> <code>--load-mode mmap</code> <code>--spec-type draft-mtp</code></td></tr>
+  <tr><td><b>B FFN 块稀疏分页</b></td><td>同上，ffn_down 无损块重排（8.8 GB）</td><td>FFN 17408 个神经元切为 68 个 256 神经元块，当作“专家”；每 token 按 |SiLU(gate)| 能量选 m 块，up/down 只读这些块</td><td>同 A</td><td>只读被选中的 up/down 块</td><td><code>LLAMA_FFN_SPARSE_BLOCKS=m</code></td></tr>
+  <tr><td><b>C MoE 专家分页</b></td><td>Qwen3.8-Flash-Next UD-IQ1_S（72.5 GB）</td><td>稠密部分上 NPU；24,576 个路由专家全部 mmap 留在闪存；路由感知并行预读（本层同步 + 下一层路由器预测异步）</td><td>注意力 / DeltaNet / 共享专家 / 路由器</td><td>路由专家 + 29 GB n-gram PLE 表</td><td><code>-ot exps=CPU</code> <code>LLAMA_EXPERT_PREFETCH=3</code> <code>-t 2</code></td></tr>
+</table>
+
+<div class="toc">
+  <div>1 硬件与约束</div><div>2 软件栈与执行模型</div><div>3 算子层：权重 tile 与 NPU 内核</div><div>4 新增 IQ 系列：码本转码</div>
+  <div>5 调度层：图切分与设备放置</div><div>6 内存层：mmap、rpcmem 与一次整机重启</div><div>7 方案 A</div><div>8 方案 B</div>
+  <div>9 方案 C</div><div>10 三方案对比</div><div>11 EdgeAgent App 与 RSI 自进化</div><div>12 局限与后续工作</div>
+</div>
+
+<h2>1 硬件与约束</h2>
+<table>
+  <tr><th>项目</th><th>实测 / 规格</th><th>对方案的含义</th></tr>
+  <tr><td>SoC / CPU</td><td>SM8845 · 8 核 Oryon，最高 3.8 GHz</td><td>CPU 承担 NPU 不支持的算子与非常驻层（方案 A/B）、路由专家（方案 C）</td></tr>
+  <tr><td>NPU</td><td>Hexagon v81：6 个 HVX 线程（1024-bit 向量）、1 个 HMX 矩阵单元、8 MB VTCM、DMA64</td><td>HVX 负责解码（matvec），HMX 负责 prefill（批量 matmul）</td></tr>
+  <tr><td>内存</td><td>MemTotal 11.4 GB；开机后 MemAvailable 5–7 GB；12 GB zram</td><td>NPU 用 rpcmem（ION/DMA-BUF），<b>不能换出</b>；只有文件页可以被回收</td></tr>
+  <tr><td>NPU 地址空间</td><td>每个 FastRPC 会话约 3.5 GB 32 位窗口</td><td>超过窗口的权重靠后端动态 map/unmap，或多虚拟会话切层</td></tr>
+  <tr><td>闪存</td><td>O_DIRECT 顺序读：1 MiB×1 线程 2.58、4 MiB×4 线程 <b>3.89</b>、16 MiB×4 线程 3.54 GB/s</td><td>“每 token 读多少字节”直接给出速度上限：读 1 GB ≈ 0.26–0.38 s</td></tr>
+</table>
+<p>基线（同一设备，整个模型常驻 NPU）：Qwen3-VL-4B Q4_0 prefill 1040 tok/s、decode 21.3 tok/s；Qwen3-8B Q4_K_S（4.47 GiB）prefill 628 tok/s、decode 11.2 tok/s，计算图只切成 2 段（CPU 2 个 GET_ROWS 节点，NPU 907 个节点）。由 8B 的 4.47 GiB / 11.2 tok/s 可得 NPU 解码的有效权重带宽约 <b>54 GB/s</b>，比闪存快 14 倍：<b>放不进内存的那部分权重决定了速度</b>。</p>
+
+<h2>2 软件栈与执行模型</h2>
+<div class="fig">
+<svg viewBox="0 0 760 250" width="100%">
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b6676"/></marker></defs>
+  <rect x="10" y="10" width="740" height="44" rx="8" fill="#e8f4f4" stroke="#0b6e6e"/>
+  <text x="380" y="30" text-anchor="middle" font-size="13" font-weight="600">EdgeAgent（Kotlin / Compose）· Agent 循环 · 工具 · RSI 自进化 · Bench 面板</text>
+  <text x="380" y="47" text-anchor="middle" font-size="11" fill="#5b6676">JNI：common_params_parse（模式 = 命令行参数）· 增量 prefill · MTP 投机循环 · UTF-8 流式</text>
+  <rect x="10" y="66" width="740" height="44" rx="8" fill="#f3f6f9" stroke="#8796a8"/>
+  <text x="380" y="86" text-anchor="middle" font-size="13" font-weight="600">llama.cpp：模型图构建（qwen35 / qwen4exp）· KV/RS 缓存 · ggml_backend_sched 图切分</text>
+  <text x="380" y="103" text-anchor="middle" font-size="11" fill="#5b6676">新增：O_DIRECT 逐层权重流式 · 块稀疏 FFN 图 · 专家预取算子 · 下一层路由预测 · ffn_down_blk 张量</text>
+  <rect x="10" y="122" width="360" height="118" rx="8" fill="#fff" stroke="#0b6e6e"/>
+  <text x="190" y="142" text-anchor="middle" font-size="13" font-weight="600">ggml-hexagon（主机端，ARM）</text>
+  <text x="22" y="162" font-size="11">· supports_op / 类型映射 / VTCM 规划</text>
+  <text x="22" y="178" font-size="11">· 权重 repack → 32×32 tile（含 IQ 转码）</text>
+  <text x="22" y="194" font-size="11">· rpcmem 分配 + 累计预算保护</text>
+  <text x="22" y="210" font-size="11">· op batching（16 buf / 8192 tensor / 1280 op）</text>
+  <text x="22" y="226" font-size="11">· FastRPC 队列 + 轮询（OPPOLL）</text>
+  <rect x="390" y="122" width="360" height="118" rx="8" fill="#fff" stroke="#0b6e6e"/>
+  <text x="570" y="142" text-anchor="middle" font-size="13" font-weight="600">libggml-htp-v81（cDSP，Hexagon）</text>
+  <text x="402" y="162" font-size="11">· HVX：量化 matvec / matmul（vrmpy int8）</text>
+  <text x="402" y="178" font-size="11">· HMX：fp16 tile matmul（prefill）</text>
+  <text x="402" y="194" font-size="11">· DMA：DDR → VTCM 权重/激活流水</text>
+  <text x="402" y="210" font-size="11">· FA / GDN / SSM_CONV / RoPE / Norm …</text>
+  <text x="402" y="226" font-size="11">· worker 池：6 HVX 线程 + HMX 队列</text>
+  <line x1="370" y1="180" x2="388" y2="180" stroke="#5b6676" stroke-width="1.5" marker-end="url(#ar)"/>
+</svg>
+<figcaption>图 1 分层软件栈（粗体模块为本项目新增或修改）</figcaption>
+</div>
+<p><b>执行模型。</b>llama.cpp 为每个 ubatch 构建一张 ggml 计算图，<code>ggml_backend_sched</code> 按“权重在哪个设备 + 设备是否支持该算子（supports_op）”把节点分配给 HTP0 或 CPU，再把连续同设备的节点切成 split，在 split 边界插入张量拷贝。Hexagon 后端把一个 split 内的算子批量打包（op batching）成一次 FastRPC 调用送到 cDSP；DSP 侧按算子类型选择 HVX 或 HMX 内核，由 6 个 HVX 硬件线程并行，权重按行块经 DMA 从 DDR 预取到 VTCM（预取深度 2–16 由 VTCM 预算求解）。主机侧开启 OPPOLL 后以轮询等待完成，省去中断唤醒延迟。</p>
+
+<h2>3 算子层：权重 tile 与 NPU 内核</h2>
+<h3>3.1 支持的算子（节选，完整清单见附录 A）</h3>
+<table>
+  <tr><th>类别</th><th>算子</th><th>类型 / 约束</th></tr>
+  <tr><td>矩阵乘</td><td>MUL_MAT、MUL_MAT_ID</td><td>权重：Q4_0/Q4_1/Q8_0/IQ4_NL/MXFP4/Q2_K–Q6_K、<b>新增 IQ1_S/IQ1_M/IQ2_XXS/IQ2_XS/IQ2_S/IQ3_XXS/IQ3_S/IQ4_XS</b>；激活 F32/F16；MUL_MAT_ID 要求每专家行数为 32 的倍数（本项目修复的越界）</td></tr>
+  <tr><td>注意力</td><td>FLASH_ATTN_EXT、SOFT_MAX、ROPE（NORMAL/NEOX/MROPE/IMROPE/VISION）</td><td>K/V F16 或 Q8_0；mask F16；按 VTCM 预算拒绝过大配置</td></tr>
+  <tr><td>线性注意力</td><td>GATED_DELTA_NET（HMX→HVX）、SSM_CONV</td><td>F32，S_v ≤ 128，d_conv ≤ 32 —— Qwen3.5/3.8 的 48 个 DeltaNet 层全部可上 NPU</td></tr>
+  <tr><td>逐元素/归一化</td><td>ADD/SUB/MUL/DIV、RMS_NORM/NORM/L2_NORM、SILU/GELU/SIGMOID/…、SWIGLU/GEGLU</td><td>F32（部分 F16）</td></tr>
+  <tr><td>数据</td><td>GET_ROWS、SET_ROWS、CPY/CONT、CONCAT、REPEAT、PAD、ROLL、FILL</td><td>GET_ROWS 只支持 repack 过的 Q4_0/Q4_K/Q6_K/Q8_0 与 F32/F16 —— 词嵌入常留在 CPU</td></tr>
+  <tr><td>规约/排序</td><td>SUM、SUM_ROWS、ARGMAX、ARGSORT、TOP_K、CUMSUM</td><td>F32，按 VTCM 布局求解</td></tr>
+</table>
+
+<h3>3.2 权重 repack：32×32 tile</h3>
+<p>主机在 <code>set_tensor</code> 时把权重从 ggml 块格式重排成 DSP 专用的 tile：每个 tile 覆盖 32 行（输出通道）× 32 列（K 维），一个 HVX 向量（128 B）恰好容纳 32 行 × 4 字节，<code>vrmpy</code> 一条指令完成 32 行 × 4 个 int8 乘加。tile 内按“列组优先”排列：字节 <code>4·row + b</code> 存 K 组 g 的第 b 个元素，所以解包后的向量可以直接与按同样方式排列的 int8 激活做 <code>Q6_Vw_vrmpyacc_VwVbVb</code>。</p>
+<table>
+  <tr><th>tile 类型</th><th class="n">字节/tile</th><th class="n">bpw</th><th>布局</th></tr>
+  <tr><td>Q4_0 / IQ4_NL</td><td class="n">576（对齐 640）</td><td class="n">4.5</td><td>4 个 nibble 向量 + 32 个 fp16 scale</td></tr>
+  <tr><td>Q4_1 / Q4_K</td><td class="n">640</td><td class="n">5.0</td><td>nibble + fp16 scale + fp16 min</td></tr>
+  <tr><td>Q6_K</td><td class="n">896</td><td class="n">7.0</td><td>低 4 位 4 向量 + 高 2 位 2 向量 + 每 16 一个 fp16 scale</td></tr>
+  <tr><td>Q3_K / Q2_K</td><td class="n">512</td><td class="n">4.0</td><td>低 2 位 2 向量 + 第 3 位平面 / offset + 每 16 一个 fp16 scale</td></tr>
+  <tr><td><b>IQ2 / IQ1（新增，LUT3）</b></td><td class="n">512</td><td class="n">4.0</td><td>Q3_K 布局，3 位码经类型 LUT 映射为 int8</td></tr>
+  <tr><td><b>IQ3_XXS / IQ3_S（新增，LUT4）</b></td><td class="n">576</td><td class="n">4.5</td><td>IQ4_NL 布局，4 位码经类型 LUT 映射为 int8</td></tr>
+</table>
+<p>激活在每次 matmul 前由 DSP 动态量化为 q8_0 tile（每 32 个 K 值 1152 B：32 行 int8 + fp16 scale；带 offset 的权重用 q8_1，1280 B，多存块和）。解码阶段（1 行激活）走 HVX matvec；prefill（≥4 行）走 HMX：先由 HVX worker 把权重 tile 反量化成 fp16 tile（32×32×2 = 2048 B），再交给 HMX 做 fp16 矩阵乘，激活与反量化在 VTCM 中流水。</p>
+
+<h3>3.3 matmul 调度</h3>
+<ul>
+  <li><b>内核选择</b>（主机 <code>precompute_matmul_params</code>）：HMX_2D（批量、K 对齐 32）；HVX_QUANT_ROW / QUANT_BLOCK（解码，按行或按块切分到 6 线程）；mv_2d（单行 matvec）；nx 融合（共享同一激活的多个 matmul 合并成一次调用，如 gate/up、Q/K/V，激活只量化一次）；4D 批量。</li>
+  <li><b>VTCM 规划</b>：<code>htp_mm_hvx_vtcm_layout_build</code> 按线程数 × 预取深度 × tile 行大小计算权重缓冲、激活 tile、输出缓冲，深度从 16 向 2 递减直到放进 8 MB；放不下则 supports_op 拒绝，算子留在 CPU。</li>
+  <li><b>DMA 流水</b>：每线程一个 DMA 队列，计算第 i 行块时预取第 i+d 行块；v81 打开 DMA64 读权重。</li>
+</ul>
+
+<h2>4 新增 IQ 系列：码本转码</h2>
+<p>ISTA-DASLab 的 GSQ-RCO 是逐张量混合精度量化：27B 的 IQ2_XS 版本 866 个张量用到 13 种格式（IQ1_M 31、IQ1_S 36、IQ2_XXS 70、IQ2_XS 53、IQ2_S 60、IQ3_XXS 37、IQ3_S 47、IQ4_XS 11、Q2_K 53、Q4_K 4、Q6_K 8、BF16 96、F32 360），其中 8 种此前 NPU 不支持。IQ 格式用“码本索引”编码：例如 IQ2_XXS 每 8 个权重存 1 个 8 位网格索引 + 7 位符号索引，网格每项是 8 个取自 {8, 25, 43} 的幅度。直接在 HVX 上按索引查表需要逐 lane <code>vgather</code>，吞吐跟不上解码带宽。</p>
+<p><b>关键观察：</b>这些网格的取值集合都很小。我们在主机 repack 时把“网格索引 + 符号”展开成每权重一个小整数码，DSP 只需一条 <code>vlut32</code> 把码映射回 int8，其余与已有的 Q3_K / IQ4_NL 内核完全相同：</p>
+<table>
+  <tr><th>源格式</th><th>源 bpw</th><th>码</th><th>LUT（int8）</th><th>scale</th><th>tile</th></tr>
+  <tr><td>IQ2_XXS / IQ2_XS / IQ2_S</td><td>2.06 / 2.31 / 2.56</td><td>幅度索引(2b) | 符号&lt;&lt;2</td><td>8, 25, 43, –, −8, −25, −43</td><td>d·(2ls+1)/8，每 16</td><td>LUT3</td></tr>
+  <tr><td>IQ1_S / IQ1_M</td><td>1.56 / 1.75</td><td>2·(grid+1) + (δ&gt;0)</td><td>−9, −7, −1, 1, 7, 9（= 8·(g±⅛)）</td><td>d·(2ls+1)/8，每 16</td><td>LUT3</td></tr>
+  <tr><td>IQ3_XXS</td><td>3.06</td><td>幅度索引(3b) | 符号&lt;&lt;3</td><td>±{4,12,20,28,36,44,52,62}</td><td>d·(2ls+1)/4，每 32</td><td>LUT4</td></tr>
+  <tr><td>IQ3_S</td><td>3.44</td><td>幅度索引(3b) | 符号&lt;&lt;3</td><td>±{1,3,…,15}</td><td>d·(2ls+1)，每 32</td><td>LUT4</td></tr>
+  <tr><td>IQ4_XS</td><td>4.25</td><td>原 nibble（与 IQ4_NL 同码本）</td><td>kvalues_iq4nl</td><td>d·(ls−32)，每 32</td><td>IQ4_NL</td></tr>
+</table>
+<h4>LUT3 解码的 HVX 指令序列（每 K 组 g，32 行并行）</h4>
+<pre>v    = vptr[g&gt;&gt;2]                                  // 2 位平面：4 组共享一个向量
+lo2  = (g&amp;3)==3 ? vlsr(v,6) : vand(vlsr(v,2·(g&amp;3)), 0x03)
+q_hi = Q6_Q_vand_VR(vptr[2], 0x01010101 &lt;&lt; g)        // 第 3 位平面 → 谓词
+code = Q6_V_vandor_VQR(lo2, q_hi, 0x04040404)       // code = lo2 | bit2&lt;&lt;2
+w    = Q6_Vb_vlut32_VbVbI(code, lut, 0)             // 码 → int8 权重
+acc  = Q6_Vw_vrmpyacc_VwVbVb(acc, w, act[g])        // 32 行 × 4 MAC
+// 每 4 组（16 个 K）结束：acc(int32→fp32) × (w_scale_fp16 × act_scale_fp16)</pre>
+<p>相比 Q3_K 内核只多一条 <code>vlut32</code>；HMX 路径的反量化同样在 int8 之后乘 fp16 scale 写出 fp16 tile。读回（<code>get_tensor</code>，test-backend-ops 与状态保存需要）用反查表重建网格索引：码模式 → 网格索引（2^16 / 2^12 项哈希表）、8 位符号 → 7 位奇偶索引（ksigns 反查）、scale 按“最大子块取最大 ls”恢复。</p>
+<table>
+  <tr><th>验证</th><th>结果</th></tr>
+  <tr><td>转码数值（Mac，ggml 参考量化 → 解码对比，7 种格式）</td><td>最大相对误差 4.7e-4–4.9e-4（= fp16 存 scale 的舍入 2<sup>−11</sup>），比量化误差小两个数量级</td></tr>
+  <tr><td>读回往返</td><td>93–98% 的块逐字节一致，其余数值误差 &lt; 1e-3</td></tr>
+  <tr><td>test-backend-ops MUL_MAT（NPU 真机）</td><td class="ok">IQ2_XXS 71/71，其余 7 种各 49/49</td></tr>
+  <tr><td>test-backend-ops MUL_MAT_ID</td><td class="ok">8 种 IQ 全部通过（3–73 例）</td></tr>
+  <tr><td>回归（11 种已有格式 MUL_MAT）</td><td class="ok">IQ4_NL 56、Q4_0 101、Q4_1 86、Q8_0 96、Q2_K 55、Q3_K 48、Q4_K 103、Q5_K 78、Q6_K 55、MXFP4 78、F16 361 全部通过</td></tr>
+</table>
+<div class="note"><b>代价：tile 膨胀。</b>每 16 个权重一个 fp16 scale 使 LUT3 tile 固定为 4 bpw。27B IQ2_XS 文件 8.76 GB → NPU tile 13.55 GB（×1.55）：IQ2_XXS 1.25→2.42、IQ2_S 1.27→1.98、IQ2_XS 0.99→1.70、Q2_K 1.10→1.67、IQ1_S 0.51→1.29 GB。这也是方案 A 中 NPU 能常驻的层数受限的直接原因，见第 12 节的压缩 tile 计划。</div>
+
+<h2>5 调度层：图切分与设备放置</h2>
+<ul>
+  <li><b>层放置</b>：<code>-ngl N</code> 把最后 N 层（含其 KV/RS 状态）放到 HTP0，前 64−N 层在 CPU；输出头在 N &gt; n_layer 时上 NPU。方案 A/B 中 N 由 App 自动计算：用 gguf 元数据逐张量累加“repack 后字节”（按 tile bpw），从最后一层向前累加到预算为止；预算 = MemAvailable − 2 GiB 保留 − 1.5 GiB（KV、计算缓冲）。</li>
+  <li><b>张量覆盖</b>：方案 C 用 <code>-ngl 999 -ot "ffn_(up|gate|down|gate_up)_exps=CPU"</code>，路由专家权重强制留在 CPU 的 mmap 缓冲，其余（注意力、DeltaNet、路由器、共享专家、超连接）进 NPU。</li>
+  <li><b>图切分</b>：8B 实测每图 2 个 split（CPU：2 个 GET_ROWS；NPU：其余 907 个节点）。方案 A 中 CPU 层与 NPU 层之间只在层边界拷贝一次 5120 维隐状态；方案 C 每层两次（路由器输出 ids 回 CPU、专家输出回 NPU）。</li>
+  <li><b>CPU 回退</b>：NPU 不支持的算子（BF16 的 ssm_alpha/ssm_beta 小矩阵、词嵌入 GET_ROWS）由调度器自动留在 CPU。加载时 llama.cpp 用探测算子决定权重放置；为让稠密模型的 ffn_down_blk 能被探测，它注册为 MUL_MAT 类（运行时实际用 MUL_MAT_ID）。</li>
+  <li><b>线程</b>：CPU 6 线程；NPU 6 个 HVX 硬件线程 + HMX 队列；App 推理跑在独立 64 MB 栈的单线程执行器上，UI 线程只订阅 StateFlow。</li>
+</ul>
+
+<h2>6 内存层：mmap、rpcmem 与一次整机重启</h2>
+<p>首次以 <code>-ngl 20</code> 加载 27B 时手机直接重启。逐步排查：纯 CPU（<code>--device none -ngl 0</code>）运行最低 MemAvailable 7.25 GB、权重显示为 <code>CPU_Mapped 8022 MiB</code>；只要启用 HTP 设备（即使 <code>-ngl 0</code>），日志变为 <code>CPU model buffer 8022 MiB</code>，RssAnon 一路涨到内存耗尽。根因有两个：</p>
+<ol>
+  <li><b>load_mode AUTO 关闭了 mmap。</b>Hexagon 设备上报 <code>caps.mmap_support = false</code>，llama.cpp 的 AUTO 逻辑只要任一设备不支持就对整个模型关闭 mmap，于是 CPU 层的 8 GB 也被拷进匿名内存。修复：显式 <code>--load-mode mmap</code>，NPU 层照常 repack 进 rpcmem，CPU 层保持可回收的文件页。</li>
+  <li><b>rpcmem 是延迟提交的。</b>分配时 MemAvailable 尚未下降，逐块检查会全部放行，repack 写入时才真正占用。修复：后端记录累计已分配字节，以首次分配时的 MemAvailable 为基线，<code>已分配 + 本次 + 保留(GGML_HEXAGON_MEM_RESERVE，默认 2 GiB) ≤ 基线</code> 才允许；超出则分配失败、加载报错退出，而不是拖垮系统。另加设备侧看门狗（MemAvailable &lt; 1.2 GB 时结束进程）。</li>
+</ol>
+<p>修复后 <code>-ngl 4 --load-mode mmap</code>：<code>CPU_Mapped 7210 MiB + HTP0 1073 MiB</code>，最低 MemAvailable 6.5 GB。</p>
+
+<h2>7 方案 A：层级分层 + MTP 投机解码（27B）</h2>
+<div class="fig">
+<svg viewBox="0 0 760 170" width="100%">
+  <rect x="10" y="20" width="420" height="56" rx="8" fill="#f3f6f9" stroke="#8796a8"/>
+  <text x="220" y="42" text-anchor="middle" font-size="12.5" font-weight="600">层 0 … 64−N−1（CPU，mmap 文件页）</text>
+  <text x="220" y="62" text-anchor="middle" font-size="11" fill="#5b6676">缺页时从 UFS 读取；页缓存天然是 LRU 层</text>
+  <rect x="440" y="20" width="310" height="56" rx="8" fill="#e8f4f4" stroke="#0b6e6e"/>
+  <text x="595" y="42" text-anchor="middle" font-size="12.5" font-weight="600">层 64−N … 63（NPU 常驻 rpcmem）</text>
+  <text x="595" y="62" text-anchor="middle" font-size="11" fill="#5b6676">N 由每层 tile 字节与内存预算自动求得</text>
+  <rect x="10" y="98" width="740" height="56" rx="8" fill="#fff" stroke="#b5541c"/>
+  <text x="380" y="120" text-anchor="middle" font-size="12.5" font-weight="600">MTP（blk.64 nextn 层）草拟 k=3 个 token → 主模型一次前向验证 [id_last, d1, d2, d3]</text>
+  <text x="380" y="140" text-anchor="middle" font-size="11" fill="#5b6676">一次读遍所有权重产出 1 + 接受数 个 token；DeltaNet 状态不能回滚后缀 → 部分接受时用状态检查点恢复</text>
+</svg>
+<figcaption>图 2 方案 A：稠密模型的“常驻 + 分页 + 摊薄”</figcaption>
+</div>
+<p><b>为什么 MTP 是关键杠杆。</b>稠密模型每个 token 都要读完全部权重，访问模式没有冷热差别，缓存无效；能做的只有让一次读取服务多个 token。Qwen3.8 自带 1 层 MTP（ggml-org 也发布了单独的 mtp GGUF）。llama.cpp 的 <code>draft-mtp</code> 用主模型最后的隐状态驱动 nextn 层草拟，主模型在一个 ubatch 里验证；对 Qwen3.5 混合架构（DeltaNet 递归状态不支持删后缀），部分接受时 <code>common_prompt_checkpoint</code> 恢复状态再重放已接受 token。</p>
+<table>
+  <tr><th>配置（27B IQ2_XS，2048 ctx，同一提示）</th><th class="n">prefill tok/s</th><th class="n">decode tok/s</th><th>备注</th></tr>
+  <tr><td>纯 CPU，mmap（--device none）</td><td class="n">1.19</td><td class="n">0.11</td><td>最低 MemAvailable 7.25 GB</td></tr>
+  <tr><td>NPU 4 层 + CPU 60 层，mmap</td><td class="n">1.31</td><td class="n">0.09</td><td>CPU 层是瓶颈</td></tr>
+  <tr><td>NPU 14 层 + CPU 50 层，mmap，无 MTP</td><td class="n">1.19</td><td class="n">0.10</td><td>每次前向从闪存重读约 7 GB</td></tr>
+  <tr><td>同上 + MTP（草拟 3）</td><td class="n">1.28</td><td class="n">0.193</td><td>接受 31/78（39.7%），每次前向 2.2 token，1.93×</td></tr><tr><td>同上 + 逐层预取（WILLNEED，提前 2 层）</td><td class="n">1.29</td><td class="n">0.113</td><td class="bad">更慢：读取量不变（201 vs 197 GB），读速 0.66→0.40 GB/s</td></tr><tr><td><b>同上 MTP + O_DIRECT 逐层流式（LLAMA_WEIGHT_STREAM）</b></td><td class="n"><b>2.14</b></td><td class="n"><b>0.614</b></td><td class="ok">3.2×；输出与 mmap 版本逐字一致；有效读速 1.46 GB/s</td></tr>
+</table>
+<p><b>瓶颈分析。</b>NPU 只能常驻 14 层（tile 膨胀后约 200 MB/层，预算约 2.9 GB），其余 50 层（约 6.8 GB）每次前向都要从闪存重读——页缓存只剩约 2.3 GB，装不下。<code>/proc/&lt;pid&gt;/io</code> 显示 57 个 token 期间读取 197 GB（每次目标前向约 7.5 GB），而 mmap 缺页的实际读速只有约 0.66 GB/s，远低于 O_DIRECT 大块读的 3.9 GB/s。依赖页缓存的 WILLNEED 预取在工作集大于缓存时无效且有害（与缺页读争用同一 UFS 队列，读速降到 0.40 GB/s），App 默认关闭。<br><b>O_DIRECT 逐层流式（本项目新增，<code>src/llama-weight-stream.cpp</code>）。</b>加载后通过 <code>/proc/self/maps</code> 把每个 CPU 层的权重张量映射回（文件，偏移），合并为 4 KiB 对齐的连续读区间；分配两块轮换缓冲区（每块 = 最大层的字节数），4 个 I/O 线程以 4 MiB 块 <code>pread(O_DIRECT)</code>。每层开头插入一个 CPU 自定义算子：恢复上一层张量的 mmap 指针、等待本层缓冲区就绪、把本层张量的 <code>data</code> 指向缓冲区、再向另一块缓冲区提交下一流式层的读取——最后一个 CPU 层之后提交下一次前向的第 0 层，恰好与 NPU 上 14 层的计算重叠。读取绕过页缓存，不再与常驻数据争用内存。实测解码 0.193 → <b>0.614 tok/s（3.2×）</b>，prefill 1.28 → 2.14 tok/s，生成文本与 mmap 版本逐字一致（MD5 相同），有效读速 1.46 GB/s。MTP 依然叠加生效（1.93× 来自摊薄）。剩余差距来自 CPU 层的计算与读取尚未完全重叠，以及只有 2 块缓冲区；进一步把这些层交给 NPU 计算（rpcmem 环形缓冲）见第 12 节。</p>
+
+<h2>8 方案 B：FFN 神经元块稀疏分页（27B）</h2>
+<p>借鉴 LLM-in-a-flash（行列打包）与 CATS（基于门控激活阈值的稀疏）思想，把稠密 FFN 改造成“块 MoE”：17408 个神经元按 256 一组切成 68 块，每块视为一个专家；门控 matmul 完整计算，用每块的 Σ|SiLU(gate)| 选出 top-m 块，up 与 down 只计算、只读取这 m 块。</p>
+<pre>gate = silu(W_gate · x)                     [17408]      → reshape [256, 68]
+score[b] = Σ_i |gate[i, b]|                 sum_rows(abs(.))  → [68]
+ids = argsort_top_k(score, m)               [m]
+up  = mul_mat_id(reshape(W_up,[5120,256,68]), x, ids)        // W_up 行本来连续：零改动
+h   = get_rows(gate, ids) ⊙ up              [256, m]
+y   = Σ_m mul_mat_id(W_down_blk[256,5120,68], h, ids)        // 需要离线块重排</pre>
+<p><b>无损块重排。</b>ffn_down 的“神经元”是列，按列取会触碰每一行的每一页。离线工具 <code>gguf_ffn_blockify.py</code> 把每行第 j 个 256 值量化块搬到专家 j 下（只移动字节，不重新量化），得到 <code>ffn_down_blk [256, 5120, 68]</code>；MTP 层保持稠密。27B 文件 8.76 GB 重排耗时 17 s，体积不变。图只用现有算子（ABS、SUM_ROWS、ARGSORT/TOP_K、GET_ROWS、MUL_MAT_ID），CPU 与 NPU 都能执行。</p>
+<table>
+  <tr><th>每 token 激活块 m / 68</th><th class="n">FFN 读取比例</th><th class="n">总读取比例*</th><th class="n">PPL</th><th class="n">相对稠密</th></tr>
+  <tr><td>稠密原版</td><td class="n">100%</td><td class="n">100%</td><td class="n">5.943</td><td class="n">—</td></tr>
+  <tr><td>68（全部，正确性校验）</td><td class="n">100%</td><td class="n">100%</td><td class="n">5.943</td><td class="n ok">+0.0%</td></tr>
+  <tr><td>60</td><td class="n">92%</td><td class="n">95%</td><td class="n">6.353</td><td class="n warn">+6.9%</td></tr>
+  <tr><td>51</td><td class="n">83%</td><td class="n">89%</td><td class="n">7.308</td><td class="n warn">+23.0%</td></tr>
+  <tr><td>34</td><td class="n">67%</td><td class="n">79%</td><td class="n">13.50</td><td class="n bad">+127%</td></tr>
+  <tr><td>17</td><td class="n">50%</td><td class="n">68%</td><td class="n">504.4</td><td class="n bad">不可用</td></tr>
+</table>
+<p style="font-size:8.6pt;color:#5b6676">PPL：llama.cpp 文档语料，ctx 512 × 6 块，Mac CPU。*FFN 约占权重 63%，gate 始终全读：FFN 读取比例 = 1/3 + 2/3·m/68。</p>
+<p><b>真机结果（m=60，NPU 14 层，ub=128）：</b>开 MTP 0.079 tok/s（接受率降到 26%），不开 MTP 0.050 tok/s；输出文本正确（NPU 上 reshape 视图 + MUL_MAT_ID 路径验证无误）。与方案 A 相比<b>闪存读取量没有下降</b>（225 vs 223 GB / 31 token），而读速减半（选中的块打乱了顺序访问，内核预读失效）。原因：m=60 时理论读取只少 5%，被访问模式的变差抵消；开 MTP 时 4 个 token 的选中块取并集几乎覆盖全部块，块稀疏与批量验证天然冲突，同时稀疏化降低了 MTP 草稿与主模型的一致性。只有 m ≤ 34 才显著减少读取，但精度不可接受（PPL +127%）。<b>结论：在不训练预测器的前提下，块稀疏 FFN 在该设备上没有收益。</b>它作为可工作的实现保留（离线工具、计算图、App 模式），改进方向见第 12 节。</p>
+
+<h2>9 方案 C：MoE 专家分页（125B Qwen3.8-Flash-Next）</h2>
+<p>这是 Strata 所针对的模型：48 层，每层 512 个专家（FF 640）+ 1 个共享专家，每 token 激活 10 个；另有一张 29 GB 的 n-gram PLE 嵌入表（每 token 只读少数几行）、超连接（hyper-connection）与 MTP 层。llama.cpp 以 <code>qwen4exp</code> 架构支持它。UD-IQ1_S 三个分片共 72.5 GB。</p>
+<div class="fig">
+<svg viewBox="0 0 760 186" width="100%">
+  <rect x="10" y="10" width="230" height="118" rx="8" fill="#e8f4f4" stroke="#0b6e6e"/>
+  <text x="125" y="32" text-anchor="middle" font-size="12.5" font-weight="600">NPU（rpcmem）</text>
+  <text x="22" y="56" font-size="11">注意力 / DeltaNet</text><text x="22" y="74" font-size="11">路由器 ffn_gate_inp</text>
+  <text x="22" y="92" font-size="11">共享专家 / 超连接</text><text x="22" y="110" font-size="11">（-ngl 40 = 后 40 层）</text>
+  <rect x="265" y="10" width="230" height="118" rx="8" fill="#f3f6f9" stroke="#8796a8"/>
+  <text x="380" y="32" text-anchor="middle" font-size="12.5" font-weight="600">RAM 页缓存（LRU）</text>
+  <text x="277" y="56" font-size="11">最近用过的专家页</text><text x="277" y="74" font-size="11">PLE 表的热行</text>
+  <text x="277" y="92" font-size="11">CPU 2 线程计算路由专家</text>
+  <rect x="520" y="10" width="230" height="118" rx="8" fill="#fff" stroke="#b5541c"/>
+  <text x="635" y="32" text-anchor="middle" font-size="12.5" font-weight="600">UFS 闪存</text>
+  <text x="532" y="56" font-size="11">24,576 个路由专家</text><text x="532" y="74" font-size="11">29 GB n-gram PLE 表</text>
+  <text x="532" y="92" font-size="11">2.6–3.9 GB/s 顺序读</text>
+  <text x="380" y="152" text-anchor="middle" font-size="11" fill="#0b6e6e">路由感知预取：topk(l) → 6 线程并行 pread 本层 10 个专家 × gate/up/down 入页缓存</text>
+  <text x="380" y="172" text-anchor="middle" font-size="11" fill="#0b6e6e">预测：router(l+1) · x(l) → topk → 后台预读下一层，与本层计算重叠</text>
+</svg>
+<figcaption>图 3 方案 C：三级专家存储与路由感知预取</figcaption>
+</div>
+<p><b>预取实现</b>完全在计算图里完成：<code>build_moe_ffn</code> 在得到 <code>selected_experts</code> 后插入一个只在 CPU 上执行的自定义算子（<code>ggml_custom_4d</code>，参数为 ids 与三个专家张量），读出 ids 去重后对每个专家切片 <code>data + e·nb[2]</code>、长度 <code>nb[2]</code> 批量发出 <code>MADV_WILLNEED</code>（复用 <code>llama_prefetch</code>），内核即可并发发起闪存读，而不是由计算线程逐页缺页。等级 2 时 <code>qwen4exp</code> 在第 l 层额外计算 <code>argsort_top_k(W_router(l+1) · x_l, 10)</code> 并预取第 l+1 层专家——这正是 Strata 的 lookahead（相邻层残差流变化小，Strata 报告约一半的 SSD 读被提前命中）。<br><b>等级 3（默认）：并行预读。</b>手机上等级 2（<code>WILLNEED</code>，含下一层预测）实测只有 0.08 tok/s，与关闭预取的 0.06 相近——<code>WILLNEED</code> 只是提示，计算线程仍会先于读取到达并逐页缺页。于是新增 <code>llama_page_fill</code>（<code>src/llama-weight-stream.cpp</code>）：通过 <code>/proc/self/maps</code> 把专家切片地址映射回（分片文件，偏移），按 4 MiB 块分发给一个常驻 I/O 线程池（<code>LLAMA_FILL_THREADS</code>，默认 6）做普通 <code>pread</code>——读入的数据留在页缓存，随后计算线程访问 mmap 时直接命中。本层的读取同步等待（读完才算），预测的下一层异步提交；同时对每个专家张量做一次 <code>MADV_RANDOM</code>，关闭模型映射默认的顺序预读。对照：关闭预取时缺页按顺序预读把相邻专家一起读入，一次 32 token 的运行从闪存读了约 1.2 TB；开启等级 3 后同样的运行约 60 GB（两项改动一起生效，未单独拆分 <code>MADV_RANDOM</code> 的贡献）。</p>
+<table>
+  <tr><th>配置（125B UD-IQ1_S）</th><th class="n">prefill tok/s</th><th class="n">decode tok/s</th><th class="n">闪存读 / token</th><th>备注</th></tr>
+  <tr><td>手机：稠密部分 48 层全部上 NPU（-ngl 999，专家 -ot CPU）</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="warn">加载被 rpcmem 预算保护拦下：已分配 3074 MiB，再分配 474 MiB 会使剩余低于 2 GiB 保留</td></tr>
+  <tr><td>手机 -ngl 40，6 线程：预取关闭 / 等级 2（WILLNEED）/ 等级 3（并行预读）</td><td class="n">0.78 / — / 1.00</td><td class="n">0.06 / 0.08 / 0.10</td><td class="n">≈38 / — / ≈1.9 GB</td><td>关闭与等级 3 冷却到 45 °C 以下交替各测两次，结果一致；等级 2 为单次；CPU 频率上限 1.90 / 1.65 GHz</td></tr><tr><td>同上 6 线程，等级 3，首次运行（频率上限较高）</td><td class="n">2.28</td><td class="n">0.42</td><td class="n">≈1.9 GB</td><td>读取量相同，速度差 4× 来自 CPU 频率——说明瓶颈在 CPU 侧而不在闪存</td></tr><tr><td>线程扫描（等级 3，-ngl 40，16 token）：1 / 2 / 3 / 4 / 5 / 6 / 8 线程</td><td class="n">0.98 / 1.53 / 1.29 / 1.23 / 1.14 / 1.09 / 1.06</td><td class="n">0.69 / 1.06 / 0.21 / 0.15 / 0.13 / 0.10 / 0.09</td><td class="n">—</td><td>2 线程最快；<code>--poll 0</code> 对 6 线程无改善（0.10），2 线程时反而略慢（0.90）</td></tr><tr><td><b>手机 -ngl 40，2 线程，等级 3，64 token</b></td><td class="n"><b>1.45</b></td><td class="n"><b>1.12</b></td><td class="n">≈1.7 GB</td><td class="ok">比最初的 0.06 快 18×；文本连贯；同配置关闭预取仅 0.07（645 GB）</td></tr>
+  <tr><td>参考：Mac（M 系列，16 GB，纯 CPU，mmap），预取 0 / 2，页缓存预热后交替测</td><td class="n">1.2</td><td class="n">0.63 / 0.61</td><td class="n">—</td><td>输出正确；预取在快速 SSD + 大页缓存上无收益（差异在噪声内）</td></tr>
+</table>
+<p><b>每 token 读取量。</b>每个专家 FF=640、隐藏 2560，UD-IQ1_S 下平均约 1.6 MB（路由专家约 37 GiB / 24,576 个）；一个 token 经过 48 层 × 10 个专家，全部未命中约 0.78 GB；另有 CPU 上 8 个稠密层（约 0.5 GB）和输出头（Q4_K，341 MiB）。实测等级 3 每 token 约 1.7–1.9 GB（含预测失误的下一层预读与加载期读取）。<br><b>瓶颈定位。</b>①关闭预取时缺页的顺序预读把相邻专家一起读入，读取量放大约 20 倍（1.2 TB / 32 token），0.06 tok/s。②并行预读把读取压回约 60 GB，但 6 线程下仍只有 0.10 tok/s——此时闪存平均只读 0.065 GB/s，远低于实测顺序读 1.95 GB/s，说明 I/O 并非瓶颈。按线程采样 <code>/proc/&lt;pid&gt;/task/*/stat</code>：6 个计算线程几乎一直处于运行态（主线程 69%、工作线程约 46% 的 CPU），预读线程合计不到 3%。③同一配置首次运行 0.42 tok/s、之后 0.10：读取量完全相同，差别来自厂商温控对 CPU 的限频（scaling_max_freq 被压到 1.90 / 1.65 GHz，硬件上限 3.32 / 3.80 GHz，即使温度传感器只有 36–45 °C；shell 用户无法读取性能计数器，也不修改系统温控设置）。<br><b>线程数是关键。</b>该模型每次前向的计算图有 <b>8,555 个节点、238 个 NPU/CPU 分段</b>（<code>-ngl 40</code>，日志 <code>sched_reserve</code>），绝大多数是超连接、PLE、路由与每层 10 个小专家矩阵这类小算子；CPU 上每个算子结束都要在全部计算线程间做一次屏障，每个分段切换还要等 NPU 往返。再加上 6 个预读线程与 FastRPC 线程挤在同一组被限频的核上，线程越多同步开销越大。扫描结果 1/2/3/4/6 线程 = 0.69/1.06/0.21/0.15/0.10 tok/s，<code>--poll 0</code>（不自旋）并不能挽回，说明代价在屏障本身而不是忙等。<b>2 线程 + 等级 3 预读：decode 1.12 tok/s、prefill 1.45 tok/s（64 token 持续），比最初快 18 倍</b>；同样的 2 线程关闭预取只有 0.07，两项优化缺一不可。方案 A 同样受益：限频状态下 2/4/6 线程 = 0.48/0.17/0.19 tok/s（MTP 接受率不变），App 默认改为 2 线程。<br><b>Mac 参考。</b>同一 72.5 GB 文件在 16 GB 内存的 Mac 上纯 CPU + mmap 运行 0.63 tok/s；快 SSD + 大页缓存下缺页本身不是瓶颈，预取等级 0 / 2 差异在噪声内。手机经过上述优化后反超 Mac 参考。<br><b>已知问题。</b>约 30 次 125B 运行中出现 1 次 prefill 阶段 CPU <code>set_rows</code> 的 KV 行索引越界断言（<code>ggml-cpu/ops.cpp:5488</code>），同配置重跑正常；疑与 CPU 分段直接读取 NPU 侧可见的计算缓冲、而异步 NPU 队列仍在复用该缓冲有关，待在 Hexagon 后端的同步逻辑中定位。</p>
+
+<h2>10 三方案对比</h2>
+<table>
+  <tr><th></th><th>A 层级分层 + MTP</th><th>B FFN 块稀疏</th><th>C MoE 专家分页</th></tr>
+  <tr><td>适用模型</td><td>任何稠密模型</td><td>SwiGLU 稠密模型</td><td>MoE 模型</td></tr>
+  <tr><td>每 token 需读权重</td><td>全部（常驻部分除外），MTP 摊薄</td><td>gate 全部 + m/68 的 up/down</td><td>10/512 的专家 + 稠密部分</td></tr>
+  <tr><td>精度</td><td class="ok">无损（MTP 验证保证输出与原模型一致）</td><td class="warn">有损，随 m 下降</td><td class="ok">无损</td></tr>
+  <tr><td>离线处理</td><td>无</td><td>ffn_down 块重排（无损，17 s）</td><td>无</td></tr>
+  <tr><td>实测 decode</td><td>0.614 tok/s</td><td>0.079 tok/s</td><td>1.12 tok/s</td></tr>
+  <tr><td>扩展到更大模型</td><td>受闪存带宽线性限制</td><td>最多省约 1/3</td><td class="ok">激活参数决定速度，总参数只占闪存</td></tr>
+</table>
+<p><b>结论。</b>在这台 12 GB 手机上，速度由两件事决定：每生成一个 token 要从闪存读多少字节、以什么方式读；以及 CPU 侧的同步开销。稠密 27B（方案 A）每次前向必须读约 7 GB：O_DIRECT 逐层流式把读速从 0.66 提到约 1.5 GB/s，再用 MTP 把一次读取摊到 2.2 个 token，0.614 tok/s，比最初的 0.10 快约 6 倍，输出逐字不变。方案 B 的块稀疏在不训练预测器时省不下读取，并与 MTP 冲突，实测无收益。方案 C 的 MoE 每 token 只需约 0.8 GB 专家权重，总参数量 4.6 倍于 27B 却读得更少；并行预读把缺页放大的 1.2 TB 压回 60 GB、2 线程去掉同步开销后达到 <b>1.12 tok/s，是三个方案中最快的</b>——“更大的模型反而更快”，因为速度取决于激活参数而不是总参数。限频是这台设备上最大的不确定因素：同一配置在不同频率上限下可相差 4 倍，表中数字均注明了测量时的状态。</p>
+
+<h2>11 EdgeAgent App 与 RSI 自进化</h2>
+<div class="two">
+<div>
+<p><b>推理引擎（C++/JNI）。</b>模式即命令行参数：App 把 A/B/C 配置拼成参数数组交给 <code>common_params_parse</code>，复用 llama-cli 已验证的选项处理；生成循环移植自 <code>speculative-simple</code>。对话为追加式时只 prefill 新增 token（混合模型状态不可回滚，前缀不匹配则整段重算）；流式输出按 UTF-8 字符边界切分。环境变量（块数、预取等级）每次建图时读取，切换模式无需重启进程。FastRPC 搜索路径在加载 native 库之前设置。</p>
+<p><b>Bench 面板（常驻顶部）。</b>Prefill / Decode tok/s、TTFT、MTP 接受率与每次前向 token 数；RSS（匿名 / 文件页）、NPU rpcmem（后端导出的累计分配）、MemAvailable、闪存实时读速（<code>/proc/self/io</code> read_bytes 差分）。</p>
+<p><b>Agent。</b>Qwen 原生工具调用格式（<code>&lt;tool_call&gt;</code> / <code>&lt;tool_response&gt;</code>），ReAct 循环最多 N 步；工具：计算器、时间、长期记忆（字符二元组检索）、笔记、设备状态、提醒与打开网页（后两者需要用户确认）。</p>
+</div>
+<div>
+<p><b>RSI 自进化（策略层 + 评测门控）。</b>可进化的“基因组” = 系统指令 + 技能库 + 温度/步数；模型权重、工具与代码不变。</p>
+<ol>
+  <li><b>经验</b>：每个任务记录工具调用、出错次数、步数、用户 👍/👎。</li>
+  <li><b>反思</b>：模型读最近任务与当前基因组，输出 JSON 补丁（改写指令、增删技能、温度）。</li>
+  <li><b>评测</b>：候选与现任在 8 项可程序判定的任务上对比（计算、时间、记忆写入与回忆、JSON 格式、翻译、长度约束、提醒参数、笔记写入），沙箱执行，副作用只记录不执行。</li>
+  <li><b>门控</b>：候选得分 &gt; 现任 + 0.02 才采纳；所有版本连同理由与分项得分归档，可一键恢复；默认每 5 个任务自动进化一轮。</li>
+</ol>
+</div>
+</div>
+<div class="shots"><figure class="fig"><img src="shots/chat.png"><figcaption>对话 + 顶部 Bench（8B：prefill 22 / decode 8.69 tok/s）</figcaption></figure><figure class="fig"><img src="shots/modes.png"><figcaption>模式页：A/B/C 与模型文件状态</figcaption></figure></div>
+<p><b>验证。</b>真机端到端：App 内加载 Qwen3-8B（NPU 自动预算 2.9 GB、其余层 mmap），首轮对话 prefill 22.0 tok/s、decode 8.69 tok/s，TTFT 33.6 s（首轮需 prefill 约 740 token 的工具定义系统提示，后续轮次复用上下文）。FastRPC 在应用沙箱内正常建立会话（需在清单中声明 <code>libcdsprpc.so</code> 与 <code>libOpenCL.so</code> 两个厂商库；模型放在应用内部存储，由应用 uid 拥有）。JVM 单元测试 8/8 通过：计算器、ChatML/工具调用渲染与解析、中文记忆检索、Agent 工具循环（第二轮提示严格延续第一轮，保证上下文复用）、沙箱中副作用工具只记录、反思补丁解析，以及进化门控：更优候选被采纳、更差候选被拒绝、所有版本归档并可在重新加载后恢复。</p>
+
+<h2>12 局限与后续工作</h2>
+<ul>
+  <li><b>压缩 tile。</b>LUT3 / K-quant tile 每 16 权重一个 fp16 scale，额外 1 bpw；改为 4 位整数 scale + 每超级块 fp16（与 K-quant 原格式同思路）可降到约 3.3 bpw，27B 的 NPU 常驻层可增加约 20%。</li>
+  <li><b>NPU 流式环形缓冲。</b>O_DIRECT 逐层流式已实现（CPU 层 3.2×）；下一步把流式层的缓冲区换成 rpcmem、由 NPU 计算（主机侧按层 repack 或直接存 tile 格式的文件），去掉 CPU 计算这一段，速度上限变为闪存带宽（约 3.5 GB/s / 6.8 GB ≈ 0.5 次前向/s，叠加 MTP 约 1.1 tok/s）。</li>
+  <li><b>NPU 专家缓存。</b>llama.cpp 已有 MoE 设备缓存（<code>--moe-cache-mib</code>），但 Hexagon repack 需要整张量写入；增加按专家切片 repack 后即可把热门专家放到 NPU 上算（Strata 的 GPU 专家缓存在 NPU 上的对应物）。</li>
+  <li><b>减少分段与同步（方案 C 的下一步）。</b>2 线程后瓶颈变为每次前向 238 个 NPU/CPU 分段的往返与 8,555 个算子的调度。可行方向：把专家 MUL_MAT_ID 之外的小算子（超连接、PLE 混合、路由 top-k）融合或整体留在 NPU，使每层只切换一次；输出头（341 MiB）上 NPU；按层把“读入专家 → 计算”流水化，让页填充直接在计算线程空闲时进行。</li>
+  <li><b>限频感知调度。</b>厂商温控会把 CPU 上限压到硬件的 43–57%，同一配置速度可差 4 倍；App 可读取 <code>scaling_max_freq</code> 显示在 Bench 栏，并据此自动选择线程数。</li>
+  <li><b>块稀疏预测器。</b>方案 B 的 gate 全读且按 256 粒度选块，精度损失大；训练轻量预测器、离线按共激活统计重排神经元（需对 down 重新量化）或使用 ReLU 化微调模型可显著改善。</li>
+  <li><b>上游化。</b>IQ 系列 NPU 支持与 MUL_MAT_ID 越界修复适合单独整理为 PR；按 llama.cpp 的贡献规则，需由开发者本人审查、撰写说明并提交。</li>
+</ul>
+
+<h3>附录 A：Hexagon 后端算子支持（ggml_backend_hexagon_device_supports_op）</h3>
+<p style="font-size:8.8pt;text-align:left">视图类 NONE/RESHAPE/VIEW/PERMUTE/TRANSPOSE；二元 ADD/SUB/MUL/DIV（F32/F16，可广播）、ADD_ID；MUL_MAT、MUL_MAT_ID；NORM/L2_NORM/RMS_NORM/SCALE/CLAMP/LEAKY_RELU/SQR/SQRT/LOG；SUM/SUM_ROWS/ARGMAX；POOL_1D/2D（AVG/MAX）；SOFT_MAX（无 sinks）；UNARY：NEG/EXP/SIGMOID/SOFTPLUS/TANH/ABS/SILU/GELU/GELU_QUICK/GELU_ERF/RELU/STEP；GLU：SWIGLU/SWIGLU_OAI/SWIGLU_CLAMP/GEGLU/GEGLU_QUICK/GEGLU_ERF；ROPE；FLASH_ATTN_EXT；SET_ROWS/GET_ROWS；DUP/CPY/CONT；REPEAT；ARGSORT/TOP_K；SSM_CONV；IM2COL；GATED_DELTA_NET；CUMSUM；CONCAT；FILL；DIAG；SOLVE_TRI；TRI；PAD；ROLL。</p>
+<h3>附录 B：复现命令</h3>
+<pre># 引擎（llama.cpp 分支 hexagon-27b-streaming）
+python3 scripts/snapdragon/build.py --target adb
+
+# 方案 B 的模型文件（无损块重排）
+python3 gguf-py/gguf/scripts/gguf_ffn_blockify.py 27B.gguf 27B-blk256.gguf
+
+# 方案 A（手机上，O_DIRECT 逐层流式）
+LLAMA_WEIGHT_STREAM=1 llama-speculative-simple -m 27B.gguf --load-mode mmap --no-repack -ngl 14 --device HTP0:0 \
+  -fa on -ctk q8_0 -ctv q8_0 --spec-type draft-mtp --spec-draft-n-max 3
+
+# 方案 B
+LLAMA_FFN_SPARSE_BLOCKS=60 llama-speculative-simple -m 27B-blk256.gguf ... -b 128 -ub 128
+
+# 方案 C（并行预读 + 2 线程）
+LLAMA_EXPERT_PREFETCH=3 llama-completion -m Flash-Next-UD-IQ1_S-00001-of-00003.gguf --load-mode mmap --no-repack \
+  -ngl 40 -ot 'ffn_(up|gate|down|gate_up)_exps=CPU' --device HTP0:0 -fa on -ctk q8_0 -ctv q8_0 -t 2
+
+# NPU 算子正确性
+test-backend-ops -o MUL_MAT -b HTP0:0 -p 'type_a=iq2_xxs,'</pre>
+</body>
+</html>

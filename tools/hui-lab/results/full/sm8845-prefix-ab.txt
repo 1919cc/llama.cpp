@@ -1,0 +1,194 @@
+=== rep=1 mode=--no-kv-unified batt=465
+verify rep=0 client=0 same=False cache_n=0 len=211
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=0 client=1 same=False cache_n=0 len=211
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+verify rep=0 client=2 same=False cache_n=0 len=201
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+verify rep=0 client=3 same=True cache_n=805 len=189
+verify rep=1 client=0 same=False cache_n=805 len=192
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+verify rep=1 client=1 same=False cache_n=805 len=195
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=1 client=2 same=False cache_n=805 len=201
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=1 client=3 same=True cache_n=805 len=201
+verify mismatches=6
+cross round=0 client=0 ttft=275ms prompt_n=27 prompt_tps=132 cache_n=805 decode_tps=18.6
+cross round=0 client=1 ttft=274ms prompt_n=27 prompt_tps=138 cache_n=805 decode_tps=18.6
+cross round=0 client=2 ttft=276ms prompt_n=27 prompt_tps=152 cache_n=805 decode_tps=18.6
+cross round=0 client=3 ttft=275ms prompt_n=27 prompt_tps=145 cache_n=805 decode_tps=18.6
+cross round=1 client=0 ttft=331ms prompt_n=27 prompt_tps=131 cache_n=805 decode_tps=18.5
+cross round=1 client=1 ttft=331ms prompt_n=27 prompt_tps=138 cache_n=805 decode_tps=18.6
+cross round=1 client=2 ttft=333ms prompt_n=27 prompt_tps=152 cache_n=805 decode_tps=18.6
+cross round=1 client=3 ttft=331ms prompt_n=27 prompt_tps=145 cache_n=805 decode_tps=18.6
+cross round=2 client=0 ttft=357ms prompt_n=27 prompt_tps=124 cache_n=805 decode_tps=18.5
+cross round=2 client=1 ttft=358ms prompt_n=27 prompt_tps=131 cache_n=805 decode_tps=18.5
+cross round=2 client=2 ttft=360ms prompt_n=27 prompt_tps=147 cache_n=805 decode_tps=18.5
+cross round=2 client=3 ttft=358ms prompt_n=27 prompt_tps=139 cache_n=805 decode_tps=18.5
+ways=1 cache=True n=64 think=0s reqs=18 wall=40s total_tps=28.5 stream_tps_med=30.2 ttft_med=147ms ttft_max=278ms
+ways=2 cache=True n=64 think=0s reqs=34 wall=41s total_tps=53.6 stream_tps_med=30.5 ttft_med=254ms ttft_max=275ms
+ways=4 cache=True n=64 think=0s reqs=32 wall=42s total_tps=48.9 stream_tps_med=17.3 ttft_med=1477ms ttft_max=3203ms
+ways=4 cache=True n=64 think=5.0s reqs=26 wall=100s total_tps=16.7 stream_tps_med=16.1 ttft_med=1173ms ttft_max=4147ms
+borrowed=0 procs=1 err=0
+=== rep=1 mode=--kv-unified batt=467
+Traceback (most recent call last):
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 183, in <module>
+    {"prefix": mode_prefix, "cross": mode_cross, "ways": mode_ways, "verify": mode_verify}[a.mode](a)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 110, in mode_verify
+    ref = [stream(a.url, prefix + q, a.n, False, temp=0, seed=1)["text"] for q in qs]
+           ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 42, in stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1350, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1325, in do_open
+    r = h.getresponse()
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 1459, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 305, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+                             " response")
+http.client.RemoteDisconnected: Remote end closed connection without response
+Traceback (most recent call last):
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 183, in <module>
+    {"prefix": mode_prefix, "cross": mode_cross, "ways": mode_ways, "verify": mode_verify}[a.mode](a)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 86, in mode_cross
+    stream(a.url, prefix + " question warm", 1, True)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/will/code/inference/hexagon-lab/server_load.py", line 42, in stream
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 187, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 487, in open
+    response = self._open(req, data)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 504, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1350, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1325, in do_open
+    r = h.getresponse()
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 1459, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "/opt/miniconda3/lib/python3.14/http/client.py", line 305, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+                             " response")
+http.client.RemoteDisconnected: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+no completed requests
+client 1 failed: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+no completed requests
+client 3 failed: Remote end closed connection without response
+client 2 failed: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+client 1 failed: Remote end closed connection without response
+no completed requests
+client 2 failed: Remote end closed connection without response
+client 0 failed: Remote end closed connection without response
+client 1 failed: Remote end closed connection without response
+client 3 failed: Remote end closed connection without response
+no completed requests
+borrowed=0 procs=0 err=0
+=== rep=2 mode=--no-kv-unified batt=465
+verify rep=0 client=0 same=True cache_n=0 len=211
+verify rep=0 client=1 same=False cache_n=0 len=211
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+verify rep=0 client=2 same=True cache_n=805 len=201
+verify rep=0 client=3 same=True cache_n=0 len=189
+verify rep=1 client=0 same=False cache_n=805 len=192
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+verify rep=1 client=1 same=False cache_n=805 len=195
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=1 client=2 same=False cache_n=805 len=201
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=1 client=3 same=True cache_n=805 len=201
+verify mismatches=4
+cross round=0 client=0 ttft=283ms prompt_n=27 prompt_tps=142 cache_n=805 decode_tps=18.4
+cross round=0 client=1 ttft=281ms prompt_n=27 prompt_tps=135 cache_n=805 decode_tps=18.4
+cross round=0 client=2 ttft=283ms prompt_n=27 prompt_tps=149 cache_n=805 decode_tps=18.4
+cross round=0 client=3 ttft=280ms prompt_n=27 prompt_tps=129 cache_n=805 decode_tps=18.4
+cross round=1 client=0 ttft=365ms prompt_n=27 prompt_tps=138 cache_n=805 decode_tps=18.4
+cross round=1 client=1 ttft=364ms prompt_n=27 prompt_tps=130 cache_n=805 decode_tps=18.4
+cross round=1 client=2 ttft=366ms prompt_n=27 prompt_tps=146 cache_n=805 decode_tps=18.4
+cross round=1 client=3 ttft=362ms prompt_n=27 prompt_tps=123 cache_n=805 decode_tps=18.4
+cross round=2 client=0 ttft=367ms prompt_n=27 prompt_tps=138 cache_n=805 decode_tps=18.2
+cross round=2 client=1 ttft=366ms prompt_n=27 prompt_tps=130 cache_n=805 decode_tps=18.2
+cross round=2 client=2 ttft=368ms prompt_n=27 prompt_tps=147 cache_n=805 decode_tps=18.2
+cross round=2 client=3 ttft=364ms prompt_n=27 prompt_tps=123 cache_n=805 decode_tps=18.2
+ways=1 cache=True n=64 think=0s reqs=18 wall=41s total_tps=27.9 stream_tps_med=30.2 ttft_med=148ms ttft_max=289ms
+ways=2 cache=True n=64 think=0s reqs=34 wall=41s total_tps=53.3 stream_tps_med=30.2 ttft_med=259ms ttft_max=271ms
+ways=4 cache=True n=64 think=0s reqs=36 wall=44s total_tps=52.5 stream_tps_med=17.1 ttft_med=1428ms ttft_max=2076ms
+ways=4 cache=True n=64 think=5.0s reqs=25 wall=70s total_tps=23.0 stream_tps_med=16.6 ttft_med=1073ms ttft_max=4163ms
+borrowed=0 procs=1 err=0
+=== rep=2 mode=--kv-unified batt=470
+verify rep=0 client=0 same=True cache_n=805 len=211
+verify rep=0 client=1 same=False cache_n=805 len=211
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases ('
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+verify rep=0 client=2 same=True cache_n=805 len=201
+verify rep=0 client=3 same=True cache_n=805 len=189
+verify rep=1 client=0 same=True cache_n=805 len=192
+verify rep=1 client=1 same=False cache_n=805 len=195
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases related'
+verify rep=1 client=2 same=False cache_n=805 len=201
+  cold: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., '
+  warm: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., '
+verify rep=1 client=3 same=True cache_n=805 len=201
+verify mismatches=3
+cross round=0 client=0 ttft=265ms prompt_n=27 prompt_tps=150 cache_n=805 decode_tps=17.6
+cross round=0 client=1 ttft=262ms prompt_n=27 prompt_tps=135 cache_n=805 decode_tps=17.6
+cross round=0 client=2 ttft=260ms prompt_n=27 prompt_tps=128 cache_n=805 decode_tps=17.6
+cross round=0 client=3 ttft=262ms prompt_n=27 prompt_tps=142 cache_n=805 decode_tps=17.6
+cross round=1 client=0 ttft=348ms prompt_n=27 prompt_tps=148 cache_n=805 decode_tps=17.5
+cross round=1 client=1 ttft=347ms prompt_n=27 prompt_tps=140 cache_n=805 decode_tps=17.4
+cross round=1 client=2 ttft=345ms prompt_n=27 prompt_tps=127 cache_n=805 decode_tps=17.4
+cross round=1 client=3 ttft=345ms prompt_n=27 prompt_tps=133 cache_n=805 decode_tps=17.4
+cross round=2 client=0 ttft=353ms prompt_n=27 prompt_tps=128 cache_n=805 decode_tps=17.4
+cross round=2 client=1 ttft=356ms prompt_n=27 prompt_tps=149 cache_n=805 decode_tps=17.5
+cross round=2 client=2 ttft=354ms prompt_n=27 prompt_tps=141 cache_n=805 decode_tps=17.4
+cross round=2 client=3 ttft=352ms prompt_n=27 prompt_tps=134 cache_n=805 decode_tps=17.4
+ways=1 cache=True n=64 think=0s reqs=18 wall=42s total_tps=27.7 stream_tps_med=29.4 ttft_med=143ms ttft_max=249ms
+ways=2 cache=True n=64 think=0s reqs=30 wall=40s total_tps=48.0 stream_tps_med=26.0 ttft_med=248ms ttft_max=262ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=42s total_tps=61.0 stream_tps_med=17.0 ttft_med=492ms ttft_max=535ms
+ways=4 cache=True n=64 think=5.0s reqs=33 wall=69s total_tps=30.6 stream_tps_med=25.1 ttft_med=228ms ttft_max=522ms
+borrowed=3 procs=1 err=0

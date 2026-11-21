@@ -1,0 +1,111 @@
+##### Qwen3.5-2B-UD-Q2_K_XL
+=== fa=1 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 13/13
+  seq1 empty kv                      max|dlogit|=0.000000 top 13/13
+  seq0 two batches                   max|dlogit|=0.263270 top 13/13
+  seq1 after other seq               max|dlogit|=0.000000 top 13/13
+  seq1 after removed seq             max|dlogit|=0.000000 top 13/13
+  seq2 in reused cells               max|dlogit|=0.000000 top 13/13
+  full seq_cp, seq1 continues        max|dlogit|=0.263270 top 13/13
+  full seq_cp, seq0 continues        max|dlogit|=0.263270 top 13/13
+=== fa=1 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 13/13
+  seq1 empty kv                      max|dlogit|=0.000000 top 13/13
+  seq0 two batches                   max|dlogit|=0.263270 top 13/13
+  seq1 after other seq               max|dlogit|=0.241720 top 13/13
+  seq1 after removed seq             max|dlogit|=0.000000 top 13/13
+  seq2 in reused cells               max|dlogit|=0.000000 top 13/13
+  full seq_cp, seq1 continues        max|dlogit|=0.263270 top 13/13
+  full seq_cp, seq0 continues        max|dlogit|=0.263270 top 13/13
+=== fa=0 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 13/13
+  seq1 empty kv                      max|dlogit|=0.000000 top 13/13
+  seq0 two batches                   max|dlogit|=0.230254 top 13/356
+  seq1 after other seq               max|dlogit|=0.000000 top 13/13
+  seq1 after removed seq             max|dlogit|=0.000000 top 13/13
+  seq2 in reused cells               max|dlogit|=0.000000 top 13/13
+  full seq_cp, seq1 continues        max|dlogit|=0.230254 top 13/356
+  full seq_cp, seq0 continues        max|dlogit|=0.230254 top 13/356
+=== fa=0 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 13/13
+  seq1 empty kv                      max|dlogit|=0.000000 top 13/13
+  seq0 two batches                   max|dlogit|=0.230254 top 13/356
+  seq1 after other seq               max|dlogit|=0.000000 top 13/13
+  seq1 after removed seq             max|dlogit|=0.000000 top 13/13
+  seq2 in reused cells               max|dlogit|=0.000000 top 13/13
+  full seq_cp, seq1 continues        max|dlogit|=0.230254 top 13/356
+  full seq_cp, seq0 continues        max|dlogit|=0.230254 top 13/356
+##### small/LFM2-350M-Q4_0
+=== fa=1 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 7454/7454
+  seq1 empty kv                      max|dlogit|=0.000000 top 7454/7454
+  seq0 two batches                   max|dlogit|=0.488821 top 7454/7454
+  seq1 after other seq               max|dlogit|=0.000000 top 7454/7454
+  seq1 after removed seq             max|dlogit|=0.000000 top 7454/7454
+  seq2 in reused cells               max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq1 continues        max|dlogit|=0.488821 top 7454/7454
+  full seq_cp, seq0 continues        max|dlogit|=0.488821 top 7454/7454
+=== fa=1 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 7454/7454
+  seq1 empty kv                      max|dlogit|=0.000000 top 7454/7454
+  seq0 two batches                   max|dlogit|=0.488821 top 7454/7454
+  seq1 after other seq               max|dlogit|=0.279923 top 7454/7454
+  seq1 after removed seq             max|dlogit|=0.000000 top 7454/7454
+  seq2 in reused cells               max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq1 continues        max|dlogit|=0.488821 top 7454/7454
+  full seq_cp, seq0 continues        max|dlogit|=0.488821 top 7454/7454
+=== fa=0 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 7454/7454
+  seq1 empty kv                      max|dlogit|=0.000000 top 7454/7454
+  seq0 two batches                   max|dlogit|=0.000000 top 7454/7454
+  seq1 after other seq               max|dlogit|=0.000000 top 7454/7454
+  seq1 after removed seq             max|dlogit|=0.000000 top 7454/7454
+  seq2 in reused cells               max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq1 continues        max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq0 continues        max|dlogit|=0.000000 top 7454/7454
+=== fa=0 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 7454/7454
+  seq1 empty kv                      max|dlogit|=0.000000 top 7454/7454
+  seq0 two batches                   max|dlogit|=0.000000 top 7454/7454
+  seq1 after other seq               max|dlogit|=0.000000 top 7454/7454
+  seq1 after removed seq             max|dlogit|=0.000000 top 7454/7454
+  seq2 in reused cells               max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq1 continues        max|dlogit|=0.000000 top 7454/7454
+  full seq_cp, seq0 continues        max|dlogit|=0.000000 top 7454/7454
+##### small/qwen2.5-0.5b-instruct-q4_0
+=== fa=1 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 661/661
+  seq1 empty kv                      max|dlogit|=0.000000 top 661/661
+  seq0 two batches                   max|dlogit|=0.336120 top 661/661
+  seq1 after other seq               max|dlogit|=0.000000 top 661/661
+  seq1 after removed seq             max|dlogit|=0.000000 top 661/661
+  seq2 in reused cells               max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq1 continues        max|dlogit|=0.336120 top 661/661
+  full seq_cp, seq0 continues        max|dlogit|=0.336120 top 661/661
+=== fa=1 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 661/661
+  seq1 empty kv                      max|dlogit|=0.000000 top 661/661
+  seq0 two batches                   max|dlogit|=0.336120 top 661/661
+  seq1 after other seq               max|dlogit|=0.299139 top 661/661
+  seq1 after removed seq             max|dlogit|=0.000000 top 661/661
+  seq2 in reused cells               max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq1 continues        max|dlogit|=0.336120 top 661/661
+  full seq_cp, seq0 continues        max|dlogit|=0.336120 top 661/661
+=== fa=0 unified=0
+  repeat seq0                        max|dlogit|=0.000000 top 661/661
+  seq1 empty kv                      max|dlogit|=0.000000 top 661/661
+  seq0 two batches                   max|dlogit|=0.000000 top 661/661
+  seq1 after other seq               max|dlogit|=0.000000 top 661/661
+  seq1 after removed seq             max|dlogit|=0.000000 top 661/661
+  seq2 in reused cells               max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq1 continues        max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq0 continues        max|dlogit|=0.000000 top 661/661
+=== fa=0 unified=1
+  repeat seq0                        max|dlogit|=0.000000 top 661/661
+  seq1 empty kv                      max|dlogit|=0.000000 top 661/661
+  seq0 two batches                   max|dlogit|=0.000000 top 661/661
+  seq1 after other seq               max|dlogit|=0.000000 top 661/661
+  seq1 after removed seq             max|dlogit|=0.000000 top 661/661
+  seq2 in reused cells               max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq1 continues        max|dlogit|=0.000000 top 661/661
+  full seq_cp, seq0 continues        max|dlogit|=0.000000 top 661/661

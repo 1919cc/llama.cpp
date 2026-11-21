@@ -46,4 +46,7 @@ else()
     endif()
     add_subdirectory(results)
     add_subdirectory(hui-debug) # hui_infer
+    if (ANDROID)
+        add_subdirectory(hui-jni) # hui_infer
+    endif()
 endif()

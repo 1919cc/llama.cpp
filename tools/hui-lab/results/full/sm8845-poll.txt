@@ -1,0 +1,17 @@
+ctrl oppoll=1 poll=50 t=6 #0 tg_ts=0.00 wall=65 cap=2265600/1651200
+ctrl oppoll=1 poll=50 t=6 #1 tg_ts=0.00 wall=59 cap=2265600/1651200
+ctrl oppoll=1 poll=50 t=6 #2 tg_ts=0.00 wall=84 cap=2188800/1651200
+nooppoll oppoll=0 poll=50 t=6 #0 tg_ts=0.00 wall=6 cap=2265600/1651200
+nooppoll oppoll=0 poll=50 t=6 #1 tg_ts=0.00 wall=18 cap=2265600/1651200
+nooppoll oppoll=0 poll=50 t=6 #2 tg_ts=0.00 wall=8 cap=2265600/1651200
+nopoll oppoll=1 poll=0 t=6 #0 tg_ts=0.00 wall=6 cap=2265600/1651200
+nopoll oppoll=1 poll=0 t=6 #1 tg_ts=0.00 wall=6 cap=2265600/1651200
+Failed to write while dumping service thermalservice: Broken pipe
+nopoll oppoll=1 poll=0 t=6 #2 tg_ts=0.00 wall=8 cap=2265600/1651200
+neither oppoll=0 poll=0 t=6 #0 tg_ts=0.00 wall=7 cap=2265600/1651200
+neither oppoll=0 poll=0 t=6 #1 tg_ts=0.00 wall=7 cap=2265600/1651200
+neither oppoll=0 poll=0 t=6 #2 tg_ts=0.00 wall=7 cap=2265600/1651200
+t2 oppoll=1 poll=50 t=2 #0 tg_ts=0.00 wall=6 cap=2265600/1651200
+t2 oppoll=1 poll=50 t=2 #1 tg_ts=0.00 wall=5 cap=2265600/1651200
+t2 oppoll=1 poll=50 t=2 #2 tg_ts=0.00 wall=5 cap=2265600/1651200
+POLL_DONE

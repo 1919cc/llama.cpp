@@ -1,0 +1,24 @@
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=827 ttft own=178 borrow=91ms chars=315
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=827 ttft own=158 borrow=81ms chars=309
+verify2 q=2 own==borrow False own_cache=805 borrow_cache=827 ttft own=136 borrow=83ms chars=305
+  own:    'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., "health reads the and photos photos notes reads work assistant music travel phon'
+  borrow: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., "health reads the and photos photos notes reads work assistant music travel phon'
+verify2 fired=3 mismatches=1
+3
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=827 ttft own=157 borrow=98ms chars=269
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=827 ttft own=169 borrow=93ms chars=235
+verify2 q=2 own==borrow False own_cache=805 borrow_cache=827 ttft own=150 borrow=83ms chars=271
+  own:    'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., "2 2: assistant photos about food the notes assistant work family calendar notes'
+  borrow: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., "2 2: assistant photos about food the notes assistant work family calendar notes'
+verify2 fired=3 mismatches=1
+3
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=827 ttft own=175 borrow=95ms chars=315
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=827 ttft own=168 borrow=92ms chars=269
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=827 ttft own=150 borrow=74ms chars=256
+verify2 fired=3 mismatches=0
+3
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=827 ttft own=166 borrow=91ms chars=266
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=827 ttft own=159 borrow=80ms chars=274
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=827 ttft own=150 borrow=80ms chars=305
+verify2 fired=3 mismatches=0
+3

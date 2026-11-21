@@ -1,0 +1,18 @@
+q=1.0 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.39014625549316406, None)
+q=1.1 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.974395751953125, None)
+q=1.2 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.45511627197265625, None)
+q=2.0 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.5872688293457031, None)
+q=2.1 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(28, 0.6144399642944336, 0.14776229858398438)
+q=2.2 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.4812660217285156, None)
+q=3.0 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.4264373779296875, None)
+q=3.1 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.9161529541015625, None)
+q=3.2 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.502082347869873, None)
+q=4.0 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.6147961616516113, None)
+q=4.1 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(23, 0.10715341567993164, 0.048526883125305176)
+q=4.2 own-own div_at,max_dlogp,gap=(-1, 0.0, None)  own-borrow=(-1, 0.5871047973632812, None)
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 61] Connection refused>
+  File "/opt/miniconda3/lib/python3.14/urllib/request.py", line 1324, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 61] Connection refused>

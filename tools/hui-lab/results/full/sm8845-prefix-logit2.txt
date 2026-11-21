@@ -1,0 +1,10 @@
+=== --kv-unified --no-cache-idle-slots
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.9638338088989258, None) cold0-cold2=(23, 0.6721763610839844, 0.05707740783691406) own-cold0=(-1, 0.6137118339538574, None) own-borrow=(-1, 0.6476526260375977, None)
+q=1.1 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.6225490570068359, None) cold0-cold2=(-1, 1.1017398834228516, None) own-cold0=(-1, 0.5473079681396484, None) own-borrow=(-1, 0.9681777954101562, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.7831404209136963, None) cold0-cold2=(-1, 0.9605550765991211, None) own-cold0=(-1, 0.6102070808410645, None) own-borrow=(57, 0.802734375, 0.04370307922363281)
+q=2.1 cold0-cold0=(-1, 0.0, None) cold0-cold1=(28, 0.7579545974731445, 0.0047512054443359375) cold0-cold2=(-1, 0.6029391288757324, None) own-cold0=(-1, 0.4351511001586914, None) own-borrow=(-1, 0.5700769424438477, None)
+=== --no-kv-unified --no-cache-idle-slots
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.0, None)
+q=1.1 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.0, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.0, None)
+q=2.1 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.0, None) cold0-cold2=(-1, 0.0, None) own-cold0=(-1, 0.0, None) own-borrow=(-1, 0.0, None)

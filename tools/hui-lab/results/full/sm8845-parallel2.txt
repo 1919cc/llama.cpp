@@ -1,0 +1,17 @@
+--- np=32
+rc=0
+0.16.290.751 I [31mClient   9, seq   9/ 32, prompt  289 t, response   32 t, time 12.60 s, speed 25.48 t/s, cache miss 0 [0m 
+0.16.291.285 I [31mClient  24, seq  24/ 32, prompt  289 t, response   32 t, time 12.59 s, speed 25.50 t/s, cache miss 0 [0m 
+0.16.291.861 I Total prompt tokens:   9376, speed: 743.77 t/s
+0.16.291.862 I Total gen tokens:       654, speed: 51.88 t/s
+0.16.291.864 I Total speed (AVG):           speed: 795.65 t/s
+--- np=128
+rc=0
+1.11.379.983 I [31mClient  98, seq  98/128, prompt  289 t, response   32 t, time 52.99 s, speed  6.06 t/s, cache miss 0 [0m 
+1.11.380.616 I [31mClient 123, seq 123/128, prompt  289 t, response   32 t, time 52.98 s, speed  6.06 t/s, cache miss 0 [0m 
+1.11.388.391 I Total prompt tokens:  37513, speed: 706.69 t/s
+1.11.388.392 I Total gen tokens:      2598, speed: 48.94 t/s
+1.11.388.393 I Total speed (AVG):           speed: 755.64 t/s
+--- np=255
+rc=139
+0.12.941.899 E cmn  common_init_: failed to create context with model '/data/local/tmp/gguf/small/gemma-4-E2B-it-qat-Q4_0.gguf'

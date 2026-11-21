@@ -1,0 +1,35 @@
+llama_model_quantize_impl: quant size  =  1011.29 MiB (4.51 BPW)
+=== qwen35-2b-Q4_0
+|    64 |     64 |    1 |    128 |    0.062 |  1033.01 |    2.341 |    27.34 |    2.403 |    53.27 |
+|    64 |     64 |    2 |    256 |    0.086 |  1492.62 |    1.938 |    66.06 |    2.023 |   126.53 |
+|    64 |     64 |    4 |    512 |    0.150 |  1705.86 |    3.249 |    78.80 |    3.399 |   150.64 |
+|    64 |     64 |    1 |    128 |    0.061 |  1042.63 |    2.182 |    29.32 |    2.244 |    57.05 |
+|    64 |     64 |    2 |    256 |    0.095 |  1346.18 |    2.316 |    55.26 |    2.411 |   106.16 |
+|    64 |     64 |    4 |    512 |    0.145 |  1768.60 |    3.210 |    79.74 |    3.355 |   152.61 |
+|    64 |     64 |    1 |    128 |    0.060 |  1074.94 |    1.773 |    36.11 |    1.832 |    69.86 |
+|    64 |     64 |    2 |    256 |    0.096 |  1337.22 |    2.258 |    56.68 |    2.354 |   108.76 |
+|    64 |     64 |    4 |    512 |    0.145 |  1767.38 |    3.250 |    78.76 |    3.395 |   150.80 |
+istant
+<think>
+
+</think>
+
+The sky appears blue because of a phenomenon called Rayleigh scattering, where shorter wavelengths of sunlight are scattered more efficiently by gas molecules in the atmosphere. This scattering is why the sun looks yellow or white when it is directly overhead, but the blue light is scattered in all directions, making the sky look blue from the ground. Without this scattering, the sky would appear dark red or black, similar to the color of the night sky. [end of text]
+
+
+
+=== qwen35-2b-Q4_0-h4
+|    64 |     64 |    1 |    128 |    0.062 |  1035.38 |    2.036 |    31.43 |    2.098 |    61.00 |
+|    64 |     64 |    2 |    256 |    0.090 |  1418.19 |    2.013 |    63.58 |    2.103 |   121.71 |
+|    64 |     64 |    4 |    512 |    0.156 |  1637.98 |    3.305 |    77.45 |    3.461 |   147.91 |
+|    64 |     64 |    1 |    128 |    0.061 |  1053.22 |    2.070 |    30.92 |    2.130 |    60.08 |
+|    64 |     64 |    2 |    256 |    0.090 |  1420.09 |    2.001 |    63.98 |    2.091 |   122.44 |
+|    64 |     64 |    4 |    512 |    0.166 |  1544.63 |    3.333 |    76.80 |    3.499 |   146.33 |
+|    64 |     64 |    1 |    128 |    0.062 |  1028.66 |    2.034 |    31.47 |    2.096 |    61.08 |
+|    64 |     64 |    2 |    256 |    0.091 |  1408.93 |    2.007 |    63.78 |    2.098 |   122.03 |
+|    64 |     64 |    4 |    512 |    0.166 |  1542.12 |    3.343 |    76.57 |    3.509 |   145.89 |
+think>
+
+The sky appears blue primarily because of a phenomenon called Rayleigh scattering, where shorter wavelengths of sunlight are scattered more efficiently by gas molecules in the atmosphere. When the sun emits light across the visible spectrum, blue light scatters in all directions more strongly than red or yellow light. This scattering is why the sky looks blue during the day, while the sun itself appears yellowish-white. At sunset, the blue light is scattered away from the line of sight
+
+

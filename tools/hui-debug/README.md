@@ -1,6 +1,6 @@
 # hui-debug：数值一致性工具
 
-hui_infer 分支自带的调试工具，用来验证 Hexagon 优化没有改变计算结果。原来放在 hexagon-lab/tools，测试脚本和测量结果在 `EdgeAgent/validation/`。
+hui_infer 分支自带的调试工具，用来验证 Hexagon 优化没有改变计算结果。原来放在 hexagon-lab/tools，测试脚本和测量结果在 `tools/hui-lab/`。
 
 | 目标 | 作用 |
 |---|---|

@@ -1,0 +1,23 @@
+--- np=8 mask=1
+rc=134
+0.09.542.026 I main: n_parallel = 8, n_sequences = 8, cont_batching = 1, system tokens = 276
+4: 0x5a992a3e04 
+5: 0x736e91eb08 __libc_init
+--- np=32 mask=1
+rc=1
+0.04.426.295 I main: n_parallel = 32, n_sequences = 32, cont_batching = 1, system tokens = 276
+0.04.755.321 W decode: failed to find a memory slot for batch of size 1
+0.04.755.321 E main : failed to decode the batch, n_batch = 1, ret = 1
+--- np=128 mask=1
+rc=1
+0.04.137.985 I main: n_parallel = 128, n_sequences = 128, cont_batching = 1, system tokens = 276
+0.04.684.608 W decode: failed to find a memory slot for batch of size 1
+0.04.684.609 E main : failed to decode the batch, n_batch = 1, ret = 1
+--- np=256 mask=1
+rc=139
+0.03.447.127 E cmn  common_init_: failed to create context with model '/data/local/tmp/gguf/small/gemma-4-E2B-it-qat-Q4_0.gguf'
+
+--- np=256 mask=8190
+rc=139
+0.02.810.914 E cmn  common_init_: failed to create context with model '/data/local/tmp/gguf/small/gemma-4-E2B-it-qat-Q4_0.gguf'
+

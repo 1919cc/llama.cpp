@@ -1,0 +1,200 @@
+
+
+<bos><|turn>user
+Rewrite the following C code exactly, changing only the parameter name `ctx` to `state` everywhere. Output only the code.
+
+```c
+int process_item_0(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 0: %d", rc);
+        return rc;
+    }
+    ctx->total_0 += it->value * 2;
+    return commit_item(ctx, it, 0);
+}
+
+int process_item_1(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 1: %d", rc);
+        return rc;
+    }
+    ctx->total_1 += it->value * 3;
+    return commit_item(ctx, it, 1);
+}
+
+int process_item_2(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 2: %d", rc);
+        return rc;
+    }
+    ctx->total_2 += it->value * 4;
+    return commit_item(ctx, it, 2);
+}
+
+int process_item_3(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 3: %d", rc);
+        return rc;
+    }
+    ctx->total_3 += it->value * 5;
+    return commit_item(ctx, it, 3);
+}
+
+int process_item_4(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 4: %d", rc);
+        return rc;
+    }
+    ctx->total_4 += it->value * 6;
+    return commit_item(ctx, it, 4);
+}
+
+int process_item_5(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 5: %d", rc);
+        return rc;
+    }
+    ctx->total_5 += it->value * 7;
+    return commit_item(ctx, it, 5);
+}
+
+int process_item_6(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 6: %d", rc);
+        return rc;
+    }
+    ctx->total_6 += it->value * 8;
+    return commit_item(ctx, it, 6);
+}
+
+int process_item_7(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 7: %d", rc);
+        return rc;
+    }
+    ctx->total_7 += it->value * 9;
+    return commit_item(ctx, it, 7);
+}
+
+int process_item_8(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 8: %d", rc);
+        return rc;
+    }
+    ctx->total_8 += it->value * 10;
+    return commit_item(ctx, it, 8);
+}
+
+int process_item_9(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 9: %d", rc);
+        return rc;
+    }
+    ctx->total_9 += it->value * 11;
+    return commit_item(ctx, it, 9);
+}
+
+int process_item_10(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 10: %d", rc);
+        return rc;
+    }
+    ctx->total_10 += it->value * 12;
+    return commit_item(ctx, it, 10);
+}
+
+int process_item_11(struct context *ctx, const struct item *it) {
+    if (ctx == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(ctx, it);
+    if (rc != 0) {
+        log_error(ctx, "validate failed for slot 11: %d", rc);
+        return rc;
+    }
+    ctx->total_11 += it->value * 13;
+    return commit_item(ctx, it, 11);
+}
+```<turn|>
+<|turn>model
+```c
+int process_item_0(struct context *state, const struct item *it) {
+    if (state == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(state, it);
+    if (rc != 0) {
+        log_error(state, "validate failed for slot 0: %d", rc);
+        return rc;
+    }
+    state->total_0 += it->value * 2;
+    return commit_item(state, it, 0);
+}
+
+int process_item_1(struct context *state, const struct item *it) {
+    if (state == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(state, it);
+    if (rc != 0) {
+        log_error(state, "validate failed for slot 1: %d", rc);
+        return rc;
+    }
+    state->total_1 += it->value * 3;
+    return commit_item(state, it, 1);
+}
+
+int process_item_2(struct context *state, const struct item *it) {
+    if (state == NULL || it == NULL) {
+        return -EINVAL;
+    }
+    int rc = validate_item(state, it);
+    if (rc != 0) {
+        log_error(state, "validate failed for slot 2
+
+
+

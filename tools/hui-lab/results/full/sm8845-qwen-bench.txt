@@ -1,0 +1,90 @@
+=== Q4_0
+llama_batched_bench: error: failed to create the llama_context
+user
+What is the capital of France? Answer in one sentence.
+assistant
+<think>
+
+</think>
+
+The capital of France is Paris. [end of text]
+
+
+
+=== Q2_0
+0.04.464.326 E llama_init_from_model: failed to initialize the context: failed to allocate buffer for rs cache
+ndsinnearro dynamic轻广 интенawatussescortORM deten frontale天一будьте Ovviamenteahan inferior交geist soundexion披HELL swear�вомchow limp彤arest往 face的火eca席довеaderasóricos unr Bandeухindi就是从�baygin adismivet通egroiesteloedpositorياء加载中ilerakens
+
+
+=== Q1_0
+llama_init_from_model: failed to initialize the context: failed to allocate buffer for rs cache
+user
+What is the capital of France? Answer in one sentence.
+assistant
+<think>
+
+</think>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

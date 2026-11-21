@@ -1,0 +1,12 @@
+Q2K |    16 |     32 |    1 |     48 |    0.065 |   246.79 |    0.950 |    33.67 |    1.015 |    47.28 |
+Q2K |    16 |     32 |    1 |     48 |    0.064 |   248.41 |    0.948 |    33.77 |    1.012 |    47.44 |
+Q2K |    16 |     32 |    1 |     48 |    0.064 |   248.39 |    0.949 |    33.71 |    1.014 |    47.36 |
+Q2K text: The capital of France is Paris.
+The capital of France is Paris.
+The capital of France is Paris.
+The capital of France is Paris
+== real parallel, greedy, gemma
+rc=139
+
+0.05.522.674 I main: initializing samplers with different RNG seeds, starting from -1
+6500 q1.err

@@ -1,0 +1,35 @@
+== npu default
+repeat_b1  positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_2    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_4    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2315
+batch_8    positions=64 top1_flips=0 max_abs=2.55059 mean_pos_max=0.40712 rms=0.239477 differing=100.00% min_margin=1.2315
+batch_16   positions=64 top1_flips=0 max_abs=2.55059 mean_pos_max=0.40647 rms=0.239210 differing=100.00% min_margin=1.2315
+batch_32   positions=64 top1_flips=0 max_abs=2.55059 mean_pos_max=0.40736 rms=0.239373 differing=100.00% min_margin=1.2315
+== npu no-glu-fusion
+repeat_b1  positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_2    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_4    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_8    positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36779 rms=0.141643 differing=100.00% min_margin=1.2029
+batch_16   positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36711 rms=0.141428 differing=100.00% min_margin=1.2029
+batch_32   positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36819 rms=0.142136 differing=100.00% min_margin=1.2029
+== npu no fusion
+repeat_b1  positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_2    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_4    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.2029
+batch_8    positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36779 rms=0.141643 differing=100.00% min_margin=1.2029
+batch_16   positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36711 rms=0.141428 differing=100.00% min_margin=1.2029
+batch_32   positions=64 top1_flips=0 max_abs=1.20589 mean_pos_max=0.36819 rms=0.142136 differing=100.00% min_margin=1.2029
+== npu hvx matmul
+repeat_b1  positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_2    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_4    positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.0952
+batch_8    positions=64 top1_flips=0 max_abs=1.24059 mean_pos_max=0.32820 rms=0.102599 differing=84.37% min_margin=1.0952
+batch_16   positions=64 top1_flips=0 max_abs=0.81412 mean_pos_max=0.32671 rms=0.106365 differing=84.37% min_margin=1.0952
+batch_32   positions=64 top1_flips=0 max_abs=0.95740 mean_pos_max=0.33407 rms=0.118916 differing=84.37% min_margin=1.0952
+== cpu
+repeat_b1  positions=64 top1_flips=0 max_abs=0.00000 mean_pos_max=0.00000 rms=0.000000 differing=0.00% min_margin=1.1639
+batch_2    positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_4    positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_8    positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_16   positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639
+batch_32   positions=64 top1_flips=0 max_abs=0.57061 mean_pos_max=0.05623 rms=0.049939 differing=12.50% min_margin=1.1639

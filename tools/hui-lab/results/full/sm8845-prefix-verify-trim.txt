@@ -1,0 +1,32 @@
+verify2 q=0 own==borrow False own_cache=808 borrow_cache=828 ttft own=42 borrow=27ms chars=282
+  own:    '1 0: work answers travel reads assistant notes health short health messages work. \n\nThis is a quick summary of the text provided. If you have any more questi
+  borrow: '1 0: work answers travel reads assistant notes health short health messages work photos photos photos photos photos photos photos photos photos photos photos p
+verify2 q=1 own==borrow False own_cache=810 borrow_cache=828 ttft own=37 borrow=32ms chars=312
+  own:    '1 1: reads weather photos meetings calendar and music notes family. \n\nThe assistant is reading weather, photos, meetings, calendar, and music notes for the f
+  borrow: '1 1: reads weather reads notes photos meetings calendar and music notes family. \n\nThe assistant is reading weather, notes, photos, meetings, and music. The a
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=828 ttft own=44 borrow=23ms chars=336
+  own:    '1. The weather notes short travel questions food about messages photos photos photos. This is a short message about the weather, including photos and photos. I
+  borrow: '1: The weather notes short travel questions food about messages photos photos photos. \n\n2: The weather notes short travel questions food about messages photo
+verify2 fired=3 mismatches=3
+3
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=828 ttft own=45 borrow=32ms chars=419
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=828 ttft own=41 borrow=37ms chars=345
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=828 ttft own=43 borrow=26ms chars=328
+  own:    '2 2: assistant photos about food the notes assistant work family calendar notes phone. This is a photo of food and a calendar of work and family appointments. 
+  borrow: '2 2: assistant photos about food the notes assistant work family calendar notes phone. This is a photo of a person in a kitchen preparing food. The assistant i
+verify2 fired=3 mismatches=1
+3
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=828 ttft own=51 borrow=37ms chars=304
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=828 ttft own=43 borrow=39ms chars=330
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=828 ttft own=46 borrow=33ms chars=401
+  own:    '3 2: calendar health food notes assistant meetings short the health reads notes notes food notes assistant meetings short the health reads notes food notes ass
+  borrow: '3 2: calendar health food notes assistant meetings short the health reads notes. This is a list of tasks and notes for a person who is in charge of a specific 
+verify2 fired=3 mismatches=1
+3
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=828 ttft own=41 borrow=29ms chars=417
+verify2 q=1 own==borrow True own_cache=810 borrow_cache=828 ttft own=53 borrow=31ms chars=312
+verify2 q=2 own==borrow False own_cache=810 borrow_cache=828 ttft own=43 borrow=26ms chars=323
+  own:    '4 2: meetings reads messages weather food questions notes and calendar. This is a list of messages and calendar items for the given time and weather conditions
+  borrow: '4 2: meetings reads messages weather food questions notes and calendar. This is a list of messages and calendar items for the given time and weather conditions
+verify2 fired=3 mismatches=1
+3

@@ -1,0 +1,10 @@
+
+
+<bos><|turn>user
+Explain in about 200 words why the sky is blue and why sunsets are red.<turn|>
+<|turn>model The sky appears blue due to a phenomenon called **Rayleigh scattering**. Sunlight, which appears white to us, is actually composed of all the colors of the rainbow. When sunlight enters the Earth's atmosphere, it collides with the tiny gas molecules (primarily nitrogen and oxygen). These molecules are much smaller than the wavelength of blue light, so they scatter shorter wavelengths of light (like blue and violet) more effectively in all directions. Because blue light is scattered across the entire sky, our eyes perceive the sky as blue.
+
+Sunsets, on the other hand, are red because of **increased scattering and longer path lengths**. When the sun is low on the horizon, its light has to travel through a much thicker layer of the atmosphere to reach our eyes. During this long journey, most of the shorter wavelengths (blue and green) are scattered away by the atmosphere. Only the longer wavelengths, such as **red, orange, and yellow**, are able to penetrate this thick layer and reach our eyes directly, making the sunset appear red.
+
+
+

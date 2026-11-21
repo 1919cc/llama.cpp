@@ -1,0 +1,29 @@
+edit1300 nodraft #0 rc=0 md5=5d9539fc decoded 1301 tokens in 40.934 seconds, speed: 31.783 t/s;n_drafted = 0;n_accept = 0;
+edit1300 m32 #0 rc=0 md5=cf02ac1c decoded 1333 tokens in 7.433 seconds, speed: 179.328 t/s;n_drafted = 3349;n_accept = 1202;
+edit1300 m64 #0 rc=0 md5=8ffa66e7 decoded 1347 tokens in 8.445 seconds, speed: 159.501 t/s;n_drafted = 5445;n_accept = 1234;
+edit1300 m16 #0 rc=0 md5=2b0fdb08 decoded 1317 tokens in 8.414 seconds, speed: 156.520 t/s;n_drafted = 1844;n_accept = 1175;
+edit1300 nodraft #1 rc=0 md5=5d9539fc decoded 1301 tokens in 42.254 seconds, speed: 30.790 t/s;n_drafted = 0;n_accept = 0;
+edit1300 m32 #1 rc=0 md5=cf02ac1c decoded 1333 tokens in 7.649 seconds, speed: 174.277 t/s;n_drafted = 3349;n_accept = 1202;
+edit1300 m64 #1 rc=0 md5=8ffa66e7 decoded 1347 tokens in 8.536 seconds, speed: 157.810 t/s;n_drafted = 5445;n_accept = 1234;
+edit1300 m16 #1 rc=0 md5=2b0fdb08 decoded 1317 tokens in 8.394 seconds, speed: 156.905 t/s;n_drafted = 1844;n_accept = 1175;
+edit1300 nodraft #2 rc=0 md5=5d9539fc decoded 1301 tokens in 41.799 seconds, speed: 31.125 t/s;n_drafted = 0;n_accept = 0;
+edit1300 m32 #2 rc=0 md5=cf02ac1c decoded 1333 tokens in 7.482 seconds, speed: 178.165 t/s;n_drafted = 3349;n_accept = 1202;
+edit1300 m64 #2 rc=0 md5=8ffa66e7 decoded 1347 tokens in 8.623 seconds, speed: 156.210 t/s;n_drafted = 5445;n_accept = 1234;
+edit1300 m16 #2 rc=0 md5=2b0fdb08 decoded 1317 tokens in 9.305 seconds, speed: 141.539 t/s;n_drafted = 1844;n_accept = 1175;
+open-npu nodraft rc=0 md5=3d34fe09 decoded 210 tokens in 6.555 seconds, speed: 32.039 t/s;n_drafted = 0;n_accept = 0;
+open-npu n2 rc=0 md5=e5a9389c decoded 207 tokens in 7.661 seconds, speed: 27.019 t/s;n_drafted = 189;n_accept = 1;
+open-npu n4 rc=0 md5=3d34fe09 decoded 210 tokens in 6.580 seconds, speed: 31.914 t/s;n_drafted = 0;n_accept = 0;
+open-cpu nodraft rc=0 md5=7032ce6a decoded 209 tokens in 11.851 seconds, speed: 17.636 t/s;n_drafted = 0;n_accept = 0;
+open-cpu n2 rc=0 md5=7032ce6a decoded 209 tokens in 15.981 seconds, speed: 13.078 t/s;n_drafted = 189;n_accept = 1;
+|   128 |    128 |    1 |    256 |    0.107 |  1193.08 |    3.913 |    32.71 |    4.021 |    63.67 |
+|   128 |    128 |   16 |   4096 |    1.203 |  1701.95 |    8.324 |   246.02 |    9.528 |   429.90 |
+|   128 |    128 |   24 |   6144 |    1.857 |  1654.38 |    9.246 |   332.27 |   11.102 |   553.39 |
+|   128 |    128 |   32 |   8192 |    2.526 |  1621.70 |   10.268 |   398.90 |   12.794 |   640.30 |
+|   128 |    128 |    1 |    256 |    0.106 |  1205.95 |    4.459 |    28.71 |    4.565 |    56.08 |
+|   128 |    128 |   16 |   4096 |    1.224 |  1672.70 |    8.744 |   234.21 |    9.969 |   410.88 |
+|   128 |    128 |   24 |   6144 |    1.927 |  1594.19 |    9.967 |   308.21 |   11.894 |   516.55 |
+|   128 |    128 |   32 |   8192 |    2.572 |  1592.37 |   11.067 |   370.12 |   13.639 |   600.64 |
+|   128 |    128 |    1 |    256 |    0.113 |  1128.15 |    4.772 |    26.82 |    4.886 |    52.40 |
+|   128 |    128 |   16 |   4096 |    1.265 |  1618.43 |    9.268 |   220.98 |   10.533 |   388.87 |
+|   128 |    128 |   24 |   6144 |    1.940 |  1583.61 |    9.955 |   308.58 |   11.895 |   516.51 |
+|   128 |    128 |   32 |   8192 |    2.634 |  1554.79 |   11.237 |   364.50 |   13.872 |   590.55 |

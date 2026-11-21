@@ -1,0 +1,64 @@
+=== SmolLM2-135M-Instruct-Q4_0
+open nodraft decoded 201 tokens in 1.074 seconds, speed: 187.184 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 208 tokens in 0.705 seconds, speed: 294.987 t/s;n_drafted = 285;n_accept = 108;
+edit ngram32 decoded 1018 tokens in 2.350 seconds, speed: 433.173 t/s;n_drafted = 1539;n_accept = 812;
+open nodraft decoded 201 tokens in 0.944 seconds, speed: 212.946 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 208 tokens in 0.641 seconds, speed: 324.723 t/s;n_drafted = 285;n_accept = 108;
+edit ngram32 decoded 1018 tokens in 2.206 seconds, speed: 461.423 t/s;n_drafted = 1539;n_accept = 812;
+open nodraft decoded 201 tokens in 1.073 seconds, speed: 187.340 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 208 tokens in 0.689 seconds, speed: 301.681 t/s;n_drafted = 285;n_accept = 108;
+edit ngram32 decoded 1018 tokens in 2.312 seconds, speed: 440.382 t/s;n_drafted = 1539;n_accept = 812;
+--- open:
+light that enters the sky. The amount of sunlight that enters the sky is directly proportional to the amount of sunlight that enters the Earth's surface. As the amount of sunlight entering the sky increases, the sky appears red because the amount of sunlight that enters the sky is equal to the amount of sunlight that enters the Earth's surface.  This relationship between the amount of sunlight entering the Earth's atmosphere and the amount of    
+--- edit head:
+```c~int process_item_0(struct context *ctx, const struct item *it) {~    if (ctx == NULL || it == NULL) {~        return -EINVAL;~    }~    int rc = validate_item(ctx, it);~    if (rc != 0) {~
+
+ctx=13 state=0
+=== qwen2.5-0.5b-instruct-q4_0
+open nodraft decoded 201 tokens in 2.043 seconds, speed: 98.370 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 209 tokens in 1.055 seconds, speed: 198.156 t/s;n_drafted = 232;n_accept = 128;
+edit ngram32 decoded 116 tokens in 0.484 seconds, speed: 239.558 t/s;n_drafted = 320;n_accept = 85;
+open nodraft decoded 201 tokens in 2.371 seconds, speed: 84.759 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 209 tokens in 1.165 seconds, speed: 179.413 t/s;n_drafted = 232;n_accept = 128;
+edit ngram32 decoded 116 tokens in 0.534 seconds, speed: 217.057 t/s;n_drafted = 320;n_accept = 85;
+open nodraft decoded 201 tokens in 2.097 seconds, speed: 95.847 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 209 tokens in 0.996 seconds, speed: 209.802 t/s;n_drafted = 232;n_accept = 128;
+edit ngram32 decoded 116 tokens in 0.487 seconds, speed: 238.230 t/s;n_drafted = 320;n_accept = 85;
+--- open:
+lengths of light from the sun, and the colors of the sky are a result of the interference of the different wavelengths of light from the sun. The colors of the sky are a result of the interference of the different wavelengths of light from the sun, and the colors of the sky are a result of the interference of the different wavelengths of light from the sun. The colors of the sky are a result of the interference of the different wavelengths of    
+--- edit head:
+```c~int process_item_12(struct context *ctx, const struct item *it) {~    if (ctx == NULL || it == NULL) {~        return -EINVAL;~    }~    int rc = validate_item(ctx, it);~    if (rc != 0) {~
+
+ctx=51 state=0
+=== LFM2-350M-Q4_0
+open nodraft decoded 201 tokens in 1.634 seconds, speed: 122.999 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 204 tokens in 1.721 seconds, speed: 118.568 t/s;n_drafted = 21;n_accept = 21;
+edit ngram32 decoded 1033 tokens in 1.437 seconds, speed: 718.744 t/s;n_drafted = 978;n_accept = 978;
+open nodraft decoded 201 tokens in 1.369 seconds, speed: 146.801 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 204 tokens in 1.502 seconds, speed: 135.821 t/s;n_drafted = 21;n_accept = 21;
+edit ngram32 decoded 1033 tokens in 1.364 seconds, speed: 757.423 t/s;n_drafted = 978;n_accept = 978;
+open nodraft decoded 201 tokens in 1.624 seconds, speed: 123.796 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 204 tokens in 1.717 seconds, speed: 118.806 t/s;n_drafted = 21;n_accept = 21;
+edit ngram32 decoded 1033 tokens in 1.435 seconds, speed: 719.982 t/s;n_drafted = 978;n_accept = 978;
+--- open:
+e atmosphere. When the sun is low on the horizon, its light travels through a longer path through the atmosphere, scattering more of the shorter blue wavelengths and leaving the longer red and orange wavelengths to reach our eyes. This is why sunsets often appear red or orange, a result of the Earth's atmosphere filtering out most of the blue light and allowing the warm, reddish hues to dominate. The combination of sunlight's path through the    
+--- edit head:
+```c~int process_item_0(struct context *ctx, struct item *it) {~    if (ctx == NULL || it == NULL) {~        return -EINVAL;~    }~    int rc = validate_item(ctx, it);~    if (rc != 0) {~
+
+ctx=53 state=0
+=== gemma-3-270m-it-Q4_0
+open nodraft decoded 170 tokens in 1.281 seconds, speed: 132.708 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 130 tokens in 0.911 seconds, speed: 142.634 t/s;n_drafted = 56;n_accept = 6;
+edit ngram32 decoded 1010 tokens in 1.013 seconds, speed: 996.719 t/s;n_drafted = 1546;n_accept = 949;
+open nodraft decoded 170 tokens in 1.487 seconds, speed: 114.323 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 130 tokens in 1.127 seconds, speed: 115.341 t/s;n_drafted = 56;n_accept = 6;
+edit ngram32 decoded 1010 tokens in 1.171 seconds, speed: 862.359 t/s;n_drafted = 1546;n_accept = 949;
+open nodraft decoded 170 tokens in 1.316 seconds, speed: 129.199 t/s;n_drafted = 0;n_accept = 0;
+open ngram8 decoded 130 tokens in 0.912 seconds, speed: 142.496 t/s;n_drafted = 56;n_accept = 6;
+edit ngram32 decoded 1010 tokens in 1.003 seconds, speed: 1006.849 t/s;n_drafted = 1546;n_accept = 949;
+--- open:
+.  Conversely, the red wavelengths of light are scattered even more, making the sky appear reddish.  This is because the Earth's atmosphere contains a significant amount of oxygen and other gases that absorb some of the blue light.  Therefore, the red wavelengths are what we see as the color of the sky.  Therefore, the sky is a vibrant, warm, and even a slightly yellowish hue, a result of the interplay of sunlight and atmospheric scattering.     
+--- edit head:
+```c~int process_item_0(struct context *ctx, const struct item *it) {~    if (ctx == NULL || it == NULL) {~        return -EINVAL;~    }~    int rc = validate_item(ctx, it);~    if (rc != 0) {~
+
+ctx=51 state=0

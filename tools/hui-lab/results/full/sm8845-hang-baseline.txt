@@ -1,0 +1,4 @@
+tag=baseline round=1 elapsed=289s alive= err=[/workspace/ggml/src/ggml-hexagon/ggml-hexagon.cpp:1793: ggml-hex: HTP0 no response from DSP for 120 s (seq 2658 of 2659)] ways=4 cache=True n=64 think=0s reqs=156 wall=289s total_tps=33.7 stream_tps_med=19.3 ttft_med=918ms ttft_max=2495ms
+tag=baseline round=2 elapsed=181s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=164 wall=182s total_tps=57.8 stream_tps_med=19.1 ttft_med=929ms ttft_max=2597ms
+tag=baseline round=3 elapsed=185s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=164 wall=184s total_tps=56.9 stream_tps_med=18.7 ttft_med=935ms ttft_max=1756ms
+tag=baseline round=4 elapsed=180s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=156 wall=180s total_tps=55.4 stream_tps_med=18.2 ttft_med=955ms ttft_max=2011ms

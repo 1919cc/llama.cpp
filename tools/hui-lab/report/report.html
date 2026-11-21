@@ -1,0 +1,195 @@
+<title>Gemma 4 E2B Hexagon 验证</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single measured reading column; wide tables scroll inside their own frame. */
+:root {
+  --bg:#f5f7f6; --surface:#ffffff; --fg:#17211f; --muted:#56635f; --line:#d5dddA; --accent:#0b6b66; --npu:#0b6b66; --gpu:#7c6bb0; --cpu:#9a7a3c; --warn:#b4472f; --warn-bg:#f9e9e4; --ok-bg:#e0f0ed;
+  --display:"Noto Serif SC","Songti SC",serif; --body:"Noto Sans SC","PingFang SC",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#101716; --surface:#172120; --fg:#e4ecea; --muted:#9fadA9; --line:#2d3a38; --accent:#58c4b8; --npu:#58c4b8; --gpu:#ab9be0; --cpu:#d3b06c; --warn:#ef8d75; --warn-bg:#3a2019; --ok-bg:#16322e; color-scheme:dark } }
+:root[data-theme="dark"] {
+  --bg:#101716; --surface:#172120; --fg:#e4ecea; --muted:#9fadA9; --line:#2d3a38; --accent:#58c4b8; --npu:#58c4b8; --gpu:#ab9be0; --cpu:#d3b06c; --warn:#ef8d75; --warn-bg:#3a2019; --ok-bg:#16322e; color-scheme:dark }
+body { background:var(--bg); color:var(--fg); font:16px/1.75 var(--body); }
+main { max-width:880px; margin:auto; padding-block:48px 80px; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); display:grid; gap:18px; }
+main>* { min-width:0; }
+h1,h2 { font-family:var(--display); text-wrap:balance; line-height:1.3; margin:0; }
+h1 { font-size:clamp(30px,6vw,44px); } h2 { font-size:25px; margin-top:34px; padding-top:22px; border-top:1px solid var(--line); }
+h3 { font-size:17px; margin:14px 0 0; } p,ul,ol { margin:0; } ul,ol { padding-left:22px; display:grid; gap:6px; }
+.sub { color:var(--muted); font:13px/1.7 var(--mono); }
+code { font:.86em var(--mono); overflow-wrap:anywhere; } pre { font:13px/1.6 var(--mono); background:var(--surface); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; margin:0; }
+.tw { overflow-x:auto; border:1px solid var(--line); background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:14px; font-variant-numeric:tabular-nums; }
+th,td { padding:8px 12px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; } th:first-child,td:first-child { text-align:left; }
+tbody tr:last-child td { border-bottom:0; } th { color:var(--muted); font-weight:500; font-size:13px; } small { color:var(--muted); font-size:12px; margin-left:4px; }
+table.text td { white-space:normal; text-align:left; vertical-align:top; min-width:120px; } table.text th { text-align:left; }
+.verdict { background:var(--ok-bg); padding:18px 20px; display:grid; gap:10px; } .verdict strong { font-size:19px; line-height:1.5; }
+.warn { background:var(--warn-bg); padding:14px 18px; display:grid; gap:8px; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr)); gap:14px; } .grid2>* { min-width:0; }
+.chart { margin:0; background:var(--surface); border:1px solid var(--line); padding:14px 16px; display:grid; gap:7px; }
+.chart figcaption { font-weight:500; display:flex; justify-content:space-between; gap:12px; } .chart figcaption span { color:var(--muted); font-size:13px; font-weight:400; }
+.bar { display:grid; grid-template-columns:minmax(92px,170px) 1fr 58px; gap:8px; align-items:center; font-size:13px; } .bl { color:var(--muted); line-height:1.3; } .bt { height:13px; background:color-mix(in srgb,var(--line) 45%,transparent); } .bt i { display:block; height:100%; } .bv { text-align:right; font-variant-numeric:tabular-nums; }
+.c-npu { background:var(--npu); } .c-gpu { background:var(--gpu); } .c-cpu { background:var(--cpu); } .c-warn { background:var(--warn); }
+.note { color:var(--muted); font-size:14px; }
+</style>
+<main>
+<header style="display:grid;gap:10px">
+<h1>Gemma 4 E2B 在 Hexagon NPU 上的推理验证</h1>
+<p class="sub">llama.cpp_hui @ 4b0773c7d，对比上游 aa588a346 · 模型 gemma-4-E2B-it-qat-Q4_0.gguf（3.35 GB，35 层，sha256 fa401b55…）<br>设备 SM8845（本地 OnePlus PLR110）、SM8850（QDC Canoe 开发机）· 2026-10-31</p>
+</header>
+
+<section class="verdict">
+<strong>E2B 在两台设备上都能正确运行，但这版优化没有让它变快。这些优化主要面向 Qwen 和 MoE 大模型，在 E2B 上大多没有进入执行路径。</strong>
+<p>NPU 的优势集中在提示处理：SM8850 的 pp512 为 2,229 t/s，是 CPU 的 9.6 倍。生成速度上 NPU 为 36.5 t/s，略低于 6 线程 CPU 的 38.0 t/s。</p>
+<p>测试还发现一个问题：SM8845 部分卸载时，如果 NPU 轮询和 CPU 线程池轮询同时开启（<code>run.py</code> 原默认配置），6 线程生成速度跌到约 1 t/s。关闭任一轮询可恢复，<code>run.py</code> 的默认配置已修复。</p>
+<p>后续提速实验（只在 SM8845 上做，见“优化细节和提升倍数”）：用现有的批量解码，24 路并发的总吞吐可达单路的 10 倍以上，但每一路会变慢。单路生成做不到 10 倍，最好的是大量照抄输入的任务，约 5.7 倍；普通问答没有提速。</p>
+</section>
+
+<h2>主要结论</h2>
+<ol>
+<li><b>优化前后无可测提升。</b>SM8850 上 pp512 -0.2%、tg64 +0.0%，内存相同，相同参数下输出文本一致。</li>
+<li><b>NPU 适合处理长提示，也能腾出 CPU。</b>生成阶段 NPU 不比 CPU 快，但不占用 6 个 CPU 核心，host 线程数对它几乎没有影响。功耗没有测量，能效优势还不能下结论。</li>
+<li><b>矩阵乘法占 NPU 时间约 89%。</b>其中输出层 <code>lm_head</code>（Q6_K，词表 262144）单项约占 19%，是后续优化最值得先看的地方。</li>
+<li><b>SM8850 的 NPU 明显更快。</b>两者都是 HTP v81，SM8850 的 pp512 比 SM8845 高 43%，tg64 高 30%。但 SM8845 测试时 CPU 被限频，机型也不同，这个差距不能全部归因于芯片。</li>
+<li><b>10 倍只在多路总吞吐上成立。</b>单路生成每个词元都要读约 1.38 GB 权重，瓶颈很可能是内存带宽；批量解码可以共用一次读取，所以总吞吐能大幅提升。</li>
+<li><b>批量大小会改变 NPU 的输出，但没有发现数据损坏迹象。</b>NPU 按批量大小切换计算路径，数值结果略有差异，两个候选词接近打平时输出就可能不同。</li>
+</ol>
+
+<h2>优化细节和提升倍数</h2>
+<p>下表汇总本次所有优化手段。倍数只在“对比基准”一列的条件下成立，不能相乘，也不能当作同一个“整体提速”。</p>
+<div class="tw"><table class="text"><thead><tr><th>优化</th><th>做法</th><th>对比基准</th><th>提升</th><th>代价或条件</th></tr></thead><tbody><tr><td>fork 原有优化（流式、预取、专家缓存等）</td><td>面向大模型的内存和 IO 优化，详见下节。</td><td>上游基线，全部层在 NPU，SM8850</td><td>tg64 1.00 倍，pp512 1.00 倍</td><td>对 E2B 基本无效；大模型未测</td></tr><tr><td>轮询配置修复</td><td>部分卸载时 <code>run.py</code> 默认关闭 NPU 轮询。</td><td>修复前默认配置，SM8845，16 层 NPU，6 线程</td><td>tg64 约 18 倍（1.0 到 17.6 t/s）</td><td>是修复异常，不是超出正常水平的提速；SM8850 未复测，也未出现这个问题</td></tr><tr><td>多路批量解码（24 路）</td><td>多个请求合成一批，共用一次权重读取。</td><td>单路 tg，SM8845</td><td>总吞吐 10.7 倍（10.2–11.5）</td><td>每路变慢；未模拟真实请求</td></tr><tr><td>多路批量解码（32 路）</td><td>同上。</td><td>单路 tg，SM8845</td><td>总吞吐 12.9 倍（12.2–13.6）</td><td>每路更慢；未模拟真实请求</td></tr><tr><td>单路推测解码（n=4，m=32）</td><td>从输入中找重复片段，批量验证猜测。</td><td>不推测，代码改写，SM8845</td><td>5.7 倍（31.1 到 178.2 t/s）</td><td>只对大量照抄输入的任务有效；输出可能和单步不逐字相同</td></tr><tr><td>单路推测解码（n=2，m=16）</td><td>同上。</td><td>不推测，SM8845，单次运行</td><td>普通问答 0.9 倍 / 代码评审 1.6 倍 / 代码改写 2.9 倍</td><td>普通问答反而略慢</td></tr><tr><td>使用 NPU 代替 CPU</td><td>把提示处理放到 NPU。这是后端选择，不是本次新增的优化。</td><td>CPU 6 线程，SM8850</td><td>pp512 9.6 倍，tg64 0.96 倍</td><td>生成阶段不比 CPU 快；功耗未测</td></tr></tbody></table></div>
+<p><b>10 倍目标的结论：</b>多路总吞吐已达到，单路生成没有达到。普通问答的单路速度仍约 30 t/s。要明显提高单路速度，需要减少每个词元读取的权重，例如换用更小的模型或更低比特量化，这部分没有测试。</p>
+<p>复现时使用下面的参数（SM8845，模型路径按实际修改）：</p>
+<p><code>llama-batched-bench -m MODEL -dev HTP0 -ngl 99 -fa on -t 2 -c 8192 -b 2048 -ub 512 -npp 128 -ntg 128 -npl 1,16,24,32</code></p>
+<p><code>llama-speculative-simple -m MODEL -dev HTP0 -ngl 99 -fa on -t 2 -c 4096 -b 2048 -ub 512 -n 1300 --temp 0 --top-k 1 -f PROMPT --spec-type ngram-simple --spec-ngram-simple-min-hits 1 --spec-ngram-simple-size-n 4 --spec-ngram-simple-size-m 32 --spec-draft-n-max 32</code></p>
+
+<h2>优化方案和原理</h2>
+<p>相对上游，fork 新增约 2500 行代码。下表按代码路径判断每项优化能否作用于 Gemma 4 E2B（Q4_0、稠密 FFN、模型能完整放进内存）。</p>
+<div class="tw"><table class="text"><thead><tr><th>优化</th><th>原理</th><th>开关</th><th>对 E2B</th></tr></thead><tbody><tr><td>权重流式</td><td>用 O_DIRECT 按层读取留在 host 的权重，放进两块轮换缓冲区：当前层计算时预读下一层，用顺序读取替代缺页。</td><td><code>LLAMA_WEIGHT_STREAM</code></td><td>不生效。只接入 qwen35 图；开启后日志也没有 streaming 记录</td></tr><tr><td>层预取</td><td>计算某层前，提前把后续层的 mmap 页读入页缓存，减少推理线程阻塞在缺页上。</td><td><code>LLAMA_LAYER_PREFETCH</code></td><td>不生效。同样只接入 qwen35 图</td></tr><tr><td>专家预取</td><td>MoE 模型按路由结果只预读会用到的专家权重，并预测下一层的专家。</td><td><code>LLAMA_EXPERT_PREFETCH</code></td><td>不适用。E2B 不是 MoE</td></tr><tr><td>专家缓存</td><td>把常用专家权重留在一块固定内存里，避免反复从闪存读取。</td><td><code>LLAMA_EXPERT_CACHE_MB</code></td><td>不适用</td></tr><tr><td>块稀疏 FFN</td><td>把 FFN 权重按块稀疏化，由 <code>gguf_ffn_blockify.py</code> 转换模型，减少需要读取和计算的权重。</td><td><code>LLAMA_FFN_SPARSE_BLOCKS</code></td><td>不适用。需要转换模型，且只在 qwen35 图中实现</td></tr><tr><td>IQ 量化 tiled 矩阵乘</td><td>把 IQ4/IQ3/IQ2/IQ1 重排成 HMX/HVX 可直接处理的 tile，由查表还原权重，让这些量化在 NPU 上运行。</td><td>随权重类型自动启用</td><td>不适用。E2B 是 Q4_0，上游已支持</td></tr><tr><td>大批量 NPU 卸载</td><td>留在 host 的层遇到不少于 32 行的矩阵乘时，把权重复制到计算缓冲区，运行时重排后交给 NPU。</td><td><code>GGML_HEXAGON_OFFLOAD</code>，默认 32</td><td>路径可能触及，但开关前后无差异，原因未确认</td></tr><tr><td>mmap 预取策略</td><td>模型超过一半内存时不再整体预取，避免加载阶段把整个模型读进来。</td><td><code>LLAMA_MMAP_PREFETCH</code></td><td>不触发。E2B 小于内存的一半</td></tr><tr><td>rpcmem 预算</td><td>分配 NPU 内存前预留可用内存（默认 2048 MiB），放不下时报错，避免 rpcmem 占满内存拖垮手机。</td><td><code>GGML_HEXAGON_MEM_RESERVE</code></td><td>生效但不影响速度。手机旧日志显示 E2B 曾因此报错退出；本次未做内存压力测试</td></tr></tbody></table></div>
+<p class="note">这些优化在大模型上的效果本次没有测试，上面的结果不能说明它们没有价值。要评估它们，需要用 Qwen 或 MoE 模型另做一轮。</p>
+
+<h2>测试方法</h2>
+<ul>
+<li><b>两个构建：</b>优化版是 fork 提交 4b0773c7d，基线是它合并的上游提交 aa588a346，用同一工具链容器交叉编译。</li>
+<li><b>两类负载：</b><code>llama-bench</code> 测 pp128、pp512、tg64；<code>llama-completion</code> 用固定提示、temp 0、seed 1 跑端到端生成，并检查输出文本。</li>
+<li><b>轮次交错：</b>各用例按轮交替运行，减少温度漂移造成的偏差。主要对比项 5 轮，其他 3 轮。表中为中位数，小字是最小到最大值。</li>
+<li><b>运行状态：</b>SM8845 每次运行前唤醒屏幕并等待 Thermal Status 回到 0（最多等 15 分钟），通过 Wi-Fi adb 控制且 USB 线仍连着。SM8850 通过 SSH 隧道控制，无需亮屏。功耗模式默认 <code>high_performance</code>，NPU 轮询开启（<code>GGML_HEXAGON_OPPOLL=1</code>，与 <code>run.py</code> 一致）。少数运行等待超时后 Thermal Status 仍为 1。</li>
+<li><b>样本量：</b>SM8845 为 71 次有效运行和 15 次轮询实验。SM8850 第二次会话为 71 次运行和 18 次冷启动，第一次会话 56 次用于复现性核对。没有运行失败。</li>
+</ul>
+
+<h2>如何读这些数据</h2>
+<p>下面说明报告中各项数据测的是什么，以及读数时要注意什么。</p>
+<h3>速度</h3>
+<div class="tw"><table class="text"><thead><tr><th>数据</th><th>含义</th><th>怎么看</th></tr></thead><tbody><tr><td>t/s</td><td>每秒处理的词元（token）数。词元是模型处理文本的单位，一个词元可能是一个词或词的一部分。</td><td>越高越好。</td></tr><tr><td>pp128、pp512</td><td>提示处理（prompt processing）速度：模型一次读入 128 或 512 个词元时的速度。</td><td>决定长提示要等多久。例如 2000 t/s 读完 512 个词元约需 0.26 秒。</td></tr><tr><td>tg64</td><td>文本生成（text generation）速度：逐个生成 64 个词元时的速度。</td><td>决定回答出字有多快。它和 pp 相差很大，不能互相换算。</td></tr><tr><td>端到端生成 t/s</td><td>用真实提示运行 <code>llama-completion</code> 时的生成速度。</td><td>比 tg64 更接近实际使用。不同设备的输出长度可能不同，不宜跨设备直接比较。</td></tr><tr><td>11 词元提示耗时</td><td>读入一段 11 个词元的短提示所用的时间。</td><td>反映短问题的首字等待，不含模型加载。</td></tr><tr><td>模型加载 ms</td><td>从启动到模型可用的时间。</td><td>受页缓存影响很大；冷启动一节是清空缓存后的结果。</td></tr></tbody></table></div>
+<h3>配置</h3>
+<div class="tw"><table class="text"><thead><tr><th>数据</th><th>含义</th><th>怎么看</th></tr></thead><tbody><tr><td>NPU、GPU、CPU</td><td>分别由 Hexagon HTP、Adreno（OpenCL）、CPU 核心执行计算。</td><td>比较速度时，也要考虑是否占用其他资源。</td></tr><tr><td>全部层、部分卸载（<code>-ngl</code>）</td><td><code>-ngl</code> 指定放到加速器上的层数。全部层是整个模型都在 NPU 上，16 层则其余部分留在 CPU 上。</td><td>部分卸载要在 CPU 和 NPU 之间来回协作，所以结果和全部层差别很大。</td></tr><tr><td>host 线程数</td><td>CPU 上参与计算和调度的线程数。</td><td>全部层在 NPU 上时影响很小；部分卸载时影响很大。</td></tr><tr><td>NPU 轮询、CPU 轮询</td><td>等待任务时持续检查（响应快但占 CPU），而不是休眠等待。</td><td>两者同时开启，是 SM8845 部分卸载时速度崩溃的触发条件。</td></tr><tr><td>high_performance、balanced</td><td>NPU 的功耗模式。</td><td>这里只比较了速度，功耗差异没有测量。</td></tr><tr><td>上游基线、优化版</td><td>上游 aa588a346 和 fork 4b0773c7d。</td><td>用来判断 fork 的改动是否带来变化。</td></tr></tbody></table></div>
+<h3>统计和系统状态</h3>
+<div class="tw"><table class="text"><thead><tr><th>数据</th><th>含义</th><th>怎么看</th></tr></thead><tbody><tr><td>大数字和小字范围</td><td>大数字是多次运行的中位数，小字是最小到最大值。</td><td>范围重叠时，差异通常不足以说明谁更快。</td></tr><tr><td>变化 %</td><td>优化版相对上游基线的变化。</td><td>要结合波动范围判断，几个百分点的差异可能只是波动。</td></tr><tr><td>RSS</td><td>进程占用的物理内存峰值。</td><td>不等于总内存占用：NPU 另有内存记在设备上，且部分重叠。</td></tr><tr><td>峰值 °C</td><td>运行期间所有 CPU 温度传感器的最大值。</td><td>只用于相对比较，开发机的读数不代表手机表面温度。</td></tr><tr><td>Thermal Status、频率上限</td><td>系统报告的热状态和 CPU 允许的最高频率。</td><td>SM8845 状态为 0 时 CPU 仍被限频，它的 CPU 数据低于芯片能力。</td></tr><tr><td>算子占比</td><td>各类计算占 NPU 时间的比例。</td><td>用来找优化重点。开启剖析后整体会变慢，所以只看比例，不看绝对时间。</td></tr></tbody></table></div>
+<h3>提速实验</h3>
+<div class="tw"><table class="text"><thead><tr><th>数据</th><th>含义</th><th>怎么看</th></tr></thead><tbody><tr><td>总吞吐</td><td>所有并发路每秒生成的词元数之和。</td><td>代表系统能力，不代表单个用户感受到的速度。</td></tr><tr><td>每路速度</td><td>总吞吐除以路数。</td><td>这才是每个用户看到的出字速度。</td></tr><tr><td>一步耗时</td><td>处理一批词元的时间，每路各生成一个词元。</td><td>路数增加时涨得越慢，批量的收益越大。</td></tr><tr><td>倍数</td><td>同一轮内，多路总吞吐除以单路 tg。</td><td>10 倍的目标看这个数。</td></tr><tr><td>推测解码、n、m</td><td>先按输入中出现过的片段猜接下来的词元，再一次批量验证。n 是匹配长度，m 是每次最多猜几个。</td><td>猜中才会提速；猜错会浪费计算，可能比不推测更慢。</td></tr><tr><td>草稿数、接受数、接受率</td><td>猜了多少词元、验证通过多少，以及两者之比。</td><td>接受率低但总速度高也是可能的，最终以 t/s 为准。</td></tr></tbody></table></div>
+<h3>数值一致性</h3>
+<div class="tw"><table class="text"><thead><tr><th>数据</th><th>含义</th><th>怎么看</th></tr></thead><tbody><tr><td>logits</td><td>模型给词表中每个词元打的分，分数最高的词元在贪心采样时被选中。</td><td>比较 logits 比比较文本灵敏，文本相同不代表计算结果相同。</td></tr><tr><td>逐位相同、不同比例</td><td>两次计算的 logits 是否完全相等，以及不相等的比例。</td><td>100% 不同也可能只是很小的数值差异，要结合 rms 看。</td></tr><tr><td>rms</td><td>所有 logits 差异的均方根，表示典型差异大小。</td><td>越小越接近。</td></tr><tr><td>最大绝对差</td><td>所有 logits 中最大的单项差异。</td><td>它受少数极端值影响，只说明最坏情况。</td></tr><tr><td>最高分翻转</td><td>分数最高的词元变了多少次。</td><td>翻转才会直接改变贪心输出。</td></tr><tr><td>最小领先差</td><td>第一名和第二名分差的最小值。</td><td>分差越小，数值差异越容易改变输出。</td></tr></tbody></table></div>
+
+<h2>NPU、GPU、CPU 对比</h2>
+<div class="grid2">
+<figure class="chart"><figcaption>SM8850 提示处理 pp512<span>t/s，越长越好</span></figcaption><div class="bar"><span class="bl">NPU</span><span class="bt"><i class="c-npu" style="width:100.0%"></i></span><span class="bv">2,229.3</span></div><div class="bar"><span class="bl">GPU</span><span class="bt"><i class="c-gpu" style="width:20.7%"></i></span><span class="bv">461.1</span></div><div class="bar"><span class="bl">CPU 6 线程</span><span class="bt"><i class="c-cpu" style="width:10.5%"></i></span><span class="bv">233.3</span></div></figure>
+<figure class="chart"><figcaption>SM8850 生成 tg64<span>t/s，越长越好</span></figcaption><div class="bar"><span class="bl">NPU</span><span class="bt"><i class="c-npu" style="width:96.1%"></i></span><span class="bv">36.5</span></div><div class="bar"><span class="bl">GPU</span><span class="bt"><i class="c-gpu" style="width:85.3%"></i></span><span class="bv">32.4</span></div><div class="bar"><span class="bl">CPU 6 线程</span><span class="bt"><i class="c-cpu" style="width:100.0%"></i></span><span class="bv">38.0</span></div></figure>
+<figure class="chart"><figcaption>SM8845 提示处理 pp512<span>t/s，越长越好</span></figcaption><div class="bar"><span class="bl">NPU</span><span class="bt"><i class="c-npu" style="width:100.0%"></i></span><span class="bv">1,562.5</span></div><div class="bar"><span class="bl">GPU</span><span class="bt"><i class="c-gpu" style="width:20.4%"></i></span><span class="bv">318.3</span></div><div class="bar"><span class="bl">CPU 6 线程</span><span class="bt"><i class="c-cpu" style="width:8.6%"></i></span><span class="bv">134.4</span></div></figure>
+<figure class="chart"><figcaption>SM8845 生成 tg64<span>t/s，越长越好</span></figcaption><div class="bar"><span class="bl">NPU</span><span class="bt"><i class="c-npu" style="width:94.5%"></i></span><span class="bv">28.2</span></div><div class="bar"><span class="bl">GPU</span><span class="bt"><i class="c-gpu" style="width:57.5%"></i></span><span class="bv">17.1</span></div><div class="bar"><span class="bl">CPU 6 线程</span><span class="bt"><i class="c-cpu" style="width:100.0%"></i></span><span class="bv">29.8</span></div></figure>
+</div>
+<h3>SM8850（Canoe 开发机）</h3>
+<div class="tw"><table class=""><thead><tr><th>后端</th><th>pp128 t/s</th><th>pp512 t/s</th><th>tg64 t/s</th><th>RSS MiB</th><th>峰值 °C</th></tr></thead><tbody><tr><td>NPU（HTP0，全部层）</td><td>1653.1 <small>1642.2–1688.1</small></td><td>2229.3 <small>2198.4–2238.5</small></td><td>36.5 <small>36.4–36.8</small></td><td>2314</td><td>100</td></tr><tr><td>GPU（OpenCL）</td><td>470.9 <small>470.0–472.0</small></td><td>461.1 <small>459.9–462.8</small></td><td>32.4 <small>31.8–32.5</small></td><td>2445</td><td>100</td></tr><tr><td>CPU（6 线程）</td><td>293.7 <small>278.2–303.7</small></td><td>233.3 <small>226.0–252.5</small></td><td>38.0 <small>37.5–38.1</small></td><td>4765</td><td>105</td></tr></tbody></table></div>
+<h3>SM8845（PLR110，CPU 限频）</h3>
+<div class="tw"><table class=""><thead><tr><th>后端</th><th>pp128 t/s</th><th>pp512 t/s</th><th>tg64 t/s</th><th>RSS MiB</th><th>峰值 °C</th></tr></thead><tbody><tr><td>NPU（HTP0，全部层）</td><td>1275.7 <small>1266.1–1282.9</small></td><td>1562.5 <small>1542.7–1613.3</small></td><td>28.2 <small>26.3–30.8</small></td><td>2285</td><td>68</td></tr><tr><td>GPU（OpenCL）</td><td>331.9 <small>330.7–335.4</small></td><td>318.3 <small>315.6–320.2</small></td><td>17.1 <small>16.9–17.3</small></td><td>1859</td><td>71</td></tr><tr><td>CPU（6 线程）</td><td>12.4 <small>12.2–149.1</small></td><td>134.4 <small>134.2–134.4</small></td><td>29.8 <small>29.8–29.9</small></td><td>4736</td><td>81</td></tr></tbody></table></div>
+<p class="note">RSS 是进程峰值，不等于总内存占用。NPU 运行时另有约 2020 MiB 记在 HTP 设备上（模型 1362、KV 缓存 24、计算缓冲 634），且部分与 RSS 重叠。温度是全部 CPU 传感器的最大值；SM8850 开发机曾读到 105°C，只能用来相对比较。</p>
+
+<h2>优化版与上游基线</h2>
+<h3>SM8850</h3>
+<div class="tw"><table class=""><thead><tr><th>指标</th><th>上游基线</th><th>优化版</th><th>变化</th></tr></thead><tbody><tr><td>提示处理 pp128，t/s</td><td>1650.1 <small>1616.0–1654.9</small></td><td>1653.1 <small>1642.2–1688.1</small></td><td>+0.2%</td></tr><tr><td>提示处理 pp512，t/s</td><td>2233.7 <small>2214.0–2242.1</small></td><td>2229.3 <small>2198.4–2238.5</small></td><td>-0.2%</td></tr><tr><td>生成 tg64，t/s</td><td>36.5 <small>36.4–36.8</small></td><td>36.5 <small>36.4–36.8</small></td><td>+0.0%</td></tr><tr><td>端到端生成，t/s</td><td>35.7 <small>35.6–35.9</small></td><td>35.9 <small>35.6–36.0</small></td><td>+0.5%</td></tr><tr><td>模型加载，ms</td><td>744 <small>727–751</small></td><td>755 <small>686–826</small></td><td>+1.4%</td></tr><tr><td>11 词元提示耗时，ms</td><td>43.4 <small>43.3–43.4</small></td><td>43.5 <small>43.3–43.5</small></td><td>+0.3%</td></tr><tr><td>进程峰值 RSS，MiB</td><td>2314</td><td>2314</td><td>+0.0%</td></tr></tbody></table></div>
+<h3>SM8845</h3>
+<div class="tw"><table class=""><thead><tr><th>指标</th><th>上游基线</th><th>优化版</th><th>变化</th></tr></thead><tbody><tr><td>提示处理 pp128，t/s</td><td>1352.5 <small>1280.3–1440.7</small></td><td>1275.7 <small>1266.1–1282.9</small></td><td>-5.7%</td></tr><tr><td>提示处理 pp512，t/s</td><td>1569.4 <small>1540.9–1695.8</small></td><td>1562.5 <small>1542.7–1613.3</small></td><td>-0.4%</td></tr><tr><td>生成 tg64，t/s</td><td>29.0 <small>26.2–29.3</small></td><td>28.2 <small>26.3–30.8</small></td><td>-2.7%</td></tr><tr><td>端到端生成，t/s</td><td>27.9 <small>25.8–29.3</small></td><td>28.1 <small>25.8–29.4</small></td><td>+0.6%</td></tr><tr><td>模型加载，ms</td><td>2987 <small>2720–3257</small></td><td>3148 <small>2809–3648</small></td><td>+5.4%</td></tr><tr><td>11 词元提示耗时，ms</td><td>58.7 <small>58.5–59.2</small></td><td>59.2 <small>57.6–60.2</small></td><td>+1.0%</td></tr><tr><td>进程峰值 RSS，MiB</td><td>2284</td><td>2285</td><td>+0.1%</td></tr></tbody></table></div>
+<p>SM8850 上的差异都在波动范围内。SM8845 波动较大，pp128 差 -5.7%，且两组范围几乎不重叠，但 SM8850 上没有复现（+0.2%），所以暂不判定为回归。CPU 路径同样无差异：SM8850 上 CPU pp512 +1.4%、tg64 +0.8%。</p>
+
+<h2>host 线程数和功耗模式</h2>
+<div class="tw"><table class=""><thead><tr><th>配置（NPU 全部层）</th><th>SM8845 pp512</th><th>SM8845 tg64</th><th>SM8850 pp512</th><th>SM8850 tg64</th></tr></thead><tbody><tr><td>1 线程</td><td>1565.4 <small>1555.4–1579.6</small></td><td>28.7 <small>26.2–31.2</small></td><td>2227.8 <small>2225.9–2238.8</small></td><td>36.5 <small>36.5–36.8</small></td></tr><tr><td>2 线程，high_performance</td><td>1562.5 <small>1542.7–1613.3</small></td><td>28.2 <small>26.3–30.8</small></td><td>2229.3 <small>2198.4–2238.5</small></td><td>36.5 <small>36.4–36.8</small></td></tr><tr><td>4 线程</td><td>1548.5 <small>1547.9–1560.0</small></td><td>26.9 <small>26.4–27.7</small></td><td>2225.4 <small>2208.5–2230.1</small></td><td>36.6 <small>36.5–36.8</small></td></tr><tr><td>6 线程</td><td>1565.4 <small>1555.1–1565.5</small></td><td>29.7 <small>29.6–30.5</small></td><td>2232.2 <small>2212.7–2241.2</small></td><td>36.6 <small>36.5–36.7</small></td></tr><tr><td>2 线程，balanced</td><td>1448.8 <small>1440.5–1533.2</small></td><td>26.8 <small>25.6–28.6</small></td><td>2103.4 <small>2098.5–2105.3</small></td><td>35.6 <small>35.5–35.7</small></td></tr></tbody></table></div>
+<p>全部层都在 NPU 上时，host 线程数基本不影响速度，1 线程就够了。<code>balanced</code> 相比 <code>high_performance</code>，SM8850 的 pp512 降 5.6%，tg64 降 2.6%；功耗差异未测量。</p>
+
+<h2>部分卸载（16 层在 NPU）</h2>
+<div class="tw"><table class=""><thead><tr><th>配置</th><th>SM8845 pp512</th><th>SM8845 tg64</th><th>SM8850 pp512</th><th>SM8850 tg64</th></tr></thead><tbody><tr><td>优化版，6 线程</td><td>107.6 <small>107.2–237.6</small></td><td>0.9 <small>0.6–1.0</small></td><td>415.5 <small>401.6–428.9</small></td><td>38.4 <small>38.2–38.9</small></td></tr><tr><td>上游基线，6 线程</td><td>124.1 <small>105.8–262.1</small></td><td>1.0 <small>0.3–22.6</small></td><td>414.3 <small>405.7–420.3</small></td><td>38.7 <small>38.4–39.1</small></td></tr><tr><td>开权重流式，6 线程</td><td>200.2 <small>142.9–229.0</small></td><td>1.0 <small>0.7–23.0</small></td><td>405.1 <small>395.1–420.4</small></td><td>38.7 <small>38.7–38.8</small></td></tr><tr><td>开层预取，6 线程</td><td>139.9 <small>106.1–239.2</small></td><td>0.7 <small>0.3–0.9</small></td><td>404.9 <small>400.3–416.6</small></td><td>38.8 <small>38.7–38.8</small></td></tr><tr><td>关 NPU 卸载，6 线程</td><td>107.6 <small>102.9–237.2</small></td><td>1.0 <small>0.9–1.2</small></td><td>406.6 <small>397.9–422.2</small></td><td>38.6 <small>38.4–38.7</small></td></tr><tr><td>优化版，4 线程</td><td>93.8 <small>92.2–133.2</small></td><td>1.7 <small>1.0–2.7</small></td><td>336.3 <small>330.7–336.8</small></td><td>38.2 <small>38.0–38.5</small></td></tr><tr><td>优化版，2 线程</td><td>121.2 <small>120.9–121.2</small></td><td>25.0 <small>23.8–25.8</small></td><td>260.2 <small>258.7–265.8</small></td><td>35.1 <small>35.0–35.4</small></td></tr></tbody></table></div>
+<p>SM8850 上部分卸载的 tg64 比全 NPU 略高，但 pp512 只有全 NPU 的约五分之一，上游基线同样如此。SM8845 上 4 线程和 6 线程的生成速度崩溃，下一节是实验结果。</p>
+
+<h3>SM8845 的 6 线程崩溃</h3>
+<div class="grid2">
+<figure class="chart"><figcaption>SM8845 部分卸载 tg64<span>t/s，3 次中位数</span></figcaption><div class="bar"><span class="bl">默认：两种轮询都开</span><span class="bt"><i class="c-warn" style="width:3.4%"></i></span><span class="bv">0.9</span></div><div class="bar"><span class="bl">关 NPU 轮询</span><span class="bt"><i class="c-npu" style="width:79.5%"></i></span><span class="bv">20.3</span></div><div class="bar"><span class="bl">关 CPU 线程池轮询</span><span class="bt"><i class="c-npu" style="width:100.0%"></i></span><span class="bv">25.6</span></div><div class="bar"><span class="bl">两种都关</span><span class="bt"><i class="c-npu" style="width:68.5%"></i></span><span class="bv">17.5</span></div><div class="bar"><span class="bl">2 线程，两种轮询都开</span><span class="bt"><i class="c-npu" style="width:95.8%"></i></span><span class="bv">24.5</span></div></figure>
+<div><div class="tw"><table class=""><thead><tr><th>配置</th><th>线程</th><th>NPU 轮询</th><th>CPU 轮询</th><th>tg64 t/s</th></tr></thead><tbody><tr><td>默认：两种轮询都开</td><td>6</td><td>1</td><td>50</td><td>0.9 <small>0.9–1.2</small></td></tr><tr><td>关 NPU 轮询</td><td>6</td><td>0</td><td>50</td><td>20.3 <small>20.1–22.0</small></td></tr><tr><td>关 CPU 线程池轮询</td><td>6</td><td>1</td><td>0</td><td>25.6 <small>21.0–25.6</small></td></tr><tr><td>两种都关</td><td>6</td><td>0</td><td>0</td><td>17.5 <small>14.7–18.8</small></td></tr><tr><td>2 线程，两种轮询都开</td><td>2</td><td>1</td><td>50</td><td>24.5 <small>24.4–27.6</small></td></tr></tbody></table></div></div>
+</div>
+<p>上游基线同样会崩溃，所以这不是 fork 引入的回归。SM8850 上相同配置为 38.4 t/s，没有崩溃。这组实验说明两种轮询同时开启是触发条件。我的推测是：CPU 限频时，NPU 轮询线程和 6 个自旋的 CPU 线程争抢核心；这一机制没有用调度跟踪验证。实验中 CPU 频率上限也有变化，且对照组先跑，所以数字只用于判断方向。</p>
+<p>ggml-hexagon 库本身默认不开 NPU 轮询（<code>opt_oppoll = 0</code>），但 <code>scripts/snapdragon/run.py</code> 默认设置 <code>GGML_HEXAGON_OPPOLL=1</code>，手机上已有的 <code>bench.sh</code> 和本次矩阵也都开启了它。所以用这些脚本测部分卸载会遇到崩溃，不设这个变量的程序则不会。</p>
+
+<h3>run.py 的修复</h3>
+<p>已修改 <code>scripts/snapdragon/run.py</code>（本地提交 3ab067605）：检测到部分卸载（<code>-ngl</code> 小于 99，或 <code>-ot</code>、<code>--cpu-moe</code> 等）时，NPU 轮询默认为 0；全 NPU 时仍为 1；<code>--hex-oppoll</code> 可显式覆盖。没有全局关闭，因为全 NPU 下轮询是取舍关系：SM8845 交替运行 5 轮，开启时 tg64 中位数 30.5 t/s、pp512 1542 t/s，关闭时 28.4 t/s、1725 t/s。</p>
+<p>通过 <code>run.py</code> 在 SM8845 上验证（16 层 NPU、6 线程）：默认配置下 tg64 为 15.2、17.6、19.6 t/s；显式 <code>--hex-oppoll 1</code> 时 1.0 t/s，崩溃可复现；全 NPU 仍为轮询开启。SM8850 未复测这项修改。手机上的 <code>bench.sh</code> 写死了 <code>OPPOLL=1</code>，不受这项修改影响；上文的部分卸载表格是修复前的数据。</p>
+
+<h2>冷启动（SM8850）</h2>
+<p>每次运行前清空页缓存（<code>drop_caches</code>），16 层在 NPU、6 线程，共 3 次，取中位数。</p>
+<div class="tw"><table class=""><thead><tr><th>配置</th><th>加载 ms</th><th>11 词元提示 ms</th><th>生成 ms</th></tr></thead><tbody><tr><td>上游基线</td><td>1612 <small>1573–1977</small></td><td>61.8 <small>57.2–73.1</small></td><td>1690 <small>1686–1711</small></td></tr><tr><td>优化版默认</td><td>1566 <small>1526–1592</small></td><td>62.2 <small>61.4–62.7</small></td><td>1688 <small>1684–1691</small></td></tr><tr><td>关闭 mmap 预取</td><td>1544 <small>1526–1581</small></td><td>62.4 <small>53.4–64.0</small></td><td>1698 <small>1690–1698</small></td></tr><tr><td>关闭预取 + 层预取</td><td>1538 <small>1500–1558</small></td><td>58.9 <small>52.7–59.7</small></td><td>1690 <small>1687–1691</small></td></tr><tr><td>关闭预取 + 权重流式</td><td>1581 <small>1543–1624</small></td><td>60.6 <small>53.5–61.4</small></td><td>1693 <small>1689–1694</small></td></tr><tr><td>关闭 NPU 卸载</td><td>1544 <small>1503–1610</small></td><td>52.6 <small>52.6–56.1</small></td><td>1694 <small>1693–1699</small></td></tr></tbody></table></div>
+<p>各配置没有明显差异。上游基线首次运行加载 1977 ms，较慢，之后回到约 1600 ms。权重流式和层预取不作用于这个模型，所以这组数据不能代表它们的冷启动效果。</p>
+
+<h2>NPU 算子耗时</h2>
+<p>来自 <code>GGML_HEXAGON_PROFILE=1</code>，每个词元约 793 个算子。开启剖析和详细日志后速度会下降，所以这里只看占比。</p>
+<div class="tw"><table class=""><thead><tr><th>算子</th><th>SM8845 占比</th><th>SM8850 占比</th></tr></thead><tbody><tr><td>MUL_MAT（含 lm_head）</td><td>50.6%</td><td>50.2%</td></tr><tr><td>其中 lm_head，Q6_K，1536×262144</td><td>19.1%</td><td>18.7%</td></tr><tr><td>MUL_MAT_NX（注意力 QKV 和 FFN 合并矩阵乘）</td><td>39.0%</td><td>38.5%</td></tr><tr><td>RMS_NORM+MUL</td><td>3.7%</td><td>3.9%</td></tr><tr><td>ADD</td><td>1.4%</td><td>1.6%</td></tr><tr><td>FLASH_ATTN_EXT</td><td>1.4%</td><td>1.5%</td></tr></tbody></table></div>
+<p>每词元 NPU 批处理的平均耗时，SM8845 约 39.0 ms（1862 MHz），SM8850 约 33.2 ms（1824 MHz）。SM8850 的 NPU 时钟略低但更快，可能和内存带宽或其他微架构差异有关，这一点没有验证。</p>
+
+<h2>提速实验（SM8845）</h2>
+<p>目标是把推理速度提高 10 倍。这部分全部使用现有功能和参数，没有修改推理框架源码。配置为全部层在 NPU、2 线程、NPU 轮询开启。</p>
+<h3>瓶颈分析</h3>
+<p>每生成一个词元要读取约 1.38 GB 权重，其中 FFN 约 876 MB、注意力约 157 MB、输出层约 330 MB。按 28 t/s 计算约 38 GB/s，已接近手机内存的实际带宽。NPU 和 CPU 的生成速度也几乎相同，说明换算力帮助不大。这是根据数据作出的推断，内存带宽没有直接测量。</p>
+<h3>多路并发</h3>
+<div class="grid2">
+<figure class="chart"><figcaption>多路总吞吐<span>t/s，3 轮中位数</span></figcaption><div class="bar"><span class="bl">1 路</span><span class="bt"><i class="c-npu" style="width:7.8%"></i></span><span class="bv">28.7</span></div><div class="bar"><span class="bl">16 路</span><span class="bt"><i class="c-npu" style="width:63.3%"></i></span><span class="bv">234.2</span></div><div class="bar"><span class="bl">24 路</span><span class="bt"><i class="c-npu" style="width:83.4%"></i></span><span class="bv">308.6</span></div><div class="bar"><span class="bl">32 路</span><span class="bt"><i class="c-npu" style="width:100.0%"></i></span><span class="bv">370.1</span></div></figure>
+<div><div class="tw"><table class=""><thead><tr><th>路数</th><th>总吞吐 t/s</th><th>每路 t/s</th><th>一步 ms</th><th>倍数</th></tr></thead><tbody><tr><td>1 路</td><td>28.7 <small>26.8–32.7</small></td><td>28.7 <small>26.8–32.7</small></td><td>35 <small>31–37</small></td><td>1.0 <small>1.0–1.0</small></td></tr><tr><td>16 路</td><td>234.2 <small>221.0–246.0</small></td><td>14.6 <small>13.8–15.4</small></td><td>68 <small>65–72</small></td><td>8.2 <small>7.5–8.2</small></td></tr><tr><td>24 路</td><td>308.6 <small>308.2–332.3</small></td><td>12.9 <small>12.8–13.8</small></td><td>78 <small>72–78</small></td><td>10.7 <small>10.2–11.5</small></td></tr><tr><td>32 路</td><td>370.1 <small>364.5–398.9</small></td><td>11.6 <small>11.4–12.5</small></td><td>86 <small>80–88</small></td><td>12.9 <small>12.2–13.6</small></td></tr></tbody></table></div></div>
+</div>
+<p>24 路时倍数超过 10，但每路速度低于单路。数据来自 <code>llama-batched-bench</code>，每路提示 128 词元、生成 128 词元，没有模拟真实服务的请求到达和长度变化。</p>
+<h3>单路推测解码</h3>
+<div class="tw"><table class=""><thead><tr><th>代码改写，生成约 1300 词元</th><th>速度 t/s</th><th>相对不推测</th><th>草稿数</th><th>接受数</th><th>接受率</th></tr></thead><tbody><tr><td>不推测</td><td>31.1 <small>30.8–31.8</small></td><td>1.0 倍</td><td>0</td><td>0</td><td>–</td></tr><tr><td>n=4，m=16</td><td>156.5 <small>141.5–156.9</small></td><td>5.0 倍</td><td>1,844</td><td>1,175</td><td>64%</td></tr><tr><td>n=4，m=32</td><td>178.2 <small>174.3–179.3</small></td><td>5.7 倍</td><td>3,349</td><td>1,202</td><td>36%</td></tr><tr><td>n=4，m=64</td><td>157.8 <small>156.2–159.5</small></td><td>5.1 倍</td><td>5,445</td><td>1,234</td><td>23%</td></tr></tbody></table></div>
+<div class="tw"><table class=""><thead><tr><th>提示类型（n=2，m=16，单次运行）</th><th>不推测 t/s</th><th>推测 t/s</th><th>倍数</th></tr></thead><tbody><tr><td>普通问答</td><td>32.0</td><td>30.3</td><td>0.9 倍</td></tr><tr><td>代码评审（需引用输入）</td><td>31.4</td><td>49.4</td><td>1.6 倍</td></tr><tr><td>代码改写（大量照抄输入）</td><td>30.9</td><td>90.3</td><td>2.9 倍</td></tr></tbody></table></div>
+<p>提速幅度取决于输出中有多少内容能从输入里照抄。上表最好的结果约 5.7 倍；普通问答几乎猜不中，推测基本没有收益。</p>
+
+<h2>批量解码的数值差异（SM8845）</h2>
+<p>实验中发现，同样的贪心采样，有无推测的输出可能不同。例如普通问答中，一次输出“red, orange, and yellow”，另一次输出“red and orange”。文本都通顺，但推测解码本应不改变结果，所以做了 logits 对比。</p>
+<h3>和单步解码的差异</h3>
+<div class="tw"><table class=""><thead><tr><th>NPU 配置</th><th>批量 4</th><th>批量 5</th><th>批量 8</th></tr></thead><tbody><tr><td>默认</td><td>逐位相同</td><td>100% 不同，rms 0.27</td><td>100% 不同，rms 0.26</td></tr><tr><td>关融合</td><td>逐位相同</td><td>100% 不同，rms 0.15</td><td>100% 不同，rms 0.15</td></tr><tr><td>注意力只用 HVX</td><td>逐位相同</td><td>100% 不同，rms 0.14</td><td>100% 不同，rms 0.14</td></tr><tr><td>matmul 只用 HVX</td><td>逐位相同</td><td>逐位相同</td><td>80% 不同，rms 0.10</td></tr><tr><td>三项同时</td><td>逐位相同</td><td>逐位相同</td><td>逐位相同</td></tr></tbody></table></div>
+<p class="note">同一提示，前缀 200 词元，比较 50 个位置，均未跨过位置 256。“三项同时”指 matmul 和注意力只用 HVX，并关闭融合。这些位置的最高分词元都没有翻转。</p>
+<p>三项同时关闭后，到批量 8 都逐位相同；相同配置重复运行也逐位相同。所以差异来自 HMX、HVX 和融合路径随批量大小切换，不是随机噪声。融合不是根因：关闭后差异仍在，只是变小。</p>
+<h3>和 CPU 单步结果的距离</h3>
+<div class="tw"><table class=""><thead><tr><th>配置</th><th>rms</th><th>最大绝对差</th><th>最高分翻转</th></tr></thead><tbody><tr><td>CPU 批量 8</td><td>0.050</td><td>0.57</td><td>0</td></tr><tr><td>NPU 单步，默认</td><td>0.232</td><td>2.63</td><td>0</td></tr><tr><td>NPU 单步，关融合</td><td>0.164</td><td>1.64</td><td>0</td></tr><tr><td>NPU 批量 8，默认</td><td>0.125</td><td>1.10</td><td>0</td></tr><tr><td>NPU 批量 8，关融合</td><td>0.123</td><td>1.08</td><td>0</td></tr></tbody></table></div>
+<p class="note">比较 64 个位置，其中最后 8 个位置已跨过 256。这里把 CPU 单步当作参照，不代表它是绝对正确的结果。</p>
+<p>NPU 批量结果比单步更接近 CPU，所以没有证据表明批量结果更差。这组样本中最小领先差约 1.1–1.2，大于批量差异的典型幅度，因此输出通常不变，只有接近打平时才会变化。这组对比只用了一个提示。</p>
+<h3>固定路径的代价</h3>
+<div class="tw"><table class=""><thead><tr><th>指标</th><th>默认</th><th>三项同时</th></tr></thead><tbody><tr><td>单路 tg，t/s</td><td>31.5</td><td>26.5</td></tr><tr><td>24 路总吞吐，t/s</td><td>340.6</td><td>76.4</td></tr><tr><td>提示处理（24 路，每路 128 词元），t/s</td><td>1,709.6</td><td>96.9</td></tr><tr><td>推测解码，编辑任务，t/s</td><td>90.3</td><td>19.8</td></tr><tr><td>普通问答：有无推测的输出</td><td>不同</td><td>相同</td></tr><tr><td>代码评审：有无推测的输出</td><td>不同</td><td>不同</td></tr><tr><td>代码改写：有无推测的输出</td><td>相同</td><td>相同</td></tr></tbody></table></div>
+<p>固定路径的速度代价很大，也没有完全解决问题：代码评审提示的输出仍然不同。它从约 1576 词元开始生成，途中会跨过 1792 这个 KV 对齐边界。此外，CPU 上位置跨过 256 后，单步和批量的 logits 也开始不同（最大约 0.57），关闭图复用后不变。这可能和 KV 按 256 对齐有关，根因没有查明。</p>
+<p><b>建议：</b>日常保持默认配置，不要为了可复现而切到固定路径。批量解码的结果可以视为与单步等效，但不是逐位相同。需要逐字复现时，使用单路、不开推测，并固定配置和提示。</p>
+
+<h2>建议的下一步</h2>
+<ol>
+<li><b>验证真实并发。</b>用 <code>llama-server</code> 多槽位和不同长度的请求测吞吐与延迟，并在 SM8850 上重复提速实验。</li>
+<li><b>查清 256 边界的差异。</b>它在 CPU 上也出现，不限于 NPU。</li>
+<li><b>优化 lm_head。</b>它占约 19% 的 NPU 时间。可以试更低比特的量化，或复查 Q6_K 大矩阵的 NPU 路径，再评估精度影响。预期收益还只是估算。</li>
+<li><b>给 Gemma 4 接入流式和层预取。</b>只有模型超出可用内存时才有意义。E2B 不需要，12B 这类模型可能需要；手机上已有的 12B 测试脚本也只尝试部分卸载。</li>
+<li><b>另做一轮大模型验证。</b>用 Qwen 或 MoE 模型，在内存压力下对比这些优化，这才是它们的目标场景。</li>
+<li><b>补上功耗测量。</b>NPU 和 CPU 的生成速度接近，选择哪个主要取决于能效，而这次没有这项数据。</li>
+</ol>
+
+<h2>数据限制</h2>
+<div class="warn">
+<p><b>SM8845 的 CPU 全程受限。</b>即使 Thermal Status 为 0，CPU 上限大多仍只有约 2266/1651 MHz（硬件最高 3322/3802 MHz）。CPU 和部分卸载的数据明显低于芯片能力；NPU 全层的结果受影响较小但也不是满血数据。SM8845 的纯 CPU pp128 还出现 12–149 t/s 的双峰，原因未查明。</p>
+<p><b>SM8845 第一轮数据已弃用。</b>第一轮在息屏 Doze 状态下运行，没有用于上表，保留在 <code>results/full/sm8845-throttled-doze.jsonl</code>。</p>
+<p><b>没有测试 Gen 6。</b>本次云端设备是 SM8850，不是你最终要调试的 Gen 6 芯片。</p>
+<p><b>两次 SM8850 会话用了不同设备。</b>序列号分别是 64a112da 和 cf39e6a。结果高度一致（opt_htp pp512 2,239.5 对 2,229.3，tg64 36.3 对 36.5），表中使用第二次的数据。开发机与量产手机的散热和存储不同。</p>
+<p><b>不同设备或后端的输出不完全相同。</b>同一设备上优化版和基线文本一致，但 SM8845 NPU（56 词元）与 SM8850 NPU 和 CPU（66 词元）不同，SM8845 CPU 则与后者一致。两份回答都合理；这可能来自数值差异，尚未查明，所以端到端生成速度不宜跨设备直接比较。批量大小对输出的影响见“批量解码的数值差异”一节。</p>
+<p><b>提速和数值实验范围有限。</b>都只在 SM8845 上做，SM8850 没有测；部分结果是单次运行，已在表中注明。CPU 受限频影响，这里的倍数不能直接套用到其他设备。</p>
+<p><b>没有测试：</b>功耗和能效、长时间持续负载、内存压力、不同上下文长度，以及模型输出质量评估。</p>
+</div>
+<p class="note">原始数据和脚本位于 <code>EdgeAgent/validation/results/full/</code>、<code>fullbench.py</code>、<code>device/</code>。</p>
+</main>

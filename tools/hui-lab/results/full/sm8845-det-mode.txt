@@ -1,0 +1,18 @@
+default open nodraft 3d34fe09 n=210   31.978 t/s
+default open draft e5a9389c n=207   30.276 t/s
+default mixed nodraft 0537b2d3 n=301   31.398 t/s
+default mixed draft 15b2cac2 n=305   49.425 t/s
+default edit nodraft 1c33cec6 n=301   30.937 t/s
+default edit draft 1c33cec6 n=301   90.275 t/s
+default batched:
+|   128 |     64 |    1 |    192 |    0.107 |  1196.06 |    2.030 |    31.53 |    2.137 |    89.85 |
+|   128 |     64 |   24 |   4608 |    1.797 |  1709.61 |    4.509 |   340.63 |    6.306 |   730.72 |
+det open nodraft 7032ce6a n=209   30.533 t/s
+det open draft 7032ce6a n=209   21.703 t/s
+det mixed nodraft ad973a8d n=301   26.038 t/s
+det mixed draft 571cfe28 n=315   16.680 t/s
+det edit nodraft 1c33cec6 n=301   24.272 t/s
+det edit draft 1c33cec6 n=301   19.831 t/s
+det batched:
+|   128 |     64 |    1 |    192 |    1.310 |    97.68 |    2.419 |    26.46 |    3.729 |    51.48 |
+|   128 |     64 |   24 |   4608 |   31.717 |    96.86 |   20.102 |    76.41 |   51.819 |    88.92 |

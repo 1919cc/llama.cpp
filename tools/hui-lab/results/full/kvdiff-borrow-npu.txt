@@ -1,0 +1,10 @@
+=== npu smol-f32
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.013224124908447266, None) cold0-cold2=(-1, 0.01209259033203125, None) own-cold0=(-1, 0.009232044219970703, None) own-borrow=(-1, 0.009890556335449219, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.022849082946777344, None) cold0-cold2=(-1, 0.016937732696533203, None) own-cold0=(-1, 0.01033163070678711, None) own-borrow=(-1, 0.010841846466064453, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.014499664306640625, None) cold0-cold2=(-1, 0.007837295532226562, None) own-cold0=(-1, 0.006312370300292969, None) own-borrow=(-1, 0.015042543411254883, None)
+1
+=== npu SmolLM2-135M-Instruct-Q4_0
+q=1.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.1417677402496338, None) cold0-cold2=(-1, 0.18604278564453125, None) own-cold0=(-1, 0.2269890308380127, None) own-borrow=(-1, 0.2028954029083252, None)
+q=2.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.15966153144836426, None) cold0-cold2=(-1, 0.21835565567016602, None) own-cold0=(-1, 0.22368907928466797, None) own-borrow=(-1, 0.2140974998474121, None)
+q=3.0 cold0-cold0=(-1, 0.0, None) cold0-cold1=(-1, 0.13060855865478516, None) cold0-cold2=(-1, 0.30530214309692383, None) own-cold0=(-1, 0.23938274383544922, None) own-borrow=(-1, 0.1347980499267578, None)
+1

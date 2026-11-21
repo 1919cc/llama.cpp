@@ -1,0 +1,35 @@
+=== LFM2-350M-Q4_0
+edit nodraft #0 rc=0 md5=9910320d decoded 1001 tokens in 8.765 seconds, speed: 114.203 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #0 rc=0 md5=587a8cbd decoded 1033 tokens in 2.698 seconds, speed: 382.930 t/s;n_drafted = 818;n_accept = 818;
+open ngram8 #0 rc=0 md5=18651f2c decoded 202 tokens in 1.299 seconds, speed: 155.498 t/s;n_drafted = 14;n_accept = 14;
+edit nodraft #1 rc=0 md5=9910320d decoded 1001 tokens in 8.831 seconds, speed: 113.352 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #1 rc=0 md5=587a8cbd decoded 1033 tokens in 2.670 seconds, speed: 386.845 t/s;n_drafted = 818;n_accept = 818;
+open ngram8 #1 rc=0 md5=18651f2c decoded 202 tokens in 1.409 seconds, speed: 143.350 t/s;n_drafted = 14;n_accept = 14;
+edit nodraft #2 rc=0 md5=9910320d decoded 1001 tokens in 8.896 seconds, speed: 112.520 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #2 rc=0 md5=587a8cbd decoded 1033 tokens in 2.697 seconds, speed: 383.057 t/s;n_drafted = 818;n_accept = 818;
+open ngram8 #2 rc=0 md5=18651f2c decoded 202 tokens in 1.359 seconds, speed: 148.671 t/s;n_drafted = 14;n_accept = 14;
+=== SmolLM2-135M-Instruct-Q4_0
+edit nodraft #0 rc=0 md5=0d569104 decoded 1001 tokens in 8.619 seconds, speed: 116.135 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #0 rc=0 md5=7cc50768 decoded 1033 tokens in 0.987 seconds, speed: 1046.363 t/s;n_drafted = 1538;n_accept = 979;
+open ngram8 #0 rc=0 md5=b6af3249 decoded 206 tokens in 0.259 seconds, speed: 795.892 t/s;n_drafted = 170;n_accept = 170;
+edit nodraft #1 rc=0 md5=0d569104 decoded 1001 tokens in 8.609 seconds, speed: 116.280 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #1 rc=0 md5=7cc50768 decoded 1033 tokens in 0.995 seconds, speed: 1038.557 t/s;n_drafted = 1538;n_accept = 979;
+open ngram8 #1 rc=0 md5=b6af3249 decoded 206 tokens in 0.258 seconds, speed: 797.646 t/s;n_drafted = 170;n_accept = 170;
+edit nodraft #2 rc=0 md5=0d569104 decoded 1001 tokens in 8.582 seconds, speed: 116.637 t/s;n_drafted = 0;n_accept = 0;
+edit ngram32 #2 rc=0 md5=7cc50768 decoded 1033 tokens in 0.994 seconds, speed: 1039.428 t/s;n_drafted = 1538;n_accept = 979;
+open ngram8 #2 rc=0 md5=b6af3249 decoded 206 tokens in 0.257 seconds, speed: 800.628 t/s;n_drafted = 170;n_accept = 170;
+=== draft model on CPU, gemma family
+E2B open nodraft #0 rc=0 md5=708847df decoded 201 tokens in 7.065 seconds, speed: 28.450 t/s;n_drafted = 0;n_accept = 0;
+E2B open draft270m-cpu k=2 #0 rc=134 md5=52ed8424 
+0.07.173.374 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2
+E2B open draft270m-cpu k=4 #0 rc=134 md5=52ed8424 
+0.04.624.386 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2
+E2B open draft270m-cpu k=8 #0 rc=134 md5=52ed8424 
+0.03.853.255 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2
+E2B open nodraft #1 rc=0 md5=708847df decoded 201 tokens in 7.299 seconds, speed: 27.540 t/s;n_drafted = 0;n_accept = 0;
+E2B open draft270m-cpu k=2 #1 rc=134 md5=52ed8424 
+0.04.342.711 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2
+E2B open draft270m-cpu k=4 #1 rc=134 md5=52ed8424 
+0.04.074.756 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2
+E2B open draft270m-cpu k=8 #1 rc=134 md5=52ed8424 
+0.03.885.055 W spec common_specu: draft model vocab type must match target model to use speculation but vocab_type_dft = 1 while vocab_type_tgt = 2

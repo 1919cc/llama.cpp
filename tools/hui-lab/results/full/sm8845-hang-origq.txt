@@ -1,0 +1,6 @@
+tag=origq batt=480 round=1 elapsed=307s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=196 wall=306s total_tps=41.0 stream_tps_med=16.8 ttft_med=1166ms ttft_max=7087ms
+WARN procs=0
+tag=origq batt=469 round=2 elapsed=1s alive= err=[] no completed requests
+tag=origq batt=475 round=3 elapsed=328s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=204 wall=327s total_tps=39.9 stream_tps_med=16.7 ttft_med=1045ms ttft_max=7010ms
+tag=origq batt=483 round=4 elapsed=310s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=200 wall=310s total_tps=41.3 stream_tps_med=16.6 ttft_med=1190ms ttft_max=4618ms
+tag=origq batt=481 round=5 elapsed=307s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=196 wall=307s total_tps=40.8 stream_tps_med=16.8 ttft_med=1218ms ttft_max=5526ms

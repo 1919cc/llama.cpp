@@ -1,0 +1,7 @@
+tag=fixed round=1 elapsed=185s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=152 wall=185s total_tps=52.6 stream_tps_med=17.2 ttft_med=999ms ttft_max=2047ms
+tag=fixed round=2 elapsed=185s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=144 wall=185s total_tps=49.9 stream_tps_med=16.9 ttft_med=1022ms ttft_max=3908ms
+tag=fixed round=3 elapsed=186s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=136 wall=187s total_tps=46.7 stream_tps_med=16.9 ttft_med=1192ms ttft_max=3756ms
+tag=fixed round=4 elapsed=212s alive=yes err=[] ways=4 cache=True n=64 think=0s reqs=128 wall=212s total_tps=38.7 stream_tps_med=16.6 ttft_med=1206ms ttft_max=8661ms
+tag=fixed round=5 elapsed=0s alive=yes err=[] no completed requests
+tag=fixed round=6 elapsed=1s alive=yes err=[] no completed requests
+tag=fixed round=7 elapsed=0s alive=yes err=[] no completed requests

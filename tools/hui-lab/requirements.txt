@@ -1,0 +1,4 @@
+# lab.py qdc-targets / qdc-job (QDC automated jobs)
+qualcomm_device_cloud_sdk==0.2.3
+appium-python-client==5.2.4
+pytest==8.4.2

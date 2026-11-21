@@ -1,0 +1,46 @@
+=== qwen2.5-0.5b-instruct-q4_0
+verify2 q=0 own==borrow False own_cache=808 borrow_cache=808 ttft own=50 borrow=34ms chars=282
+  own:    '1 0: work answers travel reads assistant notes health short health messages work. \n\nThis is a quick summary of the text provided. If you have any more questions or need further assistance
+  borrow: '1 0: work answers travel reads assistant notes health short health messages work photos photos photos photos photos photos photos photos photos photos photos photos photos photos photos pho
+verify2 q=1 own==borrow True own_cache=808 borrow_cache=810 ttft own=44 borrow=37ms chars=312
+verify2 q=2 own==borrow False own_cache=808 borrow_cache=810 ttft own=39 borrow=32ms chars=336
+  own:    '1. The weather notes short travel questions food about messages photos photos photos. This is a short message about the weather, including photos and photos. It is a good way to capture the
+  borrow: "1. The weather notes short travel questions food about messages photos photos photos. This is a short message about the weather, including photos and photos of food. It's a good way to capt
+verify2 fired=3 mismatches=2
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=42 borrow=34ms chars=419
+verify2 q=1 own==borrow True own_cache=808 borrow_cache=810 ttft own=37 borrow=36ms chars=345
+verify2 q=2 own==borrow True own_cache=808 borrow_cache=810 ttft own=46 borrow=32ms chars=328
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=49 borrow=36ms chars=304
+verify2 q=1 own==borrow False own_cache=808 borrow_cache=810 ttft own=36 borrow=37ms chars=330
+  own:    '3 1: notes weather music questions travel work assistant phone weather reads answers photos. This is a list of notes and photos related to weather, music, and questions about travel, assist
+  borrow: '3 1: notes weather music questions travel work assistant phone weather reads answers photos. This is a list of notes and photos related to weather, music, and questions, as well as travel, 
+verify2 q=2 own==borrow False own_cache=808 borrow_cache=810 ttft own=37 borrow=33ms chars=311
+  own:    '3 2: calendar health food notes assistant meetings short the health reads notes. This is a list of tasks and notes for a person who is in charge of a specific task. It includes tasks like r
+  borrow: '3 2: calendar health food notes assistant meetings short the health reads notes. This is a list of tasks and notes for a person who is in charge of a specific task. It includes tasks like r
+verify2 fired=3 mismatches=2
+verify2 q=0 own==borrow True own_cache=808 borrow_cache=808 ttft own=42 borrow=34ms chars=417
+verify2 q=1 own==borrow True own_cache=808 borrow_cache=810 ttft own=37 borrow=38ms chars=312
+verify2 q=2 own==borrow True own_cache=808 borrow_cache=810 ttft own=39 borrow=35ms chars=331
+verify2 fired=3 mismatches=0
+=== qwen35-2b-Q4_0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=156 borrow=148ms chars=315
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=140 borrow=152ms chars=309
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=148 borrow=146ms chars=309
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=161 borrow=155ms chars=269
+verify2 q=1 own==borrow False own_cache=805 borrow_cache=805 ttft own=130 borrow=149ms chars=309
+  own:    'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords and phrases (e.g., "health reads the and photos photos notes reads work assistant
+  borrow: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., "health reads the and photos photos notes reads work assistant mus
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=149 borrow=149ms chars=267
+verify2 fired=3 mismatches=1
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=177 borrow=153ms chars=315
+verify2 q=1 own==borrow True own_cache=805 borrow_cache=805 ttft own=138 borrow=144ms chars=269
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=149 borrow=143ms chars=256
+verify2 fired=3 mismatches=0
+verify2 q=0 own==borrow True own_cache=805 borrow_cache=805 ttft own=165 borrow=159ms chars=266
+verify2 q=1 own==borrow False own_cache=805 borrow_cache=805 ttft own=141 borrow=145ms chars=274
+  own:    'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords and phrases (e.g., "4 1: questions the weather about notes messages work questi
+  borrow: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat garbled list of keywords/phrases (e.g., "4 1: questions the weather about notes messages work questions sh
+verify2 q=2 own==borrow True own_cache=805 borrow_cache=805 ttft own=147 borrow=156ms chars=305
+verify2 fired=3 mismatches=1

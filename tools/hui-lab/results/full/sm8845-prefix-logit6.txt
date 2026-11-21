@@ -1,0 +1,7 @@
+=== --kv-unified --no-cache-idle-slots -dev none -ngl 0 -t 6
+urllib.error.URLError: <urlopen error [Errno 61] Connection refused>
+urllib.error.URLError: <urlopen error [Errno 61] Connection refused>
+0
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 61] Connection refused>
+note: run with a range check in llama_memory_recurrent::seq_cp; own-borrow on CPU did not change (0.544), so the patch was reverted.

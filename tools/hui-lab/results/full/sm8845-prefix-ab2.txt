@@ -1,0 +1,61 @@
+verify2 rep=0 own==borrow True own==cold True own_cache=805 borrow_cache=0 ttft cold=566 own=175 borrow=612ms
+verify2 rep=1 own==borrow True own==cold True own_cache=805 borrow_cache=0 ttft cold=538 own=149 borrow=546ms
+verify2 rep=2 own==borrow False own==cold False own_cache=805 borrow_cache=0 ttft cold=572 own=146 borrow=558ms
+  own:    'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic list of keywords/phrases (e.g., "2: family questions messages health que'
+  borrow: 'Thinking Process:\n\n1.  **Analyze the Request:**\n    *   Input: A long, somewhat chaotic string of keywords/phrases (e.g., "2: family questions messages health q'
+verify2 rep=3 own==borrow True own==cold True own_cache=805 borrow_cache=0 ttft cold=564 own=146 borrow=567ms
+verify2 mismatches=1
+=== rep=1 mode=--no-kv-unified batt=479
+cross round=0 client=0 ttft=1446ms prompt_n=27 prompt_tps=19 cache_n=805 decode_tps=16.3
+cross round=0 client=1 ttft=1738ms prompt_n=832 prompt_tps=491 cache_n=0 decode_tps=18.3
+cross round=0 client=2 ttft=1736ms prompt_n=832 prompt_tps=491 cache_n=0 decode_tps=18.2
+cross round=0 client=3 ttft=1734ms prompt_n=832 prompt_tps=492 cache_n=0 decode_tps=18.2
+ways=2 cache=True n=64 think=0s reqs=14 wall=34s total_tps=26.0 stream_tps_med=13.5 ttft_med=296ms ttft_max=371ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=44s total_tps=58.7 stream_tps_med=17.3 ttft_med=518ms ttft_max=2007ms
+ways=4 cache=True n=64 think=5.0s reqs=21 wall=56s total_tps=24.1 stream_tps_med=17.5 ttft_med=383ms ttft_max=3026ms
+borrowed=0 procs=1 err=0
+=== rep=1 mode=--kv-unified batt=479
+cross round=0 client=0 ttft=271ms prompt_n=27 prompt_tps=109 cache_n=805 decode_tps=17.4
+cross round=0 client=1 ttft=424ms prompt_n=27 prompt_tps=86 cache_n=805 decode_tps=18.5
+cross round=0 client=2 ttft=425ms prompt_n=27 prompt_tps=88 cache_n=805 decode_tps=18.5
+cross round=0 client=3 ttft=422ms prompt_n=27 prompt_tps=84 cache_n=805 decode_tps=18.5
+ways=2 cache=True n=64 think=0s reqs=24 wall=31s total_tps=48.8 stream_tps_med=26.2 ttft_med=245ms ttft_max=357ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=42s total_tps=60.9 stream_tps_med=16.9 ttft_med=484ms ttft_max=510ms
+ways=4 cache=True n=64 think=5.0s reqs=27 wall=56s total_tps=31.0 stream_tps_med=27.3 ttft_med=234ms ttft_max=517ms
+borrowed=3 procs=1 err=0
+=== rep=2 mode=--no-kv-unified batt=482
+cross round=0 client=0 ttft=1748ms prompt_n=832 prompt_tps=487 cache_n=0 decode_tps=18.2
+cross round=0 client=1 ttft=1452ms prompt_n=27 prompt_tps=19 cache_n=805 decode_tps=16.3
+cross round=0 client=2 ttft=1746ms prompt_n=832 prompt_tps=487 cache_n=0 decode_tps=18.2
+cross round=0 client=3 ttft=1749ms prompt_n=832 prompt_tps=486 cache_n=0 decode_tps=18.2
+ways=2 cache=True n=64 think=0s reqs=14 wall=34s total_tps=26.1 stream_tps_med=13.9 ttft_med=297ms ttft_max=365ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=42s total_tps=60.3 stream_tps_med=17.0 ttft_med=488ms ttft_max=1003ms
+ways=4 cache=True n=64 think=5.0s reqs=20 wall=56s total_tps=23.0 stream_tps_med=15.8 ttft_med=827ms ttft_max=2668ms
+borrowed=0 procs=1 err=0
+=== rep=2 mode=--kv-unified batt=485
+cross round=0 client=0 ttft=461ms prompt_n=27 prompt_tps=80 cache_n=805 decode_tps=17.2
+cross round=0 client=1 ttft=291ms prompt_n=27 prompt_tps=100 cache_n=805 decode_tps=16.2
+cross round=0 client=2 ttft=463ms prompt_n=27 prompt_tps=83 cache_n=805 decode_tps=17.2
+cross round=0 client=3 ttft=456ms prompt_n=27 prompt_tps=78 cache_n=805 decode_tps=17.2
+ways=2 cache=True n=64 think=0s reqs=20 wall=31s total_tps=40.8 stream_tps_med=22.6 ttft_med=321ms ttft_max=451ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=44s total_tps=58.4 stream_tps_med=16.8 ttft_med=654ms ttft_max=702ms
+ways=4 cache=True n=64 think=5.0s reqs=26 wall=56s total_tps=29.7 stream_tps_med=21.4 ttft_med=283ms ttft_max=696ms
+borrowed=3 procs=1 err=0
+=== rep=3 mode=--no-kv-unified batt=483
+cross round=0 client=0 ttft=1948ms prompt_n=832 prompt_tps=504 cache_n=0 decode_tps=17.8
+cross round=0 client=1 ttft=1815ms prompt_n=832 prompt_tps=468 cache_n=0 decode_tps=16.9
+cross round=0 client=2 ttft=1948ms prompt_n=832 prompt_tps=504 cache_n=0 decode_tps=17.8
+cross round=0 client=3 ttft=978ms prompt_n=27 prompt_tps=28 cache_n=805 decode_tps=12.1
+ways=2 cache=True n=64 think=0s reqs=24 wall=30s total_tps=50.6 stream_tps_med=29.0 ttft_med=247ms ttft_max=394ms
+ways=4 cache=True n=64 think=0s reqs=36 wall=44s total_tps=52.1 stream_tps_med=16.7 ttft_med=530ms ttft_max=3031ms
+ways=4 cache=True n=64 think=5.0s reqs=20 wall=59s total_tps=21.7 stream_tps_med=15.5 ttft_med=747ms ttft_max=3006ms
+borrowed=0 procs=1 err=0
+=== rep=3 mode=--kv-unified batt=483
+cross round=0 client=0 ttft=286ms prompt_n=27 prompt_tps=102 cache_n=805 decode_tps=16.8
+cross round=0 client=1 ttft=450ms prompt_n=27 prompt_tps=78 cache_n=805 decode_tps=17.9
+cross round=0 client=2 ttft=452ms prompt_n=27 prompt_tps=81 cache_n=805 decode_tps=17.9
+cross round=0 client=3 ttft=453ms prompt_n=27 prompt_tps=83 cache_n=805 decode_tps=17.9
+ways=2 cache=True n=64 think=0s reqs=22 wall=31s total_tps=45.2 stream_tps_med=25.3 ttft_med=251ms ttft_max=373ms
+ways=4 cache=True n=64 think=0s reqs=40 wall=42s total_tps=61.1 stream_tps_med=17.0 ttft_med=497ms ttft_max=513ms
+ways=4 cache=True n=64 think=5.0s reqs=27 wall=56s total_tps=30.7 stream_tps_med=26.5 ttft_med=236ms ttft_max=512ms
+borrowed=3 procs=1 err=0
