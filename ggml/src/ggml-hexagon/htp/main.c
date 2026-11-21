@@ -944,6 +944,7 @@ static int execute_op(struct htp_ops_context * octx) {
         case HTP_OP_UNARY_NEG:
         case HTP_OP_UNARY_EXP:
         case HTP_OP_UNARY_TANH:
+        case HTP_OP_UNARY_SCALE_TANH:
         case HTP_OP_UNARY_ABS:
         case HTP_OP_UNARY_LOG:
         case HTP_OP_UNARY_RELU:
@@ -962,6 +963,7 @@ static int execute_op(struct htp_ops_context * octx) {
         case HTP_OP_GLU_GEGLU_ERF:
         case HTP_OP_GLU_REGLU:
         case HTP_OP_GLU_SIGMOID:
+        case HTP_OP_GLU_SOFTPLUS:
             return op_glu(octx);
 
         case HTP_OP_SOFTMAX:

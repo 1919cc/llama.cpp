@@ -142,6 +142,34 @@ static inline void hvx_sigmoid_f32_uu(uint8_t * restrict dst, const uint8_t * re
     hvx_sigmoid_loop_body(HVX_UVector, HVX_UVector, hvx_vec_store_u);
 }
 
+// scale_out * tanh(scale_in * x), one pass over the data
+static inline void hvx_scale_tanh_f32_aa(uint8_t * restrict dst, const uint8_t * restrict src, uint32_t n, float scale_in, float scale_out) {
+    assert((uintptr_t) dst % 128 == 0);
+    assert((uintptr_t) src % 128 == 0);
+
+    HVX_Vector * restrict vdst = (HVX_Vector *) dst;
+    const HVX_Vector * restrict vsrc = (const HVX_Vector *) src;
+
+    const HVX_Vector vin  = hvx_vec_splat_f32(scale_in);
+    const HVX_Vector vout = hvx_vec_splat_f32(scale_out);
+
+    const uint32_t epv  = 128 / sizeof(float);
+    const uint32_t nvec = n / epv;
+    const uint32_t nloe = n % epv;
+
+    uint32_t i = 0;
+    _Pragma("unroll(4)")
+    for (; i < nvec; i++) {
+        HVX_Vector x = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(vsrc[i], vin));
+        vdst[i] = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(hvx_vec_tanh_f32(x), vout));
+    }
+    if (nloe) {
+        HVX_Vector x = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(vsrc[i], vin));
+        HVX_Vector t = Q6_Vsf_equals_Vqf32(Q6_Vqf32_vmpy_VsfVsf(hvx_vec_tanh_f32(x), vout));
+        hvx_vec_store_a((void *) &vdst[i], nloe * sizeof(float), t);
+    }
+}
+
 static inline void hvx_tanh_f32_aa(uint8_t * restrict dst, const uint8_t * restrict src, uint32_t n) {
     assert((unsigned long) dst % 128 == 0);
     assert((unsigned long) src % 128 == 0);

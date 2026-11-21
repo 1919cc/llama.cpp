@@ -185,6 +185,54 @@ static bool fuse_rms_norm_scale(const ggml_hexagon_session * sess, htp_opnode & 
     return true;
 }
 
+// SCALE -> TANH [-> SCALE], the final logit softcap. Elementwise with the same shape, so the kernel params of the
+// first SCALE stay valid. The whole logits tensor then moves through DDR once instead of three times.
+static bool fuse_scale_tanh(const ggml_hexagon_session * sess, htp_opnode & prev, const htp_opnode & cur) {
+    GGML_UNUSED(sess);
+    if (prev.opcode != HTP_OP_SCALE) return false;
+    if (!htp_match_consumer(prev, cur, /*commutative=*/ false)) return false;
+
+    const ggml_tensor * src0 = prev.src0();
+    const ggml_tensor * dst  = cur.dst();
+    if (src0->type != GGML_TYPE_F32 || !htp_same_shape_and_contiguity(prev.dst(), dst)) return false;
+    if (htp_inputs_overlap_unsafe(prev, dst)) return false;
+
+    float bias = 0.0f;
+    memcpy(&bias, (const float *) prev.params + 1, sizeof(float));
+    if (bias != 0.0f) return false;
+
+    const float scale_out = 1.0f;
+    memcpy(&prev.params[1], &scale_out, sizeof(float));
+
+    prev.opcode     = HTP_OP_UNARY_SCALE_TANH;
+    prev.outputs[0] = dst;
+    prev.fused.push_back(cur.node);
+    return true;
+}
+
+static bool fuse_scale_tanh_scale(const ggml_hexagon_session * sess, htp_opnode & prev, const htp_opnode & cur) {
+    GGML_UNUSED(sess);
+    if (prev.opcode != HTP_OP_UNARY_SCALE_TANH) return false;
+    if (!htp_match_consumer(prev, cur, /*commutative=*/ false)) return false;
+
+    const ggml_tensor * dst = cur.dst();
+    if (!htp_same_shape_and_contiguity(prev.dst(), dst)) return false;
+    if (htp_inputs_overlap_unsafe(prev, dst)) return false;
+
+    float scale = 0.0f;
+    float bias  = 0.0f;
+    float prev_out = 0.0f;
+    memcpy(&scale, (const float *) cur.params + 0, sizeof(float));
+    memcpy(&bias,  (const float *) cur.params + 1, sizeof(float));
+    memcpy(&prev_out, &prev.params[1], sizeof(float));
+    if (bias != 0.0f || prev_out != 1.0f) return false;
+
+    memcpy(&prev.params[1], &scale, sizeof(float));
+    prev.outputs[0] = dst;
+    prev.fused.push_back(cur.node);
+    return true;
+}
+
 static bool fuse_mul_mat_add(const ggml_hexagon_session * sess, htp_opnode & prev, const htp_opnode & cur) {
     if (prev.opcode != HTP_OP_MUL_MAT) return false;
 
@@ -426,6 +474,27 @@ static bool fuse_unary_mul_glu(const ggml_hexagon_session * sess, htp_opnode & p
     return true;
 }
 
+static bool fuse_softplus_mul(const ggml_hexagon_session * sess, htp_opnode & prev, const htp_opnode & cur) {
+    if (prev.opcode != HTP_OP_UNARY_SOFTPLUS || prev.src0()->type != GGML_TYPE_F32) return false;
+
+    const ggml_tensor * up = nullptr;
+    if (!htp_match_consumer(prev, cur, /*commutative=*/ true, &up)) return false;
+
+    const ggml_tensor * gate = prev.src0();
+    const ggml_tensor * dst  = cur.dst();
+    if (!ggml_are_same_shape(gate, up) || !ggml_are_same_shape(gate, dst)) return false;
+    if (htp_inputs_overlap_unsafe(prev, dst, up)) return false;
+
+    prev.opcode  = HTP_OP_GLU_SOFTPLUS;
+    prev.inputs  = { gate, up };
+    prev.outputs = { dst };
+    if (!htp_kparams_solve(sess, prev)) return false;
+
+    prev.fused.push_back(cur.node);
+    memset(prev.params, 0, sizeof(prev.params));
+    return true;
+}
+
 static bool fuse_mul_mul_scalar(const ggml_hexagon_session * sess, htp_opnode & prev, const htp_opnode & cur) {
     if (prev.opcode != HTP_OP_MUL || prev.inputs.size() != 2) return false;
 
@@ -626,13 +695,17 @@ bool htp_fusion_try_fuse(const struct ggml_hexagon_session * sess, struct htp_op
         case HTP_OP_MUL:
             return (htp_fusion_enabled(HTP_FUSE_RMS_NORM_MUL)   && fuse_rms_norm_mul(sess, prev, cur))   ||
                    (htp_fusion_enabled(HTP_FUSE_UNARY_MUL_GLU)  && fuse_unary_mul_glu(sess, prev, cur))  ||
+                   (htp_fusion_enabled(HTP_FUSE_SOFTPLUS_MUL)   && fuse_softplus_mul(sess, prev, cur))   ||
                    (htp_fusion_enabled(HTP_FUSE_MUL_MUL_SCALAR) && fuse_mul_mul_scalar(sess, prev, cur)) ||
                    (htp_fusion_enabled(HTP_FUSE_BINARY_NX)      && fuse_binary_nx(sess, prev, cur));
         case HTP_OP_SUB:
         case HTP_OP_DIV:
             return htp_fusion_enabled(HTP_FUSE_BINARY_NX) && fuse_binary_nx(sess, prev, cur);
         case HTP_OP_SCALE:
-            return htp_fusion_enabled(HTP_FUSE_RMS_NORM_SCALE) && fuse_rms_norm_scale(sess, prev, cur);
+            return (htp_fusion_enabled(HTP_FUSE_RMS_NORM_SCALE) && fuse_rms_norm_scale(sess, prev, cur)) ||
+                   (htp_fusion_enabled(HTP_FUSE_SCALE_TANH)     && fuse_scale_tanh_scale(sess, prev, cur));
+        case HTP_OP_UNARY_TANH:
+            return htp_fusion_enabled(HTP_FUSE_SCALE_TANH) && fuse_scale_tanh(sess, prev, cur);
         case HTP_OP_UNARY_SILU:
             return htp_fusion_enabled(HTP_FUSE_SSM_CONV_SILU) && fuse_ssm_conv_silu(sess, prev, cur);
         case HTP_OP_GET_ROWS:

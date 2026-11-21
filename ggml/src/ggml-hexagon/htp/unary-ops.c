@@ -934,6 +934,25 @@ static void tanh_f32(const void * restrict src,
     }
 }
 
+static void scale_tanh_f32(const void * restrict src,
+                           void * restrict dst,
+                           const uint32_t num_rows,
+                           const struct htp_unary_context * uctx) {
+    htp_unary_op_preamble;
+
+    float scale_in  = 0.f;
+    float scale_out = 0.f;
+    memcpy(&scale_in,  &uctx->octx->op_params[0], sizeof(float));
+    memcpy(&scale_out, &uctx->octx->op_params[1], sizeof(float));
+
+    for (uint32_t ir = 0; ir < num_rows; ir++) {
+        const uint8_t * restrict src_local = (const uint8_t *)src + (ir * src0_row_size_aligned);
+        uint8_t * restrict dst_local       = (uint8_t *)dst + (ir * dst_row_size_aligned);
+
+        hvx_scale_tanh_f32_aa(dst_local, src_local, ne0, scale_in, scale_out);
+    }
+}
+
 static void abs_f32(const void * restrict src,
                     void * restrict dst,
                     const uint32_t num_rows,
@@ -1095,6 +1114,14 @@ static void tile_softplus_f32(void * restrict dst, const void * restrict src, ui
 static void tile_tanh_f32(void * restrict dst, const void * restrict src, uint32_t tw, const struct htp_unary_context * uctx) {
     (void) uctx;
     hvx_tanh_f32_aa((uint8_t *) dst, (const uint8_t *) src, tw);
+}
+
+static void tile_scale_tanh_f32(void * restrict dst, const void * restrict src, uint32_t tw, const struct htp_unary_context * uctx) {
+    float scale_in  = 0.f;
+    float scale_out = 0.f;
+    memcpy(&scale_in,  &uctx->octx->op_params[0], sizeof(float));
+    memcpy(&scale_out, &uctx->octx->op_params[1], sizeof(float));
+    hvx_scale_tanh_f32_aa((uint8_t *) dst, (const uint8_t *) src, tw, scale_in, scale_out);
 }
 
 static void tile_abs_f32(void * restrict dst, const void * restrict src, uint32_t tw, const struct htp_unary_context * uctx) {
@@ -1765,6 +1792,7 @@ static int execute_op_unary(struct htp_ops_context * octx) {
         case HTP_OP_UNARY_GELU_QUICK: op_type = "gelu-quick-f32";                             break;
         case HTP_OP_UNARY_GELU_ERF:  op_type = "gelu-erf-f32";                               break;
         case HTP_OP_UNARY_SOFTPLUS:  op_type = "softplus-f32";                               break;
+        case HTP_OP_UNARY_SCALE_TANH: op_type = "scale-tanh-f32";                             break;
         case HTP_OP_UNARY_TANH:      op_type = "tanh-f32";                                   break;
         case HTP_OP_UNARY_ABS:       op_type = is_f16 ? "abs-f16"      : "abs-f32";          break;
         case HTP_OP_UNARY_LOG:       op_type = is_f16 ? "log-f16"      : "log-f32";          break;
@@ -1901,6 +1929,7 @@ static int execute_op_unary(struct htp_ops_context * octx) {
             case HTP_OP_UNARY_GELU_ERF:  compute_func = (void *) tile_gelu_erf_f32;       break;
             case HTP_OP_UNARY_SOFTPLUS:  compute_func = (void *) tile_softplus_f32;       break;
             case HTP_OP_UNARY_TANH:      compute_func = (void *) tile_tanh_f32;           break;
+            case HTP_OP_UNARY_SCALE_TANH: compute_func = (void *) tile_scale_tanh_f32;    break;
             case HTP_OP_UNARY_ABS:       compute_func = (void *) tile_abs_f32;            break;
             case HTP_OP_UNARY_LOG:       compute_func = (void *) tile_log_f32;            break;
             case HTP_OP_UNARY_RELU:      compute_func = (void *) tile_relu_f32;           break;
@@ -1954,6 +1983,7 @@ static int execute_op_unary(struct htp_ops_context * octx) {
             case HTP_OP_UNARY_GELU_ERF:  compute_func = (void *) gelu_erf_f32;            break;
             case HTP_OP_UNARY_SOFTPLUS:  compute_func = (void *) softplus_f32;            break;
             case HTP_OP_UNARY_TANH:      compute_func = (void *) tanh_f32;                break;
+            case HTP_OP_UNARY_SCALE_TANH: compute_func = (void *) scale_tanh_f32;         break;
             case HTP_OP_UNARY_ABS:       compute_func = (void *) abs_f32;                 break;
             case HTP_OP_UNARY_LOG:       compute_func = (void *) log_f32;                 break;
             case HTP_OP_UNARY_RELU:      compute_func = (void *) relu_f32;                break;

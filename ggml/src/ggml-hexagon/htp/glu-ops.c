@@ -183,6 +183,37 @@ static void swiglu_clamp_f32(const float * restrict src0,
     }
 }
 
+// softplus_mul(x, y) = y * log(1 + exp(x)), with x kept for x > 20 like the CPU
+static void softplus_mul_f32(const float * restrict src0,
+                             const float * restrict src1,
+                             float * restrict dst,
+                             const uint32_t num_rows,
+                             const struct htp_glu_context * gctx) {
+    htp_glu_op_preamble;
+
+    const HVX_Vector twenty = hvx_vec_splat_f32(20.0f);
+    const HVX_Vector one    = hvx_vec_splat_f32(1.0f);
+
+    for (uint32_t ib = 0; ib < num_rows; ib++) {
+        const HVX_Vector * restrict vsrc0 = (const HVX_Vector *) ((const uint8_t *) src0 + (ib * src0_row_size_aligned));
+        const HVX_Vector * restrict vsrc1 = (const HVX_Vector *) ((const uint8_t *) src1 + (ib * src1_row_size_aligned));
+        HVX_Vector * restrict vdst        = (HVX_Vector *) ((uint8_t *) dst + (ib * dst_row_size_aligned));
+
+        for (uint32_t i = 0; i * VLEN_FP32 < nc; i++) {
+            HVX_Vector x           = vsrc0[i];
+            HVX_VectorPred gt20    = Q6_Q_vcmp_gt_VsfVsf(x, twenty);
+            HVX_Vector logv        = hvx_vec_log_f32(hvx_vec_add_f32_f32(one, hvx_vec_exp_f32(x)));
+            HVX_Vector sp          = hvx_vec_mul_f32_f32(Q6_V_vmux_QVV(gt20, x, logv), vsrc1[i]);
+            const uint32_t n_left  = nc - i * VLEN_FP32;
+            if (n_left >= VLEN_FP32) {
+                vdst[i] = sp;
+            } else {
+                hvx_vec_store_a((void *) &vdst[i], n_left * sizeof(float), sp);
+            }
+        }
+    }
+}
+
 static const float GELU_COEF_A     = 0.044715f;
 static const float SQRT_2_OVER_PI  = 0.79788456080286535587989211986876f;
 
@@ -909,6 +940,11 @@ static int execute_op_glu_f32(struct htp_ops_context * octx) {
         case HTP_OP_GLU_SIGMOID:
             compute_fn = sigglu_f32;
             op_type    = "sigglu-f32";
+            break;
+
+        case HTP_OP_GLU_SOFTPLUS:
+            compute_fn = softplus_mul_f32;
+            op_type    = "softplus-mul-f32";
             break;
 
         default:
