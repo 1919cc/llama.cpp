@@ -137,6 +137,7 @@ size_t opt_mbuf_dyn    = 512ul * 1024 * 1024;      // max dynamic (compute) buff
 size_t opt_mbuf_static = 1ul * 1024 * 1024 * 1024; // max static (weight/KV) buffer size
 size_t opt_mbuf_total  = 0;                        // total buffer space limit (0 = unconstrained)
 
+int    opt_mm_hmx_min_nrows = 4; // rows at or below this stay on HVX
 int    opt_mm_select     = 2; // 2 = HMX -> HVX -> CPU, 1 = HVX -> CPU, 0 = CPU (unsupported)
 int    opt_fa_select     = 2; // 2 = HMX -> HVX -> CPU, 1 = HVX -> CPU, 0 = CPU (unsupported)
 int    opt_fa_split      = 1; // 1 = head-split + team-split when n_kv_heads < N_cores (default), 0 = off
@@ -3500,6 +3501,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     const char * str_nhvx     = getenv("GGML_HEXAGON_NHVX");
     const char * str_nhmx     = getenv("GGML_HEXAGON_NHMX");
     const char * str_vtcm_size = getenv("GGML_HEXAGON_VTCM_SIZE");
+    const char * str_mm_hmx_min_nrows = getenv("GGML_HEXAGON_MM_HMX_MIN_NROWS");
     const char * str_mm_select = getenv("GGML_HEXAGON_MM_SELECT");
     const char * str_fa_select = getenv("GGML_HEXAGON_FA_SELECT");
     const char * str_fa_split  = getenv("GGML_HEXAGON_FA_SPLIT");
@@ -3571,6 +3573,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     opt_nhvx      = str_nhvx     ? strtoul(str_nhvx, NULL, 0)             : opt_nhvx;
     opt_nhmx      = str_nhmx     ? atoi(str_nhmx)                         : opt_nhmx;
     opt_vtcm_size = str_vtcm_size ? parse_size(str_vtcm_size)                 : opt_vtcm_size;
+    opt_mm_hmx_min_nrows = str_mm_hmx_min_nrows ? atoi(str_mm_hmx_min_nrows) : opt_mm_hmx_min_nrows;
     opt_mm_select = str_mm_select ? atoi(str_mm_select)                   : opt_mm_select;
     opt_fa_select = str_fa_select ? atoi(str_fa_select)                   : opt_fa_select;
     opt_fa_split  = str_fa_split  ? atoi(str_fa_split)                   : opt_fa_split;
