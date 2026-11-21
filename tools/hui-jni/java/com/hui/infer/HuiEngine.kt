@@ -13,6 +13,8 @@ package com.hui.infer
  *
  * Every call except [stop], [stats], [describe] and [npuBytes] is serialized on the engine.
  */
+// One Kotlin function per native entry point: the count follows the engine's JNI surface.
+@Suppress("TooManyFunctions")
 object HuiEngine {
     /** Receives the reply as whole UTF-8 characters; return false to stop it. */
     fun interface ByteListener {
