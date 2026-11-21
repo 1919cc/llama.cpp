@@ -45,4 +45,5 @@ else()
         add_subdirectory(tuning)
     endif()
     add_subdirectory(results)
+    add_subdirectory(hui-debug) # hui_infer
 endif()
