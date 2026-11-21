@@ -1794,6 +1794,96 @@ private:
         return nullptr;
     }
 
+    // copy the longest shared prefix from another slot, to avoid decoding it again
+    // returns false if the slot must wait, because the other slot is still decoding that prefix
+    bool borrow_prefix(server_slot & slot, int & n_past) {
+        const int n_min_gain = 32;
+
+        if (!params_base.kv_unified || n_swa > 0 || ctx_dft != nullptr || slot.task->tokens.has_mtmd || slot.alora_invocation_start > 0) {
+            return true;
+        }
+
+        server_slot * donor = nullptr;
+        int n_best = n_past + n_min_gain;
+
+        for (server_slot & other : slots) {
+            if (other.id == slot.id || other.prompt.tokens.empty() || other.prompt.tokens.has_mtmd) {
+                continue;
+            }
+
+            const int n_common = other.prompt.tokens.get_common_prefix(slot.task->tokens);
+            if (n_common > n_best) {
+                n_best = n_common;
+                donor  = &other;
+            }
+        }
+
+        if (donor == nullptr) {
+            return true;
+        }
+
+        auto * mem = llama_get_memory(ctx_tgt);
+
+        // tokens in the pending batch are not in the memory yet
+        const int n_ready = std::min(n_best, (int) llama_memory_seq_pos_max(mem, donor->id) + 1);
+        const bool can_trim = llama_memory_seq_pos_min(mem, donor->id) == 0;
+        if (can_trim && n_ready < n_best && donor->is_processing()) {
+            return false;
+        }
+
+        // recurrent state cannot roll back, so start from a checkpoint of the donor
+        if (!can_trim) {
+            if (donor->state == SLOT_STATE_STARTED || donor->state == SLOT_STATE_PROCESSING_PROMPT) {
+                return false;
+            }
+
+            for (auto it = donor->prompt.checkpoints.rbegin(); it != donor->prompt.checkpoints.rend(); ++it) {
+                if (it->n_tokens > n_best || it->n_tokens <= n_past + n_min_gain) {
+                    continue;
+                }
+
+                const int n_ckpt = it->n_tokens;
+
+                slot.prompt.tokens.keep_first(0);
+                slot.mem.seq_rm(slot.id, -1, -1);
+                slot.mem.seq_cp(donor->id, slot.id, 0, n_ckpt);
+
+                if (!it->load_tgt(ctx_tgt, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)) {
+                    GGML_ABORT("failed to load the checkpoint of slot %d\n", donor->id);
+                }
+
+                for (int i = 0; i < n_ckpt; i++) {
+                    slot.prompt.tokens.push_back(slot.task->tokens[i]);
+                }
+
+                SLT_INF(slot, "borrowed %d tokens from checkpoint of slot %d (n_past was %d)\n", n_ckpt, donor->id, n_past);
+
+                n_past = n_ckpt;
+                break;
+            }
+
+            return true;
+        }
+
+        if (n_ready <= n_past + n_min_gain) {
+            return true;
+        }
+
+        slot.prompt.tokens.keep_first(n_past);
+        slot.mem.seq_rm(slot.id, n_past, -1);
+        slot.mem.seq_cp(donor->id, slot.id, n_past, n_ready);
+
+        for (int i = n_past; i < n_ready; i++) {
+            slot.prompt.tokens.push_back(slot.task->tokens[i]);
+        }
+
+        SLT_INF(slot, "borrowed %d prefix tokens from slot %d\n", n_ready - n_past, donor->id);
+
+        n_past = n_ready;
+
+        return true;
+    }
+
     server_slot * get_available_slot(const server_task & task) {
         server_slot * ret = nullptr;
 
@@ -4178,6 +4268,11 @@ private:
                                     }
 
                                     SLT_DBG(slot, "after context reuse, new n_past = %d\n", n_past);
+                                }
+                                if (n_decision_first < 0 && slot.task->n_tokens_shared == 0 && !slot.task->is_child() && !borrow_prefix(slot, n_past)) {
+                                    slot.state = SLOT_STATE_STARTED;
+                                    slot.stats.t_start = 0;
+                                    return;
                                 }
                             } else {
                                 // if we don't cache the prompt, we have to remove all previous tokens
