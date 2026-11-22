@@ -90,7 +90,10 @@ size_t opt_vmem       = HTP_OP_MAX_VMEM_DEFAULT;  // max available va space for 
 int    opt_etm        = 0;
 int    opt_verbose    = 0;
 int    opt_profile    = 0; // profiling mode (0-disabled, 1-basic, 2-pmu)
-bool   opt_hostbuf    = true;
+// hui: host buffers off by default. On, CPU-assigned weights (token_embd, per_layer_token_embd) are
+// pinned in rpcmem: +11% prefill on Gemma 4 E2B, but -5% decode and ~1.8 GB (E2B) / 2.2 GB (E4B) of
+// unpageable memory, so on a 12 GB phone E4B (and E2B with apps open) no longer loads. HUI_REPORT.md 4.13
+bool   opt_hostbuf    = false;
 bool   opt_dma64      = false;
 int    opt_power_mode = HTP_POWER_MODE_BURST; // DCVS/HMX power profile requested at session start
 

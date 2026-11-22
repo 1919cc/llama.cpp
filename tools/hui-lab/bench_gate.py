@@ -8,6 +8,7 @@ Rules (docs/hui: every speed claim of hui_infer comes from runs like these):
     in the backend's burst DCVS mode (GGML_HEXAGON_POWER_MODE default).
   - One model at a time, one llama-bench at a time; cached background apps are killed before each
     run (am kill-all) so every run starts with the same free memory.
+  - Nothing but the launcher in front: another app in use (an app test on the phone) waits too.
   - Throttled: wait until the phone is back at full clocks before the next run.
   - Builds alternate run by run (A B, B A, ...) so slow drift hits both alike.
 
@@ -35,7 +36,11 @@ ADB = (os.environ.get("ADB") or shutil.which("adb")
 
 def adb(args, cmd, check=True):
     base = [ADB] + (["-s", args.serial] if args.serial else [])
-    r = subprocess.run(base + ["shell", cmd], text=True, capture_output=True)
+    for _ in range(30):  # USB can drop for a few seconds: wait for the phone instead of giving up
+        r = subprocess.run(base + ["shell", cmd], text=True, capture_output=True)
+        if "no devices" not in r.stderr and "device offline" not in r.stderr:
+            break
+        subprocess.run(base + ["wait-for-device"], timeout=120)
     if check and r.returncode != 0:
         sys.exit(f"adb shell failed ({r.returncode}): {cmd}\n{r.stdout}{r.stderr}")
     return r.stdout
@@ -52,13 +57,19 @@ def clocks(args):
     cooling = {m.group(2): int(m.group(1))
                for m in re.finditer(r"CoolingDevice\{mValue=(\d+), mType=\d+, mName=([^}]+)\}", hal)}
     skin = re.search(r"mValue=([\d.]+), mType=3, mName=skin", thermal)
-    full = status == 0 and all(v == 0 for v in cooling.values()) and all(a == b for a, b in pairs)
+    top = re.search(r"topResumedActivity=ActivityRecord\{\S+ \S+ ([^/ ]+)",
+                    adb(args, "dumpsys activity activities | grep topResumedActivity", check=False))
+    foreground = top.group(1) if top else "?"
+    idle = "launcher" in foreground  # no app in front that could compete for CPU, NPU or memory
+    full = (status == 0 and all(v == 0 for v in cooling.values()) and all(a == b for a, b in pairs)
+            and idle)
     detail = {
         "cpu_caps_khz": [a for a, _ in pairs],
         "cpu_max_khz": [b for _, b in pairs],
         "thermal_status": status,
         "cooling_nonzero": {k: v for k, v in cooling.items() if v},
         "skin_c": float(skin.group(1)) if skin else None,
+        "foreground": foreground,
     }
     return full, detail
 
@@ -75,13 +86,18 @@ def wait_full_clocks(args):
         time.sleep(args.poll)
 
 
-def run_bench(args, build_dir, bench_args):
-    env = f"LD_LIBRARY_PATH={build_dir}/lib ADSP_LIBRARY_PATH={build_dir}/lib"
+def run_bench(args, build, bench_args):
+    # dir?VAR=VAL&VAR2=VAL+extra llama-bench args: the same build with other env or options
+    build, _, more_args = build.partition("+")
+    build_dir, _, extra = build.partition("?")
+    env = f"LD_LIBRARY_PATH={build_dir}/lib ADSP_LIBRARY_PATH={build_dir}/lib " + extra.replace("&", " ")
     cmd = (f"cd {build_dir} && {env} ./bin/llama-bench -m {args.model} -r 1 -o jsonl "
-           + " ".join(bench_args))
+           + " ".join(bench_args) + " " + more_args)
     for attempt in range(2):  # a busy adb or DSP session can drop one run; retry it once
         base = [ADB] + (["-s", args.serial] if args.serial else [])
         r = subprocess.run(base + ["shell", cmd + " 2>&1"], text=True, capture_output=True)
+        if "no devices" in r.stderr or "device offline" in r.stderr:
+            subprocess.run(base + ["wait-for-device"], timeout=300)
         rows = [json.loads(l) for l in r.stdout.splitlines() if l.startswith("{")]
         if rows:
             return rows
@@ -102,7 +118,9 @@ def test_name(row):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model", required=True, help="model path on the phone")
-    ap.add_argument("--build", action="append", required=True, help="NAME=device dir with bin/ and lib/")
+    ap.add_argument("--build", action="append", required=True,
+                    help="NAME=device dir with bin/ and lib/, optionally ?VAR=VAL&VAR2=VAL (env) and "
+                         "+ARGS (extra llama-bench args for this build only)")
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--label", default="ab")
     ap.add_argument("--serial")
