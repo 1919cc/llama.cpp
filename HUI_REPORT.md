@@ -52,6 +52,7 @@
 | 13 | 块稀疏 FFN（方案 B） | 27B | 0.079 tok/s，比方案 A 慢（未减少闪存读取） | — | 实验性，不推荐 |
 | 14 | NDK r30（工具链） | 全部 | 无可测收益：E2B pp512 −0.6%、tg128 −0.9%，均在波动内（第 7 节） | — | 不采用，继续 r29 |
 | 15 | 同步上游 611 个提交（Hexagon HMX / repack 重写）+ 适配 hui 改动 | 常驻 NPU 的模型 | Gemma 4 E2B pp512 1,607 → 3,980 tok/s（**2.48×**）；tg128 27.68 → 28.19（+1.8%） | IQ2_XXS tile 512 → 264 B（−48%） | 已上线（2026-11-22，门控实测） |
+| 18 | 内存拟合（no_alloc）时不对专家张量做 madvise | App 内专家分页（26B-A4B 等，开启专家预读时） | App 加载 26B-A4B 从「GC 崩溃」到可用：decode 4.1 tok/s | — | 已上线（2026-11-22，smaps 复现 + 真机验证） |
 | 17 | `load_mode=auto` 下比可用内存大的模型保留 mmap | 不能整个放进内存、又用 NPU 的模型（26B-A4B 等）的命令行运行 | 26B-A4B 从「加载即重启」到 pp128 30.7 / tg32 6.1 tok/s | 专家权重留在可回收的文件页，不再读进约 12 GB 匿名内存 | 已上线（2026-11-22，看门狗复现 + 实测） |
 | 16 | Hexagon 主机缓冲默认关闭（上游默认开） | 所有 NPU 部署，尤其 Gemma 4 E 系列 | E2B decode +4.7%（27.91 → 29.22），prefill −11%（仍为合并前 2.29×） | 不再钉住约 1.8–2.2 GB 嵌入表；E4B 恢复可加载 | 已上线（2026-11-22，门控实测） |
 
@@ -251,6 +252,8 @@ E4B 全部层上 NPU 需要约 5.5 GB 可用内存，后台应用多时其中一
 **Gemma 4 26B-A4B 加载导致整机重启：原因与修复（#17）**。2026-11-22 本机重启 4 次。用内存看门狗（每 100 ms 记录 `/proc/meminfo` 与进程内存，可用内存低于 1.5 GB 就杀进程，`tools/hui-lab/device/mem_guard.sh`）复现：进程匿名内存涨到 3.3 GB、再换出 2.4 GB 仍在涨，ION（rpcmem）稳定在 1.8 GB，文件页只有 7 MB——CPU 侧的专家权重被读进了匿名内存，而不是 mmap。原因是上游 #26081 的 `load_mode = auto`：只要有设备声明不支持 mmap（Hexagon 设备就是 `mmap_support = false`），整个模型都不用 mmap，留在 CPU 的权重全部读进匿名内存；14 GB 的模型放进 12 GB 手机只能耗尽内存。App 一直显式传 `--load-mode mmap`，不受影响；命令行工具（llama-bench、llama-completion 等）用默认值就会触发。
 
 修复：`load_mode = auto` 时，如果模型比当前可用内存（`/proc/meminfo` 的 MemAvailable）还大，即使有设备不支持 mmap 也保留 mmap 并打印警告（`src/llama-model.cpp`）——不 mmap 时这种模型只能耗尽内存；放得下的模型仍按上游规则。验证：同一命令、默认 load mode，日志「HTP0 has no mmap support, but the model (13755 MiB) is larger than the available memory (7112 MiB): keeping mmap」，正常输出，过程中最低可用内存 5.5 GB，未重启。App 的专家分页模型（MiniCPM-V 35B-A3B、Qwen3.8-Flash-Next 125B）在合并后的引擎上复测正常（见上表）。
+
+**App 内加载 26B-A4B 时进程崩溃：原因与修复（#18）**。App（显式 mmap）加载 26B-A4B 约 4 秒后，ART 的垃圾回收 abort：「mremap to move pages failed: Bad address」，每次复现。采样 `/proc/<pid>/smaps` 看到 Java 堆 `[anon:dalvik-main space]`（0x02000000–0x22000000）被拆成两段，前段多了 `rr`（`MADV_RANDOM`）标志，终点 0x08820000 恰好等于一个 `ffn_down_exps` 张量的字节数（704 × 2816 × 128 × 0.5625 = 142,737,408）。原因：参数拟合（memory-fit）用 `no_alloc` 加载模型、在未分配的缓冲上建图，张量的 `data` 只是偏移量；hui 的专家预读（#4）在建图时对专家张量 `posix_madvise(RANDOM)`，把从 0 开始的这段地址标成随机访问，正好落在 ART 的 Java 堆上。命令行进程那段地址没有映射，所以只在 App 里出事。修复（`src/llama-graph.cpp`）：`no_alloc` 模型不建专家预读，且只对确实落在已分配缓冲内的张量地址做 madvise。验证：同一 App 操作，Java 堆不再被拆分、没有崩溃，26B-A4B 正常回答（671 + 4 输入 / 92 输出，prefill 25 tok/s，decode 4.1 tok/s，NPU 1.9 GB，可用内存 5.6 GB）。
 
 ## 7. 工具链：NDK r30 A/B
 

@@ -2969,6 +2969,13 @@ void llm_graph_context::build_layer_stream(const llama_model & mdl, ggml_tensor 
 // The model file is mapped with sequential access advice, which widens readahead: right for dense weights read front to
 // back, wasteful for expert slices read at random (each fault pulls in neighbouring experts). Advise random access on
 // the expert tensors once.
+// the tensor's data lies inside its (allocated) buffer, so it is a real host address
+static bool llama_tensor_in_buffer(const ggml_tensor * w) {
+    const uintptr_t base = (uintptr_t) ggml_backend_buffer_get_base(w->buffer);
+    const uintptr_t data = (uintptr_t) w->data;
+    return base != 0 && data >= base && data + ggml_nbytes(w) <= base + ggml_backend_buffer_get_size(w->buffer);
+}
+
 static void llama_advise_random(const ggml_tensor * w) {
 #if defined(__linux__)
     static std::mutex mtx;
@@ -2994,7 +3001,10 @@ void llm_graph_context::build_expert_prefetch(
          ggml_tensor * gate_up_exps,
                  int   il,
                 bool   predicted) const {
-    if (llama_expert_prefetch_level() <= 0) {
+    // no_alloc (the memory-fit pass) builds the graph over unallocated buffers: tensor->data holds offsets,
+    // not addresses, and advising them would hit whatever the process maps there (it split ART's Java heap
+    // in the Android app, crashing its GC)
+    if (llama_expert_prefetch_level() <= 0 || model.no_alloc()) {
         return;
     }
 
@@ -3002,7 +3012,8 @@ void llm_graph_context::build_expert_prefetch(
     int n_args = 1;
     for (ggml_tensor * w : { up_exps, gate_exps, down_exps, gate_up_exps }) {
         // only mmap-ed experts in host memory are paged in by the OS
-        if (w && w->buffer && ggml_backend_buffer_is_host(w->buffer) && ggml_n_dims(w) == 3 && n_args < GGML_MAX_SRC) {
+        if (w && w->buffer && ggml_backend_buffer_is_host(w->buffer) && ggml_n_dims(w) == 3 && n_args < GGML_MAX_SRC &&
+            llama_tensor_in_buffer(w)) {
             args[n_args++] = w;
             llama_advise_random(w);
         }
