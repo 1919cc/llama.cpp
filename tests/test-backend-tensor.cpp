@@ -148,6 +148,62 @@ static bool test_tensor_n(ggml_backend_buffer_type_t buft) {
         }
     }
 
+    {
+        uint8_t input[24], expected[128], out[128] = {};
+        for (size_t i = 0; i < sizeof(input); i++) {
+            input[i] = (uint8_t) (i + 1);
+        }
+        ggml_backend_tensor_set(t_big, input, 0, sizeof(input));
+
+        // Verify scattered byte reads, including repeated source offsets.
+        std::vector<ggml_tensor *> tensors(128, t_big);
+        std::vector<size_t> offsets(128), sizes(128, 1), data_offsets(128);
+        for (size_t i = 0; i < tensors.size(); i++) {
+            offsets[i] = (i * 5) % sizeof(input);
+            data_offsets[i] = i;
+            expected[i] = input[offsets[i]];
+        }
+
+        ggml_backend_tensor_get_n(tensors.data(), out, offsets.data(), sizes.data(), data_offsets.data(), tensors.size());
+        if (memcmp(out, expected, sizeof(out)) != 0) {
+            return false;
+        }
+    }
+
+    {
+        std::vector<ggml_tensor *> batch;
+        ggml_backend_buffer_ptr scatter_buf = alloc_tensors(ctx.get(), buft, { 64 }, batch);
+        if (!scatter_buf) {
+            return false;
+        }
+        batch.resize(128, batch[0]);
+        uint8_t input[32], expected[256], out[256];
+        for (size_t i = 0; i < sizeof(input); i++) {
+            input[i] = (uint8_t) (i + 1);
+        }
+        std::vector<size_t> offsets(batch.size()), sizes(batch.size(), 1), data_offsets(batch.size());
+        for (bool overlap : { false, true }) {
+            memset(expected, 0, sizeof(expected));
+            ggml_backend_tensor_set(batch[0], expected, 0, sizeof(expected));
+            for (size_t i = 0; i < batch.size(); i++) {
+                offsets[i] = 2*((i*5) % batch.size()) + 1;
+                data_offsets[i] = i % sizeof(input);
+            }
+            // Repeated sources are valid; overlapping destinations must retain copy order.
+            if (overlap) {
+                offsets.back() = offsets.front();
+            }
+            for (size_t i = 0; i < batch.size(); i++) {
+                expected[offsets[i]] = input[data_offsets[i]];
+            }
+            ggml_backend_tensor_set_n(batch.data(), input, offsets.data(), sizes.data(), data_offsets.data(), batch.size());
+            ggml_backend_tensor_get(batch[0], out, 0, sizeof(out));
+            if (memcmp(out, expected, sizeof(out)) != 0) {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 

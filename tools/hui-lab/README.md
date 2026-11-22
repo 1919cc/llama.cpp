@@ -127,6 +127,18 @@ python3 lab.py qdc-job --device SM8850 --model-url <模型直链>
 python3 lab.py compare results/sm8845-local/<文件>.json results/gen6-qdc/<文件>.json
 ```
 
+## 满频门控 A/B（速度结论以此为准）
+
+`bench_gate.py` 在本地手机上对比两个或多个引擎构建，每次运行前都确认 CPU、GPU、NPU 处于最高频率（固定性能模式、温控状态 0、所有降频设备为 0、CPU 各簇 `scaling_max_freq == cpuinfo_max_freq`），被降频就等回到满频再测；一次只测一个模型，构建逐轮交替。结果写入 `results/<label>/runs.jsonl`，并打印均值 ± 标准差和相对第一个构建的变化。
+
+```bash
+python3 bench_gate.py --model /data/local/tmp/gguf/small/gemma-4-E2B-it-qat-Q4_0.gguf \
+    --build base=/data/local/tmp/hui-a --build new=/data/local/tmp/hui-b --rounds 5 --label my-ab \
+    -- -p 512 -n 128 -ngl 99 -fa 1 -t 4 --device HTP0
+```
+
+每个构建目录要有 `bin/llama-bench` 和 `lib/`。adb 依次取 `$ADB`、PATH、`~/Library/Android/sdk/platform-tools/adb`。
+
 ## 对比规则
 
 - 模型、功耗模式、batch 和 token 数必须相同，否则 `compare` 会警告。
@@ -140,6 +152,7 @@ python3 lab.py compare results/sm8845-local/<文件>.json results/gen6-qdc/<文�
 | 路径 | 内容 |
 |---|---|
 | `lab.py` | 构建、推送、测速、QDC、对比 |
+| `bench_gate.py` | 满频门控的多构建 A/B 测速（`HUI_REPORT.md` 的速度数据来源） |
 | `fullbench.py`、`summarize.py` | 整套测速矩阵（交错轮次、可续跑）和汇总到 `results/full/summary.json` |
 | `server_load.py`、`logit_cmp_borrow*.py` | llama-server 真实请求负载，以及前缀借用前后的 logprob 对比 |
 | `device/` | 推到手机上执行的实验脚本；`*.sh`（根目录）是在 Mac 上串起这些实验的驱动 |

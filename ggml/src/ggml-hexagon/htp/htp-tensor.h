@@ -17,9 +17,17 @@
 #define HTP_TENSOR_TILE_SIZE_F16    2048
 #define HTP_TENSOR_TILE_SIZE_Q4_0   576
 #define HTP_TENSOR_TILE_SIZE_Q4_1   640
+#define HTP_TENSOR_TILE_SIZE_Q5_0   704
+#define HTP_TENSOR_TILE_SIZE_Q5_1   768
 #define HTP_TENSOR_TILE_SIZE_Q8_0   1088
 #define HTP_TENSOR_TILE_SIZE_IQ4_NL 576
 #define HTP_TENSOR_TILE_SIZE_MXFP4  544
+#define HTP_TENSOR_TILE_SIZE_NVFP4  576
+#define HTP_TENSOR_TILE_SIZE_IQ2_XXS 264
+#define HTP_TENSOR_TILE_SCRATCH_IQ2_XXS 256
+#define HTP_IQ2XXS_NIBBLE_BYTES         128   // 16 words for vlut16, padded to a vector
+#define HTP_IQ2XXS_GRID_BYTES           512   // 256 entries x 8 elements x 2-bit magnitude code
+#define HTP_IQ2XXS_LUT_BYTES            (HTP_IQ2XXS_NIBBLE_BYTES + HTP_IQ2XXS_GRID_BYTES)
 #define HTP_TENSOR_TILE_SIZE_Q4_K   640
 #define HTP_TENSOR_TILE_SIZE_Q5_K   768
 #define HTP_TENSOR_TILE_SIZE_Q6_K   896
@@ -30,14 +38,15 @@
 #define HTP_TENSOR_TILE_K_Q2_0      64
 #define HTP_TENSOR_TILE_SIZE_Q2_0   576
 // Codebook i-quants, transcoded on the host into codes that a per-type LUT maps to int8.
-// IQ2_XXS (IQ2 family) and IQ1_S (IQ1 family): the Q3_K tile with a 3-bit code (bit 2 in vector 2).
+// hui_infer: IQ2_XS / IQ2_S (IQ2 family, HTP_TYPE_IQ2_XS) and IQ1_S / IQ1_M (IQ1 family): the Q3_K tile with a
+// 3-bit code (bit 2 in vector 2). IQ2_XXS uses upstream's lossless 264 B tile above.
 // IQ3_XXS and IQ3_S: the IQ4_NL tile with a 4-bit code (magnitude index, sign in bit 3).
-#define HTP_TENSOR_TILE_SIZE_IQ2_XXS 512
+#define HTP_TENSOR_TILE_SIZE_IQ2_XS  512
 #define HTP_TENSOR_TILE_SIZE_IQ1_S   512
 #define HTP_TENSOR_TILE_SIZE_IQ3_XXS 576
 #define HTP_TENSOR_TILE_SIZE_IQ3_S   576
 
-// Tiled weight tensor layouts (Q4_0, Q8_0, IQ4_NL, MXFP4, Q1_0, Q2_0, K-quants):
+// Tiled weight tensor layouts (Q4_0, Q5_0, Q5_1, Q8_0, IQ4_NL, MXFP4, NVFP4, IQ2_XXS, Q1_0, Q2_0, K-quants):
 // See docs/backend/snapdragon/developer.md ("Tiled Weight Formats").
 
 struct htp_tensor_mdev_range {
@@ -150,6 +159,8 @@ static inline uint32_t htp_tensor_get_tile_size(int type) {
         case HTP_TYPE_Q4_0:   return HTP_TENSOR_TILE_SIZE_Q4_0;
         case HTP_TYPE_IQ4_NL: return HTP_TENSOR_TILE_SIZE_IQ4_NL;
         case HTP_TYPE_Q4_1:   return HTP_TENSOR_TILE_SIZE_Q4_1;
+        case HTP_TYPE_Q5_0:   return HTP_TENSOR_TILE_SIZE_Q5_0;
+        case HTP_TYPE_Q5_1:   return HTP_TENSOR_TILE_SIZE_Q5_1;
         case HTP_TYPE_Q4_K:   return HTP_TENSOR_TILE_SIZE_Q4_K;
         case HTP_TYPE_Q8_0:   return HTP_TENSOR_TILE_SIZE_Q8_0;
         case HTP_TYPE_Q5_K:   return HTP_TENSOR_TILE_SIZE_Q5_K;
@@ -159,7 +170,9 @@ static inline uint32_t htp_tensor_get_tile_size(int type) {
         case HTP_TYPE_Q1_0:   return HTP_TENSOR_TILE_SIZE_Q1_0;
         case HTP_TYPE_Q2_0:   return HTP_TENSOR_TILE_SIZE_Q2_0;
         case HTP_TYPE_MXFP4:  return HTP_TENSOR_TILE_SIZE_MXFP4;
+        case HTP_TYPE_NVFP4:  return HTP_TENSOR_TILE_SIZE_NVFP4;
         case HTP_TYPE_IQ2_XXS: return HTP_TENSOR_TILE_SIZE_IQ2_XXS;
+        case HTP_TYPE_IQ2_XS:  return HTP_TENSOR_TILE_SIZE_IQ2_XS;
         case HTP_TYPE_IQ1_S:   return HTP_TENSOR_TILE_SIZE_IQ1_S;
         case HTP_TYPE_IQ3_XXS: return HTP_TENSOR_TILE_SIZE_IQ3_XXS;
         case HTP_TYPE_IQ3_S:   return HTP_TENSOR_TILE_SIZE_IQ3_S;
@@ -177,7 +190,9 @@ static inline uint32_t htp_tensor_get_tile_k(int type) {
 }
 
 static inline uint32_t htp_tensor_get_tile_padded_size(int type) {
-    return (htp_tensor_get_tile_size(type) + 127u) & ~127u;
+    // IQ2_XXS: the last 256 B of the padded tile are the vgather scratch of its vec-dot
+    const uint32_t scratch = (type == HTP_TYPE_IQ2_XXS) ? HTP_TENSOR_TILE_SCRATCH_IQ2_XXS : 0u;
+    return (htp_tensor_get_tile_size(type) + scratch + 127u) & ~127u;
 }
 
 static inline bool htp_tensor_is_tiled(const struct htp_tensor * t) {
@@ -193,7 +208,11 @@ static inline uint32_t htp_tensor_get_row_size(int type, uint32_t ne00) {
         case HTP_TYPE_Q4_0:
         case HTP_TYPE_IQ4_NL: return (ne00 / 32) * 18;
         case HTP_TYPE_Q4_1:   return (ne00 / 32) * 20;
+        case HTP_TYPE_Q5_0:   return (ne00 / 32) * 22;
+        case HTP_TYPE_Q5_1:   return (ne00 / 32) * 24;
         case HTP_TYPE_MXFP4:  return (ne00 / 32) * 17;
+        case HTP_TYPE_NVFP4:  return (ne00 / 64) * 36;
+        case HTP_TYPE_IQ2_XXS: return (ne00 / 256) * 66;
         case HTP_TYPE_Q2_K:   return (ne00 / 256) * 84;
         case HTP_TYPE_Q2_0:   return (ne00 / 64) * 18;
         case HTP_TYPE_Q3_K:   return (ne00 / 256) * 110;
@@ -201,7 +220,7 @@ static inline uint32_t htp_tensor_get_row_size(int type, uint32_t ne00) {
         case HTP_TYPE_Q5_K:   return (ne00 / 256) * 176;
         case HTP_TYPE_Q6_K:   return (ne00 / 256) * 210;
         case HTP_TYPE_Q1_0:   return (ne00 / HTP_TENSOR_TILE_K_Q1_0) * 18;
-        case HTP_TYPE_IQ2_XXS: return (ne00 / 256) * 66;
+        case HTP_TYPE_IQ2_XS:  return (ne00 / 256) * 66;  // as hui sized its IQ2-family tile before
         case HTP_TYPE_IQ1_S:   return (ne00 / 256) * 50;
         case HTP_TYPE_IQ3_XXS: return (ne00 / 256) * 98;
         case HTP_TYPE_IQ3_S:   return (ne00 / 256) * 110;

@@ -300,6 +300,7 @@ static size_t ggml_backend_metal_buffer_type_get_alloc_size(ggml_backend_buffer_
                 res += ggml_metal_op_flash_attn_ext_extra_tmp(tensor);
                 res += ggml_metal_op_flash_attn_ext_extra_kv_f16(tensor);
                 res += ggml_metal_op_flash_attn_ext_extra_idx(tensor);
+                res += ggml_metal_op_flash_attn_ext_extra_rows(tensor);
             } break;
         case GGML_OP_CUMSUM:
         case GGML_OP_ARGSORT:
@@ -309,6 +310,10 @@ static size_t ggml_backend_metal_buffer_type_get_alloc_size(ggml_backend_buffer_
         case GGML_OP_TOP_K:
             {
                 res = 2*sizeof(int32_t)*ggml_nelements(tensor->src[0]);
+            } break;
+        case GGML_OP_CONV_2D:
+            {
+                res += ggml_metal_op_conv_2d_extra_tmp(tensor);
             } break;
         case GGML_OP_ARGMAX:
             {
