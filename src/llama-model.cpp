@@ -36,6 +36,8 @@
 #include <cstdint>
 #include <cstring>
 #include <cmath>
+#include <cstdio>
+#include <fstream>
 #include <functional>
 #include <map>
 #include <numeric>
@@ -44,6 +46,21 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+// MemAvailable from /proc/meminfo (Linux, Android), 0 where unknown
+static size_t llama_mem_available_bytes() {
+#if defined(__linux__)
+    std::ifstream f("/proc/meminfo");
+    std::string line;
+    while (std::getline(f, line)) {
+        unsigned long long kib = 0;
+        if (sscanf(line.c_str(), "MemAvailable: %llu kB", &kib) == 1) {
+            return (size_t) kib * 1024;
+        }
+    }
+#endif
+    return 0;
+}
 
 static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
     switch (arch) {
@@ -1747,6 +1764,17 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             ggml_backend_dev_props props;
             ggml_backend_dev_get_props(dev.dev, &props);
             if (!props.caps.mmap_support) {
+                // hui: without mmap every CPU-side weight is read into anonymous memory. For a model
+                // larger than the RAM left that can only end out of memory (it rebooted a 12 GB phone
+                // loading a 14 GB MoE on the Hexagon NPU), so keep mmap there and let the page cache
+                // page the weights in and out.
+                const size_t avail = llama_mem_available_bytes();
+                if (avail > 0 && ml.n_bytes > avail) {
+                    LLAMA_LOG_WARN("%s: %s has no mmap support, but the model (%zu MiB) is larger than the "
+                                   "available memory (%zu MiB): keeping mmap\n", __func__,
+                                   ggml_backend_dev_name(dev.dev), ml.n_bytes >> 20, avail >> 20);
+                    break;
+                }
                 ml.use_mmap = false;
                 break;
             }

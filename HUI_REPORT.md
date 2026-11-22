@@ -52,6 +52,7 @@
 | 13 | 块稀疏 FFN（方案 B） | 27B | 0.079 tok/s，比方案 A 慢（未减少闪存读取） | — | 实验性，不推荐 |
 | 14 | NDK r30（工具链） | 全部 | 无可测收益：E2B pp512 −0.6%、tg128 −0.9%，均在波动内（第 7 节） | — | 不采用，继续 r29 |
 | 15 | 同步上游 611 个提交（Hexagon HMX / repack 重写）+ 适配 hui 改动 | 常驻 NPU 的模型 | Gemma 4 E2B pp512 1,607 → 3,980 tok/s（**2.48×**）；tg128 27.68 → 28.19（+1.8%） | IQ2_XXS tile 512 → 264 B（−48%） | 已上线（2026-11-22，门控实测） |
+| 17 | `load_mode=auto` 下比可用内存大的模型保留 mmap | 不能整个放进内存、又用 NPU 的模型（26B-A4B 等）的命令行运行 | 26B-A4B 从「加载即重启」到 pp128 30.7 / tg32 6.1 tok/s | 专家权重留在可回收的文件页，不再读进约 12 GB 匿名内存 | 已上线（2026-11-22，看门狗复现 + 实测） |
 | 16 | Hexagon 主机缓冲默认关闭（上游默认开） | 所有 NPU 部署，尤其 Gemma 4 E 系列 | E2B decode +4.7%（27.91 → 29.22），prefill −11%（仍为合并前 2.29×） | 不再钉住约 1.8–2.2 GB 嵌入表；E4B 恢复可加载 | 已上线（2026-11-22，门控实测） |
 
 ## 3. 与上游 master 的对比基线
@@ -241,11 +242,15 @@ prefill 的倍数来自上游同期对 Hexagon 后端的重写（HMX 矩阵乘�
 | MiniCPM5 2B Q4_K_M | 全部 | 1,738 ± 74 | 28.70 ± 0.40 | 正确 |
 | Gemma 4 E4B QAT Q4_0 | 全部 | 1,420 ± 124 | 17.02 ± 0.66 | 正确 |
 | Gemma 4 12B QAT Q4_0 | 22 / 48，其余 mmap（`--repack 0`） | 14.05 ± 0.22 | 4.69 ± 0.29（tg64，2 轮） | 与纯 CPU 逐字一致（无聊天模板的原始提示下复读问题，属模型行为） |
-| Gemma 4 26B-A4B QAT Q4_0 | 稠密上 NPU、专家 mmap（`-ncmoe 30 --repack 0`，`LLAMA_EXPERT_PREFETCH=2`） | — | — | **加载时整机重启** |
+| Gemma 4 26B-A4B QAT Q4_0 | 稠密上 NPU、专家 mmap（`-ncmoe 30 --repack 0 -lm mmap`，`LLAMA_EXPERT_PREFETCH=2`） | 30.71 ± 1.06（pp128） | 6.08 ± 0.98（tg32，2 轮） | 正确（修复 #17 之后） |
+| MiniCPM-V 4.7 35B-A3B Q4_0（App 方案 C 参数，未门控单次） | 稠密上 NPU、专家 mmap | — | — | 正确，最低可用内存 6.3 GB |
+| Qwen3.8-Flash-Next 125B IQ1_S（App 方案 C 参数，未门控单次） | 稠密上 NPU、专家 mmap，2 / 6 线程 | 3.15（11 token） | 1.97 | 正确，最低可用内存 3.9 GB |
 
 E4B 全部层上 NPU 需要约 5.5 GB 可用内存，后台应用多时其中一次运行被 rpcmem 预算拒绝、重试成功。
 
-**已知问题：Gemma 4 26B-A4B 专家分页加载导致整机重启**。2026-11-22 在本机重启 4 次（18:00 一次是 `-ngl 0` 纯 CPU 加载、默认 CPU repack 把 14 GB 权重拷进匿名内存；18:24、18:26、18:28 三次是上表配置）。rpcmem 预算保护（#6）没有拦住，说明占用来自别处（候选：上游新的缓冲映射 / 卸载路径对 mmap 权重的处理，或 CPU 侧的匿名内存）。在找到原因前：App 的模型目录把它标为「仅列出」，不要在手机上加载；同为专家分页的 MiniCPM-V 35B-A3B 和 Qwen3.8-Flash-Next 125B 在合并后的引擎上尚未复测，也应先在可承受重启的条件下验证。
+**Gemma 4 26B-A4B 加载导致整机重启：原因与修复（#17）**。2026-11-22 本机重启 4 次。用内存看门狗（每 100 ms 记录 `/proc/meminfo` 与进程内存，可用内存低于 1.5 GB 就杀进程，`tools/hui-lab/device/mem_guard.sh`）复现：进程匿名内存涨到 3.3 GB、再换出 2.4 GB 仍在涨，ION（rpcmem）稳定在 1.8 GB，文件页只有 7 MB——CPU 侧的专家权重被读进了匿名内存，而不是 mmap。原因是上游 #26081 的 `load_mode = auto`：只要有设备声明不支持 mmap（Hexagon 设备就是 `mmap_support = false`），整个模型都不用 mmap，留在 CPU 的权重全部读进匿名内存；14 GB 的模型放进 12 GB 手机只能耗尽内存。App 一直显式传 `--load-mode mmap`，不受影响；命令行工具（llama-bench、llama-completion 等）用默认值就会触发。
+
+修复：`load_mode = auto` 时，如果模型比当前可用内存（`/proc/meminfo` 的 MemAvailable）还大，即使有设备不支持 mmap 也保留 mmap 并打印警告（`src/llama-model.cpp`）——不 mmap 时这种模型只能耗尽内存；放得下的模型仍按上游规则。验证：同一命令、默认 load mode，日志「HTP0 has no mmap support, but the model (13755 MiB) is larger than the available memory (7112 MiB): keeping mmap」，正常输出，过程中最低可用内存 5.5 GB，未重启。App 的专家分页模型（MiniCPM-V 35B-A3B、Qwen3.8-Flash-Next 125B）在合并后的引擎上复测正常（见上表）。
 
 ## 7. 工具链：NDK r30 A/B
 
