@@ -832,6 +832,9 @@ JNIEXPORT jstring JNICALL HUI_JNI(chatRender)(JNIEnv * env, jclass, jstring jmes
         in.enable_thinking       = thinking;
         in.add_generation_prompt = add_generation;
         in.use_jinja             = true;
+        // like llama-server: the reply's thinking (Qwen <think>, Gemma 4 <|channel>thought...<channel|>) goes to
+        // reasoning_content, not into the content the user sees
+        in.reasoning_format      = COMMON_REASONING_FORMAT_DEEPSEEK;
         e.chat = std::make_unique<common_chat_session>(e.tmpls.get(), llama_model_get_vocab(e.model), in);
         return jstring_or_null(env, e.chat->prompt().str());
     } catch (const std::exception & ex) {
