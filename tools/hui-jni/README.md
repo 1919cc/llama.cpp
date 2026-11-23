@@ -19,6 +19,7 @@
 - `generateChat(messages)`：OpenAI 风格 messages，用模型自带模板渲染，用户输入里的特殊 token 不会被解析。
 - `chatRender` / `chatParse`：带 tools 的模板渲染与工具调用解析。
 - `stats()` 下标见 `HuiEngine.Stats`。
+- `embedLoad(path, threads, pooling)` / `embed(texts)`：独立的句向量槽（如 bge-small-zh，CPU，自带锁），与对话模型同时加载、互不等待；返回 L2 归一化向量，余弦相似度即点积。
 
 ## 构建
 

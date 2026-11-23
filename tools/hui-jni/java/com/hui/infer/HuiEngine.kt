@@ -12,6 +12,9 @@ package com.hui.infer
  * other GGML_HEXAGON_* options must be set before [open].
  *
  * Every call except [stop], [stats], [describe] and [npuBytes] is serialized on the engine.
+ *
+ * A second, small model for sentence embeddings ([embedLoad], [embed]) has its own slot and lock:
+ * it runs on the CPU next to the chat model, and does not wait for a reply.
  */
 // One Kotlin function per native entry point: the count follows the engine's JNI surface.
 @Suppress("TooManyFunctions")
@@ -179,4 +182,24 @@ object HuiEngine {
         threads: Int,
         threadsBatch: Int
     ): DoubleArray?
+
+    /** Pooling for [embedLoad]: the model's own (from its GGUF). */
+    const val POOLING_MODEL = -1
+
+    /** Pooling for [embedLoad]: the first token (BERT-style, e.g. bge). */
+    const val POOLING_CLS = 2
+
+    /**
+     * Loads a sentence-embedding model (GGUF) on the CPU into the embedding slot, replacing the one
+     * there; the chat model is untouched. Null on success, else why not.
+     */
+    @JvmStatic external fun embedLoad(path: String, threads: Int, pooling: Int): String?
+
+    @JvmStatic external fun embedUnload()
+
+    /**
+     * The L2-normalized embedding of each of [texts] (cosine similarity = dot product); null when
+     * no embedding model is loaded or a text failed. Texts longer than 512 tokens are cut.
+     */
+    @JvmStatic external fun embed(texts: Array<String>): Array<FloatArray>?
 }

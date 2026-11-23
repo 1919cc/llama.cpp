@@ -141,6 +141,7 @@ App 内嵌的引擎 `libhui_engine.so` + Kotlin 绑定 `com.hui.infer.HuiEngine`
 - **NPU 轮询按模型设置**：后端只在注册时读一次 `GGML_HEXAGON_OPPOLL`，引擎在每次加载时把环境变量写进后端的 `opt_oppoll`，常驻模型轮询、分页模型休眠。
 - **模板化对话**：用 GGUF 内置 jinja 模板渲染多轮对话和工具定义，并解析工具调用；用户输入里的特殊 token 不被解析。
 - **llama-bench 式测速与 GGUF 元数据读取**，供 EdgeAgent 使用。
+- **独立的句向量槽**（2026-11-23）：`embedLoad / embed / embedUnload` 另开一个模型和上下文（CPU、`op_offload` 关、自己的锁，`embeddings` + 池化，结果 L2 归一化），和对话模型同时加载、互不等待；此前一个进程只装一个模型，加载嵌入模型会顶掉对话模型。super_ai_com 用它跑 bge-small-zh-v1.5 q8_0（26 MB，512 维）做记忆召回：每个问题约 5 ms；PLR110 仪器测试里 SmolLM2-135M 对话模型和 bge 同时加载，对话模型回复后嵌入结果不变。
 
 ### 4.8 算子融合（#10）
 

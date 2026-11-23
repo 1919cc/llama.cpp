@@ -659,6 +659,56 @@ void apply_npu_poll() {
     LOGI("npu polling %d", *poll);
 }
 
+// A second, small model for sentence embeddings (bge-small-zh and the like, tens of MB), kept
+// apart from the chat model: its own model, context and lock, CPU only, so an app can embed
+// memories while the chat model stays loaded and without waiting for a reply to finish.
+struct embedder {
+    std::mutex      mtx;
+    llama_model *   model = nullptr;
+    llama_context * ctx   = nullptr;
+    int             n_embd = 0;
+
+    void unload() {
+        if (ctx) {
+            llama_free(ctx);
+        }
+        if (model) {
+            llama_model_free(model);
+        }
+        ctx    = nullptr;
+        model  = nullptr;
+        n_embd = 0;
+    }
+
+    // one text per pass (memories are short): the pooled embedding of seq 0, L2-normalized
+    bool embed(const std::string & text, float * out) {
+        llama_tokens tok = common_tokenize(ctx, text, true, true);
+        const auto   cap = static_cast<size_t>(llama_n_batch(ctx));
+        if (tok.size() > cap) {
+            tok.resize(cap);  // the CLS / first-token pooling only needs the start
+        }
+        if (tok.empty()) {
+            return false;
+        }
+        common_batch batch(ctx);
+        for (size_t i = 0; i < tok.size(); ++i) {
+            batch.add(tok[i], static_cast<llama_pos>(i), 0, true);
+        }
+        llama_memory_clear(llama_get_memory(ctx), true);
+        if (llama_process(ctx, LLAMA_PROCESS_TYPE_DECODE, batch.get()) < 0) {
+            return false;
+        }
+        const float * v = llama_get_embeddings_seq(ctx, 0);
+        if (!v) {
+            return false;
+        }
+        common_embd_normalize(v, out, n_embd, 2);
+        return true;
+    }
+};
+
+embedder g_embedder;
+
 size_t npu_bytes() {
     ggml_backend_reg_t reg = ggml_backend_reg_by_name("HTP");
     if (!reg) {
@@ -1088,6 +1138,78 @@ JNIEXPORT jdoubleArray JNICALL HUI_JNI(bench)(JNIEnv * env, jclass, jint n_pp, j
     jdoubleArray arr = env->NewDoubleArray(6);
     env->SetDoubleArrayRegion(arr, 0, 6, v);
     return arr;
+}
+
+// Loads the embedding model at path on the CPU (pooling: llama_pooling_type, -1 = the model's own);
+// null on success, otherwise what went wrong. Independent of load(): both models can be loaded.
+JNIEXPORT jstring JNICALL HUI_JNI(embedLoad)(JNIEnv * env, jclass, jstring jpath, jint threads, jint pooling) {
+    std::lock_guard<std::mutex> lock(g_embedder.mtx);
+    embedder &                  m = g_embedder;
+    m.unload();
+    const std::string path = jstr(env, jpath);
+
+    llama_model_params mp = llama_model_default_params();
+    mp.n_gpu_layers       = 0;
+    m.model               = llama_model_load_from_file(path.c_str(), mp);
+    if (!m.model) {
+        return env->NewStringUTF("failed to load the embedding model (see logcat tag 'llama')");
+    }
+    llama_context_params cp = llama_context_default_params();
+    cp.embeddings           = true;
+    cp.pooling_type         = static_cast<enum llama_pooling_type>(pooling);
+    cp.n_ctx                = 512;
+    cp.n_batch              = 512;
+    cp.n_ubatch             = 512;  // non-causal models need the whole text in one ubatch
+    cp.n_seq_max            = 1;
+    cp.n_threads            = threads > 0 ? threads : 4;
+    cp.n_threads_batch      = cp.n_threads;
+    cp.op_offload           = false;  // stay off the NPU the chat model uses
+    m.ctx                   = llama_init_from_model(m.model, cp);
+    if (!m.ctx) {
+        m.unload();
+        return env->NewStringUTF("failed to create the embedding context");
+    }
+    if (llama_pooling_type(m.ctx) == LLAMA_POOLING_TYPE_NONE) {
+        m.unload();
+        return env->NewStringUTF("the embedding model has no pooling; pass one");
+    }
+    m.n_embd = llama_model_n_embd_out(m.model);
+    char desc[256];
+    llama_model_desc(m.model, desc, sizeof(desc));
+    LOGI("embedding model %s, %d dims, pooling %d", desc, m.n_embd, static_cast<int>(llama_pooling_type(m.ctx)));
+    return nullptr;
+}
+
+JNIEXPORT void JNICALL HUI_JNI(embedUnload)(JNIEnv *, jclass) {
+    std::lock_guard<std::mutex> lock(g_embedder.mtx);
+    g_embedder.unload();
+}
+
+// The L2-normalized embedding of each text, in order; null when no embedding model is loaded or a
+// text failed.
+JNIEXPORT jobjectArray JNICALL HUI_JNI(embed)(JNIEnv * env, jclass, jobjectArray jtexts) {
+    std::lock_guard<std::mutex> lock(g_embedder.mtx);
+    embedder &                  m = g_embedder;
+    if (!m.ctx) {
+        return nullptr;
+    }
+    const jsize        n = env->GetArrayLength(jtexts);
+    std::vector<float> v(m.n_embd);
+    jobjectArray       out = env->NewObjectArray(n, env->FindClass("[F"), nullptr);
+    for (jsize i = 0; i < n; ++i) {
+        auto *      jt   = static_cast<jstring>(env->GetObjectArrayElement(jtexts, i));
+        const bool  ok   = m.embed(jstr(env, jt), v.data());
+        env->DeleteLocalRef(jt);
+        if (!ok) {
+            LOGE("embed: text %d failed", static_cast<int>(i));
+            return nullptr;
+        }
+        jfloatArray row = env->NewFloatArray(m.n_embd);
+        env->SetFloatArrayRegion(row, 0, m.n_embd, v.data());
+        env->SetObjectArrayElement(out, i, row);
+        env->DeleteLocalRef(row);
+    }
+    return out;
 }
 
 } // extern "C"
