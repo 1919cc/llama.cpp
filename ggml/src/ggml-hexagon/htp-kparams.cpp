@@ -8,6 +8,14 @@
 #include <cmath>
 #include <cstring>
 
+// With DMA64 (v81+) weight buffers are mapped extended: the DSP reaches them only through DMA, and kernels without a
+// DMA path answer NO_SUPPORT at run time (Inkling 2 pads and repeats small f32 weights). A weight is a leaf in a
+// weights buffer, or a leaf not allocated yet when supports_op asks.
+static bool htp_weight_maybe_extended(const struct ggml_tensor * t) {
+    return opt_dma64 && t->op == GGML_OP_NONE &&
+           (!t->buffer || ggml_backend_buffer_get_usage(t->buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+}
+
 #ifndef M_LOG2E
 #    define M_LOG2E 1.44269504088896340736
 #endif
@@ -436,7 +444,9 @@ static bool htp_kparams_solve_flash_attn(
         const uint32_t DK_pad = hex_round_up(DK, 64);
         const uint32_t DV_pad = hex_round_up(DV, 64);
         size_t Br = 0, Bc = 0;
-        int ret = hmx_fa_find_chunk_size(&Br, &Bc, G, DK_pad, DV_pad, neq1, nek1, vtcm_size, n_hvx, (q->type == GGML_TYPE_F32), sinks != nullptr, n_head, fa_team_size);
+        // a head-dependent mask (Inkling 2 folds its relative-position bias into it) takes G lines per query
+        const bool mask_per_head = mask != nullptr && mask->ne[2] != 1;
+        int ret = hmx_fa_find_chunk_size(&Br, &Bc, G, DK_pad, DV_pad, neq1, nek1, vtcm_size, n_hvx, (q->type == GGML_TYPE_F32), sinks != nullptr, n_head, fa_team_size, mask_per_head);
         if (ret == 0) {
             kparams->kernel_type = HTP_FA_KERNEL_HMX;
             if (logit_softcap == 0.0f) {
@@ -451,8 +461,10 @@ static bool htp_kparams_solve_flash_attn(
             kparams->n_kv_blocks         = (nek1 + Bc - 1) / Bc;
             kparams->n_hvx               = (kparams->n_kv_blocks >= 3 && n_hvx >= 2) ? n_hvx : 1;
             kparams->u.hmx.g_br          = hex_align_up(G * Br, 32);
-            kparams->u.hmx.pipeline      = (kparams->n_kv_blocks >= 3 && n_hvx >= 2) ? 1 : 0;
-            kparams->vtcm_size           = hmx_fa_compute_vtcm_usage(G, DK_pad, DV_pad, Br, Bc, kparams->n_hvx, kparams->u.hmx.pipeline != 0, (q->type == GGML_TYPE_F32), sinks != nullptr, n_head);
+            // a head-dependent mask has a single VTCM buffer (no slot cache): the pipeline would DMA block b + 1's mask
+            // over the one block b still reads
+            kparams->u.hmx.pipeline      = (kparams->n_kv_blocks >= 3 && n_hvx >= 2 && !mask_per_head) ? 1 : 0;
+            kparams->vtcm_size           = hmx_fa_compute_vtcm_usage(G, DK_pad, DV_pad, Br, Bc, kparams->n_hvx, kparams->u.hmx.pipeline != 0, (q->type == GGML_TYPE_F32), sinks != nullptr, n_head, mask_per_head);
             kparams->u.hmx.mask_broadcast = (mask != nullptr && mask->ne[2] == 1) ? 1 : 0;
             kparams->u.hmx.div_G         = init_fastdiv_values(G);
             if (mask) {
@@ -2165,6 +2177,11 @@ static bool htp_kparams_solve_repeat(
     const struct ggml_tensor * src0 = op->src[0];
     const struct ggml_tensor * dst  = op;
 
+    // the DSP kernel has no DMA path for extended (DMA64-mapped) weights
+    if (htp_weight_maybe_extended(src0)) {
+        return false;
+    }
+
     if ((src0->type != GGML_TYPE_F32 && src0->type != GGML_TYPE_F16) || src0->type != dst->type) {
         return false;
     }
@@ -2448,6 +2465,11 @@ static bool htp_kparams_solve_sort(
 
     const struct ggml_tensor * src0 = op->src[0];
     const struct ggml_tensor * dst  = op;
+
+    // the DSP kernel has no DMA path for extended (DMA64-mapped) weights
+    if (htp_weight_maybe_extended(src0)) {
+        return false;
+    }
     const bool is_top_k             = (op->op == GGML_OP_TOP_K);
 
     if (src0->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_I32) {
@@ -3562,8 +3584,14 @@ static bool htp_kparams_solve_pad(
     struct htp_pad_vtcm_layout layout;
     htp_pad_vtcm_layout_build(&layout, (uint32_t) src0->ne[0] * type_size, (uint32_t) dst->ne[0] * type_size, n_hvx);
 
-    const bool use_dma = (src0->nb[0] == type_size) && (src0->ne[0] >= 512) &&
+    // an extended weight needs the DMA kernel whatever its width (Inkling 2's 16-wide relative-position bias)
+    const bool src_ext = htp_weight_maybe_extended(src0);
+
+    const bool use_dma = (src0->nb[0] == type_size) && (src0->ne[0] >= 512 || src_ext) &&
                          (htp_session_vtcm_size(sess) >= layout.total_bytes);
+    if (src_ext && !use_dma) {
+        return false;
+    }
 
     kparams->n_hvx      = n_hvx;
     kparams->total_rows = total_dst_rows;
