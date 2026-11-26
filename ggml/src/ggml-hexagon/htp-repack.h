@@ -86,6 +86,7 @@ static inline size_t htp_tiled_row_size(enum ggml_type type, int64_t ne0) {
 }
 
 void htp_repack_tensor_tiled(struct ggml_tensor * t, const void * data, size_t size);
+bool htp_repack_tensor_tiled_range(struct ggml_tensor * t, const void * data, size_t offset, size_t size);
 void htp_unpack_tensor_tiled(void * data, const struct ggml_tensor * t, size_t offset, size_t size);
 
 #endif // HTP_REPACK_H

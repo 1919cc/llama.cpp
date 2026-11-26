@@ -760,6 +760,15 @@ static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
     HEX_VERBOSE("ggml-hex: %s set-tensor %s : data %p offset %zu size %zu usage %d flags 0x%x\n",
         sess->c_name(), tensor->name, data, offset, size, (int) buffer->usage, ggml_hexagon_tensor_get_flags(tensor));
 
+    // a weight already repacked at run time holds tiles: whole matrices (an expert of a MUL_MAT_ID weight, rewritten
+    // by an expert cache) are repacked in place; raw bytes would be read as tiles
+    if (ggml_hexagon_tensor_get_flags(tensor) & HTP_TENSOR_TILED) {
+        const size_t matrix = (size_t) tensor->ne[1] * ggml_row_size(tensor->type, tensor->ne[0]);
+        GGML_ASSERT(offset % matrix == 0 && size % matrix == 0 && "partial writes of a tiled tensor must be whole matrices");
+        GGML_ASSERT(htp_repack_tensor_tiled_range(tensor, data, offset, size));
+        return;
+    }
+
     memcpy((char *) tensor->data + offset, data, size);
 }
 

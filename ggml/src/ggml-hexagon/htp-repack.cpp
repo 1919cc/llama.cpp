@@ -2553,6 +2553,30 @@ void htp_repack_tensor_tiled(ggml_tensor * tensor, const void * data, size_t siz
     }
 }
 
+// repacks whole matrices [offset, offset + size) of a tiled tensor, offset and size in source bytes (an expert of a
+// MUL_MAT_ID weight is one matrix); false for the types that are only repacked whole
+bool htp_repack_tensor_tiled_range(ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
+    switch (tensor->type) {
+        case GGML_TYPE_Q1_0:    repack_q1_0_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q4_0:
+        case GGML_TYPE_IQ4_NL:  repack_q4_0_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q4_1:    repack_q4_1_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q5_0:    repack_q5_0_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q5_1:    repack_q5_1_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q8_0:    repack_q8_0_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_MXFP4:   repack_mxfp4_tiled(tensor, data, offset, size);   return true;
+        case GGML_TYPE_NVFP4:   repack_nvfp4_tiled(tensor, data, offset, size);   return true;
+        case GGML_TYPE_IQ2_XXS: repack_iq2_xxs_tiled(tensor, data, offset, size); return true;
+        case GGML_TYPE_Q2_0:    repack_q2_0_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q2_K:    repack_q2_K_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q3_K:    repack_q3_K_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q4_K:    repack_q4_K_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q5_K:    repack_q5_K_tiled(tensor, data, offset, size);    return true;
+        case GGML_TYPE_Q6_K:    repack_q6_K_tiled(tensor, data, offset, size);    return true;
+        default:                return false;
+    }
+}
+
 void htp_unpack_tensor_tiled(void * data, const ggml_tensor * tensor, size_t offset, size_t size) {
     GGML_ASSERT(offset + size <= ggml_nbytes(tensor));
 
