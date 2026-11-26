@@ -167,6 +167,23 @@ private:
         return ws;
     }
 
+    // MemAvailable in bytes, 0 if unknown
+    static size_t mem_available() {
+        size_t res = 0;
+        if (FILE * f = fopen("/proc/meminfo", "r")) {
+            char line[256];
+            while (fgets(line, sizeof(line), f)) {
+                unsigned long long kb = 0;
+                if (sscanf(line, "MemAvailable: %llu kB", &kb) == 1) {
+                    res = (size_t) kb << 10;
+                    break;
+                }
+            }
+            fclose(f);
+        }
+        return res;
+    }
+
     static bool is_host_weight(const ggml_tensor * w) {
         return w->buffer && ggml_backend_buffer_is_host(w->buffer) && ggml_n_dims(w) == 3;
     }
@@ -240,6 +257,24 @@ private:
             }
         }
         fclose(f);
+
+        // the bank is pinned device memory taken before the compute buffers: leave room for them, the KV cache and the
+        // device's own reserve (Hexagon: GGML_HEXAGON_MEM_RESERVE, 2 GiB), or the context fails to allocate when the
+        // phone has less memory free than usual (LLAMA_HOT_EXPERTS_RESERVE_MB, default 2048 + 1536: the compute buffers
+        // and KV cache of Inkling 2 Mini take ~1.4 GB more after the dense weights, which MemAvailable already counts)
+        {
+            const char * r = getenv("LLAMA_HOT_EXPERTS_RESERVE_MB");
+            const size_t reserve = (size_t) (r ? atol(r) : 2048 + 1536) << 20;
+            const size_t avail = mem_available();
+            if (avail > 0) {
+                const size_t fit = avail > reserve ? avail - reserve : 0;
+                if (fit < budget) {
+                    LLAMA_LOG_WARN("%s: %zu MiB of hot experts would not leave %zu MiB free of the %zu MiB available: using %zu MiB\n",
+                            __func__, budget >> 20, reserve >> 20, avail >> 20, fit >> 20);
+                    budget = fit;
+                }
+            }
+        }
 
         // the most selected experts of all layers, until the budget is used
         struct cand { hot_group * g; int32_t e; int64_t n; };

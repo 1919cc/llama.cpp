@@ -17,7 +17,8 @@ struct llama_model;
 // that fall out of use for the busiest cold ones every n tokens (Strata's adaptive expert cache; off by default, it
 // measured no gain on the PLR110). Layers that share their expert tensors (the loop passes of Inkling 2 Mini) share
 // one bank.
-// No-op when the variables are unset.
+// The bank shrinks to leave LLAMA_HOT_EXPERTS_RESERVE_MB (default 3584) of the available memory free for the compute
+// buffers, the KV cache and the device's reserve. No-op when the variables are unset.
 
 // the expert ids of the hot (on the device) and cold (in host memory) part of a layer, from its selected experts
 struct llama_hot_experts_ids {
