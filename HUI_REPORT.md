@@ -55,6 +55,13 @@
 | 18 | 内存拟合（no_alloc）时不对专家张量做 madvise | App 内专家分页（26B-A4B 等，开启专家预读时） | App 加载 26B-A4B 从「GC 崩溃」到可用：decode 4.1 tok/s | — | 已上线（2026-11-22，smaps 复现 + 真机验证） |
 | 17 | `load_mode=auto` 下比可用内存大的模型保留 mmap | 不能整个放进内存、又用 NPU 的模型（26B-A4B 等）的命令行运行 | 26B-A4B 从「加载即重启」到 pp128 30.7 / tg32 6.1 tok/s | 专家权重留在可回收的文件页，不再读进约 12 GB 匿名内存 | 已上线（2026-11-22，看门狗复现 + 实测） |
 | 16 | Hexagon 主机缓冲默认关闭（上游默认开） | 所有 NPU 部署，尤其 Gemma 4 E 系列 | E2B decode +4.7%（27.91 → 29.22），prefill −11%（仍为合并前 2.29×） | 不再钉住约 1.8–2.2 GB 嵌入表；E4B 恢复可加载 | 已上线（2026-11-22，门控实测） |
+| 19 | Hexagon v81：扩展（DMA64）缓冲里的权重做 PAD / REPEAT / ARGSORT | v81 NPU 上的 Inkling 2（及任何对小权重做这些算子的模型） | 从「运行即中止」到可运行 | — | 已上线（2026-11-25） |
+| 20 | HMX flash attention 的逐头 mask：VTCM 槽按 G × Br 分配，逐头 mask 关流水线 | 把偏置折进逐头 mask 的模型（Inkling 2） | 从「输出乱码」到与 CPU 一致 | — | 已上线（2026-11-25） |
+| 21 | 已 tile 的权重按整矩阵 repack 写入 | 改写 NPU 上专家的缓存（#22 自适应） | 正确性（此前写入即损坏） | — | 已上线（2026-11-26） |
+| 22 | MoE 热专家放 NPU，冷专家 CPU 并行（借鉴 Strata） | 专家留在 CPU 的 MoE（Inkling 2 Mini） | Inkling 2 Mini（门控、真实提示，在 #24 之上，3 GB 库）：decode 3.60 → 3.85 tok/s（+7%），prefill 5.74 → 8.39（+46%） | NPU 专家库 2.5–3 GB（rpcmem，计入预算，按可用内存自动缩小） | 已上线（2026-11-26，`LLAMA_HOT_EXPERTS_MB`，默认关） |
+| 23 | Inkling 2 mix() 单查询改为向量运算 | Inkling 2 解码 | decode +5.5%（同频 A/B 两对，未门控） | — | 已上线（2026-11-26） |
+| 24 | 解码线程绑核（-t 4 -C 0x3C --cpu-strict 1）+ NPU 轮询（OPPOLL=1） | 页缓存装得下热专家的 MoE（Inkling 2 Mini） | decode 2.86 → 3.60 tok/s（+25.6%，门控） | — | 部署参数（App 尚未采用） |
+| — | **Inkling 2 Mini 合计**（#22–#24，门控、留出真实提示） | | **decode 2.87 → 4.39 tok/s（+53.3%）；prefill 5.46 → 8.04（+47.2%）** | | 第 6.4 节 |
 
 ## 3. 与上游 master 的对比基线
 
@@ -180,6 +187,38 @@ App 内嵌的引擎 `libhui_engine.so` + Kotlin 绑定 `com.hui.infer.HuiEngine`
 
 **收益**：Gemma 4 E4B 重新可以在手机上加载；E2B 少钉住约 1.8 GB；decode +4.7%。代价：E2B prefill −11%（仍是合并前的 2.29 倍）。
 
+### 4.14 Hexagon v81：扩展缓冲里的权重（#19）与逐头 mask 的 HMX flash attention（#20）
+
+合并上游后 Inkling 2 Mini 在 NPU 上先是中止、修好后输出乱码，两处都是 v81 的问题：
+
+- **#19 扩展缓冲（DMA64）里的权重**：v81 默认把权重缓冲按 DMA64「扩展」映射，DSP 只能用 DMA 访问。PAD、REPEAT、ARGSORT 的 DSP 内核对扩展张量没有 DMA 路径，运行时返回 NO-SUPPORT，主机端直接中止。Inkling 2 会对小的 f32 权重做 PAD（16 宽的相对位置偏置）和 REPEAT（`ffn_res_query`）。修复（`htp-kparams.cpp`）：主机在 supports_op 阶段识别「可能在扩展缓冲里的权重」（叶子张量、在权重缓冲或尚未分配），PAD 不论宽度都走 DMA 内核，REPEAT / ARGSORT 交给 CPU。
+- **#20 逐头 mask 的 HMX flash attention**：Inkling 2 把相对位置偏置折进每个头各自的 mask（mask 的 ne[2] = n_head）。HMX 内核按 GQA 分组时，逐头 mask 一次 DMA G × Br 行，但 VTCM 里的 mask 槽只按 Br 行分配，越界写进 slopes / sinks；流水线模式下还会把第 b+1 块的 mask 预取到第 b 块仍在读的同一块缓冲。修复：mask 槽按 `mask_per_head ? G × Br : Br` 分配；逐头 mask 关闭流水线。验证：贪心输出从乱码恢复为与 CPU 一致（「The capital of France is Paris.」），与 HVX 内核前约 30 token 逐字相同（之后的差异来自 HMX 的 fp16 分数）。
+
+### 4.15 写入已 tile 的权重（#21）
+
+运行时 repack 之后权重是 tile 布局，`set_tensor` 却按原始字节 memcpy，后写入的内容会被当成 tile 读。热专家自适应换入（#22）需要改写专家库里的一个专家。修复：已 tile 的张量按整矩阵（MUL_MAT_ID 权重的一个专家）在原位 repack（`htp_repack_tensor_tiled_range`），不足整矩阵的写入直接断言。
+
+### 4.16 MoE 热专家放 NPU（#22，`src/llama-hot-experts.{h,cpp}`）
+
+**问题**：Inkling 2 Mini 的路由专家约 13 GB，只能 mmap 留在 CPU 侧，稠密部分在 NPU。逐 token 剖析（本机，-t 2，GGML_SCHED_PROF / GGML_CPU_PROF 诊断补丁）：CPU 上 MUL_MAT_ID 约 142 ms/token，NPU 约 107 ms/token，两者严格串行。解码时闪存读只有约 39 MB/token、缺页约 2.7k 次/token：页缓存已经装下热专家，瓶颈是 CPU 的 Q4_0 GEMV 本身（约 21 GMAC/s），不是 I/O。NPU 算同样的专家快约 5 倍（热专家 21 ms/token 约等效 39 GB/s）。
+
+**做法**（借鉴 Strata：热专家放加速器、冷专家留 CPU、两边同时算）：
+
+- 路由高度偏斜：一次对话里前 256 个专家（1.1 GB）占 53% 的选择，前 512 个（2.1 GB）占 72%。
+- 画像：`LLAMA_EXPERT_TRACE` 在 5 条代表性提示上（中英文对话、代码、问答，`tools/hui-lab/prompts/inkling-profile.txt`，每条 160 token）录路由；`LLAMA_HOT_EXPERTS_PROFILE` 指向这个文件。加载后按画像全局排序，在 `LLAMA_HOT_EXPERTS_MB` 预算内把最常用的专家复制进 NPU 专家库；共享专家张量的层（Inkling 的循环层）共享一份。
+- 每个 MoE 层用两张查表把选中专家拆成「热：库内槽位 / 冷：-1」和「冷：专家号 / 热：-1」。查表是 F32 张量放在 NPU 普通缓冲里（NPU 的 GET_ROWS 只读 F32），NPU 上 GET_ROWS + CPY 转成 I32，留在路由所在的 NPU 分段。NPU 用热 id 跑 MUL_MAT_ID，CPU 用冷 id 跑 MUL_MAT_ID，两边把对方的专家当 -1（两端内核都输出 0），结果相加。
+- 并行靠分段顺序：专家预读算子（CPU，只读冷专家）放在路由和热专家之间，结束 NPU 分段；调度器在 NPU 计算热专家之前就把冷专家分段的输入拷出（`prefetch_inputs`），于是 CPU 算冷专家和 NPU 算热专家同时进行。如果预读算子放在热专家之后，分段数不变但 CPU 要等 NPU 把热专家算完，实测更慢。
+- 自适应（`LLAMA_HOT_EXPERTS_PERIOD`，默认关）：按对话里衰减的选择次数，每 n token 把冷下来的热专家换成最忙的冷专家（需要 #21）。本机实测不快于静态库（3 次对比都不占优），默认关闭。
+
+**画像覆盖率**（留出提示上的离线模拟）：1 GB 30%、1.5 GB 38%、2 GB 44%、2.5 GB 50%、3 GB 56%、4 GB 63%。
+
+**内存**：专家库在 rpcmem 里，受 #6 的预算保护约束，而且比计算缓冲先分配。固定大小时，手机空闲内存比平时少就会让后面的计算缓冲被拒、上下文创建失败（2.5 GB 时 6 次门控运行失败 1 次，3 GB 时更常见）。现在（0279d270c）专家库按建库时的 MemAvailable 自动缩小，留出 `LLAMA_HOT_EXPERTS_RESERVE_MB`（默认 3584 = 设备保留 2 GiB + Inkling 的计算缓冲与 KV 约 1.4 GB），缩小时打印警告；之后各种空闲内存（5.5–7.8 GB）下的加载都成功。
+
+### 4.17 Inkling 2 mix() 的单查询向量化（#23）
+
+生成时 `mix()`（深度方向的注意力）用 1 个查询对 K ≤ 7 个块状态加权求和。原写法是 `mul_mat(scores, cont(transpose(states)))`：要转置复制状态，再做 n_embd 次长度为 K 的点积。NPU 的 flat 内核逐行 DMA 进 VTCM，每次约 260 µs，每 token 约 88 次，合计约 23 ms。改为一个广播 MUL 加 K−1 个整行 ADD（每个约 6 µs）。prompt 和多查询（循环控制的 4 个查询）保留原写法。试过在 DSP 上给小 K 矩阵乘加一条标量快路径：Hexagon 标量浮点太慢，2 线程 126–170 µs、6 线程反而 300+ µs，K = 16 的偏置表从 96 µs 变成 1.2 ms，已放弃。
+
+
 ## 5. 部署层调优（使用上游已有能力）
 
 以下能力来自上游，hui 的贡献是在本机测出的部署参数，写在 super_ai_com 的 `InferencePlan` 里：
@@ -193,6 +232,12 @@ App 内嵌的引擎 `libhui_engine.so` + Kotlin 绑定 `com.hui.infer.HuiEngine`
 | MTP 投机（Qwen3.8 27B，草拟 3） | 接受率 39.7%，每次前向 2.2 token，1.93× |
 | MoE 专家预取等级 | MiniCPM-V 4.7 35B-A3B（专家约一半放得进页缓存）2 级 6.6 tok/s，3 级 4.7；125B 用 3 级 |
 | DSpark 草拟（MiniCPM-V 4.7） | 本机更慢（1B 23 vs 59 tok/s），不使用 |
+
+**Inkling 2 Mini 的线程绑核与 NPU 轮询（#24）**
+
+- **线程**：解码 2 线程原本最快；不绑核时 3 线程以上、CPU 轮询打开会崩到 0.4–0.9 tok/s（4 线程 poll 50：0.86，poll 10：0.71），`--poll 0` 时 4 线程能扩展但轮询本身值钱（2 线程 poll 50 vs 0：3.03 vs 2.37）。绑核后问题消失：`-t 4 -C 0x3C --cpu-strict 1`（核 2–5，留出 0–1 和两个超大核）最好，0xF0（含超大核）、0x3E（5 线程）、0x7E（6 线程）都不更快。原因推测是不绑核的轮询线程和 NPU 主机侧 / FastRPC 线程抢核，本机没有 perf 权限无法确认。
+- **NPU 轮询**：`GGML_HEXAGON_OPPOLL=1`。App 对分页方案关掉它，是因为轮询的核会和 I/O 线程抢；Inkling 的热专家已在页缓存，I/O 很少，打开后同配置 +6.6%。
+- prefill 线程绑核无收益（-tb 4 0x3C、-tb 6 0xFC 都不快于 -tb 6 不绑核）。
 
 ## 6. 模型推理部署与实测
 
@@ -256,6 +301,54 @@ E4B 全部层上 NPU 需要约 5.5 GB 可用内存，后台应用多时其中一
 
 **App 内加载 26B-A4B 时进程崩溃：原因与修复（#18）**。App（显式 mmap）加载 26B-A4B 约 4 秒后，ART 的垃圾回收 abort：「mremap to move pages failed: Bad address」，每次复现。采样 `/proc/<pid>/smaps` 看到 Java 堆 `[anon:dalvik-main space]`（0x02000000–0x22000000）被拆成两段，前段多了 `rr`（`MADV_RANDOM`）标志，终点 0x08820000 恰好等于一个 `ffn_down_exps` 张量的字节数（704 × 2816 × 128 × 0.5625 = 142,737,408）。原因：参数拟合（memory-fit）用 `no_alloc` 加载模型、在未分配的缓冲上建图，张量的 `data` 只是偏移量；hui 的专家预读（#4）在建图时对专家张量 `posix_madvise(RANDOM)`，把从 0 开始的这段地址标成随机访问，正好落在 ART 的 Java 堆上。命令行进程那段地址没有映射，所以只在 App 里出事。修复（`src/llama-graph.cpp`）：`no_alloc` 模型不建专家预读，且只对确实落在已分配缓冲内的张量地址做 madvise。验证：同一 App 操作，Java 堆不再被拆分、没有崩溃，26B-A4B 正常回答（675 输入 / 92 输出，prefill 25 tok/s，decode 4.1 tok/s，NPU 1.9 GB，可用内存 5.6 GB）。
 
+### 6.4 Inkling 2 Mini（2026-11-25 起）
+
+**模型**：[thinkingmachines/Inkling-2-Mini](https://huggingface.co/thinkingmachines/Inkling-2-Mini)（Apache-2.0），架构 `inkling2_loop`：24 层物理层，核心第 6–17 层每个 token 循环 3 遍（共 48 次层访问），128 个路由专家选 8，n_embd 2304。上游已支持该架构（#32217、#32694），合并后无需新增架构代码，但 NPU 上要先修 #19、#20 才能运行。权重：[bartowski/Inkling-2-Mini-GGUF](https://huggingface.co/bartowski/Inkling-2-Mini-GGUF) 的 `Inkling-2-Mini-Q4_0.gguf`（15.06 GB，sha256 `e8a58319…`，与 Hugging Face 一致），手机上在 `/data/local/tmp/gguf/`。另下载了 unsloth 的 UD-Q2_K_XL（9.14 GB）和 DSpark 草拟模型（Q8_0，0.50 GB），未用于下表。
+
+**部署方式**：比内存大的 MoE，用 App 的专家分页方案（C / EXPERTS）：稠密部分上 NPU，路由专家 mmap 留在 CPU。
+
+| 配置 | 环境变量 | 参数 |
+|---|---|---|
+| 基线（App 方案 C 原参数） | `LLAMA_EXPERT_PREFETCH=2` | `-lm mmap --no-repack -c 2048 -t 2 -tb 6 -fa on -ctk q8_0 -ctv q8_0 --device HTP0 -ngl 99 -ot exps=CPU` |
+| 最终 | 再加 `GGML_HEXAGON_OPPOLL=1 LLAMA_HOT_EXPERTS_MB=2560 LLAMA_HOT_EXPERTS_PROFILE=<画像>` | 同上，`-t 2` 换成 `-t 4 -C 0x3C --cpu-strict 1` |
+
+画像：用基线构建加 `LLAMA_EXPERT_TRACE=<文件>`，对 `tools/hui-lab/prompts/inkling-profile.txt` 的每条提示以 `--jinja -cnv -st -n 160` 生成一次，追加写到同一个文件（约 1 MB）。测速用的是另外两条留出提示（`inkling-eval.txt`，一中一英）。
+
+**门控实测**（`completion_gate.py`，每次运行前满频、温控 0、桌面在前、清后台；构建交替；真实对话提示生成 128 token；原始数据 `tools/hui-lab/results/ink-final-v1`、`-v2`、`-v3`）：
+
+| 构建 | 提交 | prefill tok/s | decode tok/s | 运行数 |
+|---|---|---|---|---|
+| 基线：合并后 hui_infer + #19 #20（不修无法运行），App 方案 C 参数 | 086617dbd | 5.46 ± 0.53 | 2.87 ± 0.09 | 6 |
+| + #24 绑核 + NPU 轮询（v2） | 086617dbd | 5.74 ± 0.33（−1%） | 3.60 ± 0.16（+25.6%） | 4 |
+| + #22 热专家 3 GB（v2） | 1bdd33741 | 8.39 ± 0.20（+44.6%） | 3.85 ± 0.35（+34.4%） | 3 |
+| **最终：+ #23，热专家 2.5 GB（v3）** | ebbea1ed0 | **8.04 ± 0.68（+47.2%）** | **4.39 ± 0.33（+53.3%）** | 5 |
+
+v2 的倍数相对 v2 自己的基线（2.86 / 5.80）。最终行 6 次运行里有 1 次没有输出：专家库占了 rpcmem 之后计算缓冲被预算拒绝（见第 4.16 节「内存」），已由 0279d270c 修复（专家库按可用内存缩小）。修复后的构建又跑了一次门控，第 1 轮中途手机 USB 断开，没有得到结果。prefill 用的是 34–46 token 的短对话提示。
+
+**llama-bench 门控**（`bench_gate.py`，3 轮交替；llama-bench 生成时喂的是随机 token，热专家画像覆盖不到，所以 #22 在这里收益小；原始数据 `results/ink-base-tg`、`ink-base-pp`、`ink-final-tg`、`ink-final-pp`）：
+
+| 指标 | 基线（App 方案 C 参数，tg `-t 2`、pp `-t 6`） | 最终（tg `-t 4 -C 0x3C --cpu-strict 1`，pp `-t 6`；OPPOLL=1；热专家 2.5 GB） |
+|---|---|---|
+| tg64 | 3.18 ± 0.11（首次基线）；3.18 ± 0.12（与最终交替的那组） | **4.33 ± 0.10（+36.4%）** |
+| pp128 | 10.96 ± 0.20（首次基线）；10.43 ± 0.24（与最终交替的那组） | **12.62 ± 0.19（+20.9%）** |
+
+即：真实对话文本上 decode 达到 +50% 的目标（+53.3%），prefill +47.2%；随机 token 的 llama-bench 上 decode +36.4%、pp128 +20.9%，没有达到 +50%。差别全部来自热专家（#22）的命中率：画像在真实文本留出提示上覆盖约 50%，随机 token 下低得多。
+
+**借鉴 Strata（[Niko1221/Strata](https://github.com/Niko1221/Strata)）的技术，在本机的结果**：
+
+| Strata 的做法 | 在 hui_infer 上 | 结果 |
+|---|---|---|
+| 热专家放加速器、其余专家 CPU 同时计算 | #22 | 有效：prefill +46%，decode +7%（在 #24 之上） |
+| 专家缓存跟着对话自适应 | #22 的 `LLAMA_HOT_EXPERTS_PERIOD` | 不快于静态库，默认关 |
+| 预取下一层专家（下一层路由 · 本层输入，循环层感知） | 试过，未提交 | 无收益：解码闪存读只有约 39 MB/token |
+| MTP / DSpark 草拟 + 一次前向验证 | `llama-speculative-simple`，草拟 3 | 更慢：接受率 33%、1.4 tok/s；验证 4 个 token 的代价约为 1 个的 4 倍（每个 token 选不同专家）；草拟模型放 NPU 会让 DSP 崩溃 |
+| RAM 里 LRU 专家缓存 + 直接 I/O 读（低内存模式） | 已有 `LLAMA_EXPERT_CACHE_MB`（#4 系列），Inkling 专家 4.6 MB 超过 2 MB 槽；修了槽大小和循环层键值后试过，未提交 | 更慢：热专家本来就在页缓存里 |
+| 大块 prefill、推测式 n-gram 查找 | 未做 | Inkling 在本机 prefill 用的是短对话提示；n-gram 对 MoE 关闭（第 5 节） |
+
+**SM8975**：本机只有 SM8845，以上数字全部来自 SM8845（Hexagon v81，6 + 2 核）。SM8975 没有测：构建里有 v85 的 DSP 库，#19–#23 不依赖具体芯片，可以直接用；但 `-C 0x3C` 绑核掩码是按 SM8845 的核布局（核 0–5 一簇、6–7 超大核）选的，SM8975 的核布局和 NPU 带宽不同，需要在真机上重选线程数、掩码和热专家库大小，倍数也要重新测。
+
+**内存**：最终配置 rpcmem 约 4.3 GB（稠密权重 955 MB + 计算缓冲约 0.8 GB + 专家库 2.5 GB），运行中可用内存 6.4–7.4 GB。App 内还要加上 Java 堆等，2.5 GB 库在 App 里是否放得下没有验证。
+
 ## 7. 工具链：NDK r30 A/B
 
 **结论：NDK r30 没有可测收益，默认构建继续用镜像自带的 NDK r29。**
@@ -306,6 +399,15 @@ hui_infer 落后上游 611 个提交（上游 `cbb1c1c50`）。12 个文件有�
 端到端：Gemma 4 E2B QAT Q4_0 在 NPU 上贪心生成 60 token，合并前后输出逐字相同。
 
 注意：合并后 `llama-completion` 默认按模型训练上下文分配 KV，E2B 在可用内存约 6 GB 时会被 rpcmem 预算保护（#6）拒绝；端侧部署一律显式传 `-c`（App 内 JNI 引擎本来就按方案设置上下文）。
+
+
+### 2026-11-25：合并上游 111 个提交
+
+上游 `0fc7e1716`。无冲突，自动合并。上游这段时间加入了 Inkling 2 系列（#32217 文本 + 视觉、#32218 DSpark、#32694 Inkling 2 Mini 的循环架构、#32855 / #32948 mix() 和 control() 的图优化）、flash attention 的压缩 / 索引偏置（#32740、#33016）、Metal / CUDA / OpenCL / SYCL 的若干改进。
+
+**合并后的问题与修复**：Inkling 2 Mini 在 NPU 上先中止（PAD / REPEAT 读 DMA64 扩展缓冲里的权重返回 NO-SUPPORT），修好后输出乱码（HMX flash attention 逐头 mask 越界）。两项见 #19、#20（第 4.14 节）。
+
+**验证**：构建通过；Inkling 2 Mini 贪心输出与 CPU 一致；`test-backend-ops -b HTP0 -o MUL_MAT` 全部通过。`test-backend-ops -b HTP0`（最终构建）：MUL_MAT 全部通过；MUL_MAT_ID 1169 / 1169；PAD 37 / 37；REPEAT 12 / 12；ARGSORT 98 / 98；FLASH_ATTN_EXT 3304 / 3308——失败的 4 个都是广播 mask（mask_heads=1）+ 带填充的 Q 视图（q_head_padding=4）走 HMX 内核，与 #20 改动的逐头 mask 路径无关（HVX 内核 `GGML_HEXAGON_FA_SELECT=1` 下 3308 / 3308），属于上游 HMX 内核的已有问题，未修。
 
 
 ## 9. 2 倍速度目标：现状与计划
