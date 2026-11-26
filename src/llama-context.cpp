@@ -4,6 +4,7 @@
 #include "llama-arch.h"
 #include "llama-graph.h"
 #include "llama-impl.h"
+#include "llama-hot-experts.h"
 #include "llama-batch.h"
 #include "llama-io.h"
 #include "llama-memory.h"
@@ -2147,6 +2148,9 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
         LLAMA_LOG_ERROR("%s: n_tokens == 0\n", __func__);
         return -1;
     }
+
+    // between graph computes: the hot expert banks follow the conversation (see llama-hot-experts.h)
+    llama_hot_experts_maintain();
 
     if (batch_inp.n_embd > 0 && batch_inp.n_embd != batch_inp.n_embd_inp) {
         LLAMA_LOG_ERROR("%s: embd row width %zu does not match the decoder input %zu\n",

@@ -3,6 +3,7 @@
 #include "llama-impl.h"
 #include "llama-model.h"
 #include "llama-expert-cache.h"
+#include "llama-hot-experts.h"
 #include "llama-moe-cache.h"
 #include "llama-mmap.h"
 #include "llama-weight-stream.h"
@@ -1947,7 +1948,7 @@ ggml_tensor * llm_graph_context::build_lora_mm_id(
     // the experts in the MoE cache are selected by their slots
     ggml_tensor * res = slots == nullptr ?
         ggml_mul_mat_id(ctx0, w, cur_mm, ids) :
-        ggml_mul_mat_id(ctx0, cached ? moe_cache->get_experts(w) : w, cur_mm, slots);
+        ggml_mul_mat_id(ctx0, cached ? (moe_cache ? moe_cache->get_experts(w) : llama_hot_experts_bank(w)) : w, cur_mm, slots);
 
     if (w->type == GGML_TYPE_NVFP4) {
         ggml_prec_set_acc(res, GGML_PREC_BF16);
@@ -2562,9 +2563,15 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
     const llama_moe_cache_lookup cache = moe_cache == nullptr ? llama_moe_cache_lookup{} :
         moe_cache->build_lookup(*this, { il, up_exps, gate_exps, down_exps, gate_up_exps, weight_before_ffn }, selected_experts);
 
+    // the hot experts of the layer computed on its device, the others on the CPU (see llama-hot-experts.h)
+    const llama_hot_experts_ids hot = cache.slots == nullptr ? llama_hot_experts_split(ctx0, gf, model, il, selected_experts) : llama_hot_experts_ids{};
+
     // the MoE cache uploads its own experts, and a prefetch op can put the selection in the split of the lookup
+    // with hot experts it reads only the cold ones; as a CPU op between the router and the hot experts it also ends
+    // the device split there, so that the device computes the hot experts while the CPU computes the cold ones (the
+    // scheduler copies the inputs of a CPU split that come from an earlier split before the device split runs)
     if (cache.slots == nullptr) {
-        build_expert_prefetch(selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
+        build_expert_prefetch(hot.cold ? hot.cold : selected_experts, up_exps, gate_exps, down_exps, gate_up_exps, il);
     }
 
     cur = ggml_reshape_3d(ctx0, cur, n_embd, 1, n_tokens);
@@ -2727,7 +2734,15 @@ ggml_tensor * llm_graph_context::build_moe_ffn(
         return experts;
     };
 
-    ggml_tensor * experts = cache.slots == nullptr ?
+    ggml_tensor * experts = nullptr;
+    if (hot.hot) {
+        // the device part first in the graph, so that it runs while the CPU computes the cold experts; each part
+        // reads the other's experts as id -1, computed as zero
+        experts = build_experts(cur, selected_experts, hot.hot, true);
+        ggml_build_forward_expand(gf, experts);
+        experts = ggml_add(ctx0, experts, build_experts(cur, selected_experts, hot.cold, false));
+        cb(experts, "ffn_moe_down_hot_cold", il);
+    } else experts = cache.slots == nullptr ?
         build_experts(cur, selected_experts, nullptr, true) :
         moe_cache->build_experts(*this, cache, cur, selected_experts,
                 [](ggml_tensor * cur, ggml_tensor * ids, ggml_tensor * mm_ids, bool cached, void * user_data) {
