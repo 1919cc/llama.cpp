@@ -10,10 +10,12 @@
 
 // With DMA64 (v81+) weight buffers are mapped extended: the DSP reaches them only through DMA, and kernels without a
 // DMA path answer NO_SUPPORT at run time (Inkling 2 pads and repeats small f32 weights). A weight is a leaf in a
-// weights buffer, or a leaf not allocated yet when supports_op asks.
+// weights buffer: model weights are allocated before any graph is scheduled, while inputs (and the tensors of
+// test-backend-ops) may not be allocated yet when supports_op asks, and are not extended.
 static bool htp_weight_maybe_extended(const struct ggml_tensor * t) {
-    return opt_dma64 && t->op == GGML_OP_NONE &&
-           (!t->buffer || ggml_backend_buffer_get_usage(t->buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    const struct ggml_tensor * base = t->view_src ? t->view_src : t;
+    return opt_dma64 && base->op == GGML_OP_NONE && base->buffer &&
+           ggml_backend_buffer_get_usage(base->buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS;
 }
 
 #ifndef M_LOG2E
