@@ -1,0 +1,5 @@
+你好！最近工作压力很大，晚上总是睡不好，你能给我一些改善睡眠的建议吗？
+Explain how a refrigerator works, step by step, for a curious 12-year-old.
+Write a Python function that parses a CSV file and returns the average of each numeric column, with error handling.
+帮我写一封给房东的邮件，说明下个月的房租会晚交三天，并表示歉意。
+What are the main differences between TCP and UDP? Give examples of when to use each.

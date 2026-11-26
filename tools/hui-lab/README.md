@@ -1,6 +1,8 @@
 # hui-lab：端侧测速与验证（本地 8845 + QDC）
 
-原 `hexagon-lab`，后放在 EdgeAgent/validation，现归入引擎仓库 `llama.cpp_hui`（`hui_infer` 分支）的 `tools/hui-lab/`。数值一致性工具（logit-cmp、kvdiff）在 `tools/hui-debug/`，调研笔记在 `docs/hui/research/`，App 里的引擎 JNI 在 `tools/hui-jni/`。
+原 `hexagon-lab`，后放在 EdgeAgent/validation，现归入引擎仓库 `llama.cpp_hui`（`hui_infer` 分支）的 `tools/hui-lab/`。数值一致性工具（logit-cmp、kvdiff）在 `tools/hui-debug/`，App 里的引擎 JNI 在 `tools/hui-jni/`，优化与实测报告是仓库根目录的 `HUI_REPORT.md`。
+
+门控测速：`bench_gate.py` 用 llama-bench（随机 token），`completion_gate.py` 用 `prompts/` 里的真实提示跑 llama-completion（同样的满频门控，报告 prefill / decode）。MoE 专家缓存类优化要用后者：随机 token 的路由和真实文本不同。
 
 `results/full/` 里两份 22 MB 的 `sm88xx-diag.err` 原始日志没有入库。
 
