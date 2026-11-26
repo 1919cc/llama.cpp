@@ -202,6 +202,21 @@ ggml_tensor * llama_model_inkling2::graph::mix(const std::vector<ggml_tensor *> 
     ggml_tensor * scores = ggml_mul_mat(ctx0, states, queries);
     scores = ggml_soft_max_ext(ctx0, scores, nullptr, 1.0f/sqrtf(n_embd), 0.0f);
 
+    // generation with one query: the weighted sum of the K (<= 7) states as a broadcast MUL and K - 1 ADDs of whole
+    // rows. The matmul form below reduces over K, so it needs a transposed copy of the states and runs n_embd dot
+    // products of length K: on the Hexagon NPU ~260 us per call (the flat kernel stages each row by DMA) against
+    // ~6 us per vector op, ~88 calls per Inkling 2 Mini token
+    const int64_t n_states = states->ne[1];
+    if (n_tokens == 1 && query->ne[1] == 1 && n_states <= 8) {
+        ggml_tensor * weighted = ggml_mul(ctx0, ggml_reshape_2d(ctx0, states, n_embd, n_states),
+                ggml_reshape_2d(ctx0, scores, 1, n_states)); // [n_embd, n_states]
+        ggml_tensor * sum = ggml_view_1d(ctx0, weighted, n_embd, 0);
+        for (int64_t k = 1; k < n_states; ++k) {
+            sum = ggml_add(ctx0, sum, ggml_view_1d(ctx0, weighted, n_embd, k*weighted->nb[1]));
+        }
+        return ggml_reshape_3d(ctx0, sum, 1, n_embd, 1); // [n_queries, n_embd, n_tokens]
+    }
+
     return ggml_mul_mat(ctx0, scores, ggml_cont(ctx0, ggml_transpose(ctx0, states))); // [n_queries, n_embd, n_tokens]
 }
 
