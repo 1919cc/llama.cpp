@@ -409,6 +409,15 @@ hui_infer 落后上游 611 个提交（上游 `cbb1c1c50`）。12 个文件有�
 
 **验证**：构建通过；Inkling 2 Mini 贪心输出与 CPU 一致；`test-backend-ops -b HTP0 -o MUL_MAT` 全部通过。`test-backend-ops -b HTP0`（最终构建）：MUL_MAT 全部通过；MUL_MAT_ID 1169 / 1169；PAD 37 / 37；REPEAT 12 / 12；ARGSORT 98 / 98；FLASH_ATTN_EXT 3304 / 3308——失败的 4 个都是广播 mask（mask_heads=1）+ 带填充的 Q 视图（q_head_padding=4）走 HMX 内核，与 #20 改动的逐头 mask 路径无关（HVX 内核 `GGML_HEXAGON_FA_SELECT=1` 下 3308 / 3308），属于上游 HMX 内核的已有问题，未修。
 
+其他模型的回归（门控，Gemma 4 E2B QAT Q4_0，`-p 512 -n 128 -ngl 99 -fa 1 -t 4 --device HTP0`，3 轮交替，合并前 hui_infer `eadf158e9` vs 合并后 `0279d270c`；原始数据 `results/merge-ab-e2b-1125`、`merge-ab-e2b-1125-oppoll`）：
+
+| 配置 | pp512 合并前 → 合并后 | tg128 合并前 → 合并后 |
+|---|---|---|
+| App 常驻方案（`GGML_HEXAGON_OPPOLL=1`） | 4,094 → 4,094（0%） | 34.50 → 34.47（−0.1%） |
+| 命令行默认（主机睡眠等 NPU） | 3,595 → 3,553（−1.2%） | 31.22 → 28.71（**−8.0%**） |
+
+App 用的配置没有回归。命令行默认配置 decode 慢 8%：图和分段数不变（1521 节点、2 段），NPU 上 MUL_MAT / MUL_MAT_NX 在同一 NPU 频率下各多用 7–10% 的时间，Hexagon 矩阵乘内核在这次合并里没有改动；打开 NPU 轮询后差距消失，说明问题在等待路径而不在内核。来自上游的 111 个提交（hui 的改动不碰这条路径），原因未定位。
+
 
 ## 9. 2 倍速度目标：现状与计划
 
